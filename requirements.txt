@@ -1,0 +1,6 @@
+numpy~=2.2.5
+pandas~=2.2.3
+pypf~=0.1.0
+Flask~=3.1.0
+flask-cors~=5.0.1
+setuptools~=78.1.0

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cytoscape.js Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.27.0/cytoscape.min.js"></script>
+    <style>
+        #cy {
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div id="cy"></div>
+    <script>
+        fetch('http://127.0.0.1:5000/network_data')
+            .then(response => response.json())
+            .then(data => {
+                const cy = cytoscape({
+                    container: document.getElementById('cy'),
+                    elements: data
+                });
+            });
+    </script>
+</body>
+</html>
