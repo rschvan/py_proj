@@ -1,7 +1,7 @@
 # pypf/__init__.py
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.coherence import coherence
+from pypf.utility import get_lower, pwcorr, coherence
 
 """
 import pypf as pf

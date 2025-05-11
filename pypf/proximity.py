@@ -1,5 +1,5 @@
 #   pypf/proximity.py
-from pypf.coherence import coherence
+from pypf.utility import coherence
 import pandas as pd
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
@@ -12,16 +12,18 @@ class Proximity:
     Assumes the data file is either:
     1.  A square matrix where the first row is a header (terms), and the first column (from the second row onwards) contains the same terms.
     2.  A matrix with one more column than rows, where the first column contains the terms, and the following columns form the square distance matrix (no header row).
+
     """
 
-    def __init__(self, filepath=None, terms=None, dismat=None):
+    def __init__(self, filepath=None, terms=None, dismat=None, name=None):
         """
-        Initializes the Proximity object.
+        creates a Proximity object.
 
         Args:
-            filepath (str, optional): Path to a spreadsheet file (.xlsx or .csv) to load data from. If provided, loads data from the file and extracts a name. If None, triggers a file dialog. Defaults to None.
+            filepath (str, optional): Path to a spreadsheet file (.xlsx or .csv) with terms and distances. If provided, loads data from the file and extracts a name. If None, triggers a file dialog. Defaults to None.
             terms (list, optional): A list of item names (used if data is not loaded from a file). Defaults to None.
             dismat (numpy.ndarray, optional): A square matrix of pairwise distances (used if data is not loaded from a file). Defaults to None.
+            name (str, optional): A name for the proximity object. If None, uses the filename (if available) or the first term in the list. Defaults to None.
         """
         self.terms = []
         self.nterms = 0
@@ -34,6 +36,7 @@ class Proximity:
         self.name = None
         self.filename = None
         self.filepath = filepath
+        self.issymmetric = False
 
         if dismat is None:  # must read a file
             if filepath is None: # must prompt for the file
@@ -70,15 +73,17 @@ class Proximity:
             if nr != nc:
                 print(f"Variable inputs are not valid: ")
                 return
-            self.name = "variables"
         self.terms = terms
         self.nterms = len(self.terms)
+        if name is not None:
+            self.name = name
         self.dismat = np.copy(dismat)
         if self.dismat.shape != (self.nterms, self.nterms):
             print(f"error: terms and distance matrix are not congruent")
             return
         np.fill_diagonal(self.dismat, 0.0)
         self.dismat[np.isnan(self.dismat)] = np.inf
+        self.issymmetric = np.array_equal(self.dismat, self.dismat.T)
         if self.dismat.size > 0:
             self._calculate_stats()
             self.coh = coherence(self.dismat, self.max if hasattr(self, 'max') else np.nan)

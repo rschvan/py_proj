@@ -1,8 +1,48 @@
 #pypf/pfnet.py
 import numpy as np
+from pypf import Proximity
 
 class PFnet:
-    def __init__(self, proximity, q=np.inf, r=np.inf):
+    """
+    PFnet class is used for creating and managing Proximity File Networks, which represent
+    graph structures with nodes, edges, and distances. It is capable of handling weighted
+    graphs, both directed and undirected, and allows for various distance matrix calculations.
+
+    The class is initialized using a proximity object containing terms and a distance matrix,
+    along with other optional parameters for controlling graph behavior. It supports multiple
+    algorithms for computing minimum distances between nodes (Floyd's algorithm and Dijkstra's).
+
+    :ivar q: Parameter controlling the maximum number of iterations or range for distance processing.
+    :type q: float
+    :ivar r: Parameter affecting the distance metric, controlling the power in the Minkowski function.
+    :type r: float
+    :ivar terms: List of node labels in the graph.
+    :type terms: list
+    :ivar nnodes: Number of nodes in the graph.
+    :type nnodes: int
+    :ivar nlinks: Number of links (edges) in the graph.
+    :type nlinks: int
+    :ivar dismat: Distance matrix from the input proximity object.
+    :type dismat: numpy.ndarray
+    :ivar mindis: Matrix containing minimum distances after the computation.
+    :type mindis: numpy.ndarray
+    :ivar adjmat: Adjacency matrix with computed link weights.
+    :type adjmat: numpy.ndarray
+    :ivar isdirected: Boolean flag indicating whether the graph is directed.
+    :type isdirected: bool
+    :ivar name: Name of the graph, initialized from the proximity object.
+    :type name: str
+    """
+    def __init__(self, proximity=None, q=np.inf, r=np.inf):
+        """
+        Creates a PFnet object.
+                :param proximity: Object containing graph data, specifically a list of terms and a distance matrix.
+                            if None, user is prompted to select a proximity file.
+        :param q: Optional parameter to control the subset of nodes considered for minimum
+                  distance computations. Defaults to `np.inf`.
+        :param r: Optional parameter to control Minkowski distance calculation. Defaults to `np.inf`.
+
+        """
         self.q = q # Inf yields nterms-1
         self.r = r
         self.terms = []  # node labels
@@ -14,9 +54,10 @@ class PFnet:
         self.isdirected = False  # true for directed graph
         self.name = "default"  # Initialize the name property
 
+        if proximity is None:
+            proximity = Proximity()
         if hasattr(proximity, 'name'):
             self.name = proximity.name
-
         if hasattr(proximity, 'terms'):
             self.terms = proximity.terms
             self.nnodes = len(self.terms)
