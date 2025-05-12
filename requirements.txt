@@ -4,3 +4,5 @@ pypf~=0.1.0
 Flask~=3.1.0
 flask-cors~=5.0.1
 setuptools~=78.1.0
+networkx~=3.4.2
+matplotlib~=3.10.1

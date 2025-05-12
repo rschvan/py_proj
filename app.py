@@ -44,17 +44,17 @@ def get_network_data():
         # for i in range(n_nodes):
         #     for j in range(i + 1, n_nodes):  # Avoid duplicates for undirected graphs
         #         if adjacency_matrix[i, j] != 0 and not np.isnan(adjacency_matrix[i, j]):
-        #             edges.append({
+        #             n_edges.append({
         #                 'data': {
         #                     'source': str(i),
         #                     'target': str(j),
         #                     'weight': adjacency_matrix[i, j]  # You can include weights if needed
         #                 }
         #             })
-        #     if network.isdirected:  # Handle directed edges
+        #     if network.isdirected:  # Handle directed n_edges
         #         for j in range(n_nodes):
         #             if i != j and adjacency_matrix[i, j] != 0 and not np.isnan(adjacency_matrix[i, j]):
-        #                 edges.append({
+        #                 n_edges.append({
         #                     'data': {
         #                         'source': str(i),
         #                         'target': str(j),
@@ -62,7 +62,7 @@ def get_network_data():
         #                     }
         #                 })
 
-        network_data = {'nodes': nodes, 'edges': edges}
+        network_data = {'n_nodes': nodes, 'n_edges': edges}
         return jsonify(network_data)
     else:
         return jsonify({'error': 'Network data not loaded'}), 500

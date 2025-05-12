@@ -1,6 +1,8 @@
 # This is a sample Python script.
 import numpy as np
 
+from pypf import PFnet
+
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -15,20 +17,21 @@ def print_hi(name):
 if __name__ == '__main__':
     print_hi('PyCharm')
 
-    import pypf as pf
-    prx = pf.Proximity()
-    prx.prxprint()
-    net1 = pf.PFnet(prx)
-    net1.netprint()
-    net2 = pf.PFnet(q=2)
-    net2.netprint()
-    net3 = pf.PFnet(q=2)
+    from pypf import PFnet, Proximity
+    psyp = Proximity("data/psy.prx.xlsx")
+    psyp.prxprint()
+    psy = PFnet(psyp)
+    psy.netprint()
+    psyq2 = PFnet(psyp,q=2)
+    psyq2.netprint()
+    biop = Proximity("data/bio.prx.xlsx")
+    bio = PFnet(biop)
+    bio.netprint()
 
     from pypf.utility import discorr, netsim
-    cor = discorr(prx.dismat,net3.dismat)
+    cor = discorr(psyp.dismat,biop.dismat)
     print(f"Discorr: {cor}")
-    sim = netsim(net1.adjmat,net3.adjmat)
-    print(f"Netsim: {sim}")
-
+    sim = netsim(psy.adjmat,bio.adjmat)
+    print("Netsim: ", sim)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

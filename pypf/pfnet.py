@@ -1,16 +1,16 @@
 #pypf/pfnet.py
 import numpy as np
-from pypf import Proximity
+from pypf.proximity import Proximity
 
 class PFnet:
     """
     PFnet class is used for creating and managing Proximity File Networks, which represent
-    graph structures with nodes, edges, and distances. It is capable of handling weighted
+    graph structures with n_nodes, n_edges, and distances. It is capable of handling weighted
     graphs, both directed and undirected, and allows for various distance matrix calculations.
 
     The class is initialized using a proximity object containing terms and a distance matrix,
     along with other optional parameters for controlling graph behavior. It supports multiple
-    algorithms for computing minimum distances between nodes (Floyd's algorithm and Dijkstra's).
+    algorithms for computing minimum distances between n_nodes (Floyd's algorithm and Dijkstra's).
 
     :ivar q: Parameter controlling the maximum number of iterations or range for distance processing.
     :type q: float
@@ -18,9 +18,9 @@ class PFnet:
     :type r: float
     :ivar terms: List of node labels in the graph.
     :type terms: list
-    :ivar nnodes: Number of nodes in the graph.
+    :ivar nnodes: Number of n_nodes in the graph.
     :type nnodes: int
-    :ivar nlinks: Number of links (edges) in the graph.
+    :ivar nlinks: Number of links (n_edges) in the graph.
     :type nlinks: int
     :ivar dismat: Distance matrix from the input proximity object.
     :type dismat: numpy.ndarray
@@ -38,7 +38,7 @@ class PFnet:
         Creates a PFnet object.
                 :param proximity: Object containing graph data, specifically a list of terms and a distance matrix.
                             if None, user is prompted to select a proximity file.
-        :param q: Optional parameter to control the subset of nodes considered for minimum
+        :param q: Optional parameter to control the subset of n_nodes considered for minimum
                   distance computations. Defaults to `np.inf`.
         :param r: Optional parameter to control Minkowski distance calculation. Defaults to `np.inf`.
 

@@ -2,7 +2,9 @@
 import os
 from typing import Optional, Union
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
+from networkx import nodes
 
 def get_parent_dir():
     """
@@ -107,57 +109,72 @@ def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[f
     else:
         return np.nan
 
-def netsim(adj1, adj2):
+def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
     """
-    Calculates a similarity index between two adjacency matrices.
+    Calculates network similarity between two adjacency matrices.
 
     Args:
         adj1 (numpy.ndarray): The first adjacency matrix.
         adj2 (numpy.ndarray): The second adjacency matrix.
 
     Returns:
-        dict or float: A dictionary containing similarity details,
-                     or NaN if the matrices are not of the same size.
-                     The dictionary has the following keys:
-                     - 'common':  Indices where common adj1 and adj2 are True.
-                     - 'num_common': Number of such indices.
-                     - 'net1not2': Indices where adj1 is True and adj2 is False.
-                     - 'num_only_net1': Number of such indices.
-                     - 'net2not1': Indices where adj2 is True and adj1 is False.
-                     - 'num_only_net2': Number of such indices.
-                     - 'sim':  The similarity index.
+        dict: A dictionary containing various similarity measures.
+              Returns None if the input matrices are incompatible.
     """
 
     if adj1.shape != adj2.shape:
-        return np.nan
+        print("Incompatible nets")
+        return None
 
-    adj1_bool = adj1.astype(bool)
-    adj2_bool = adj2.astype(bool)
+    adj1 = adj1.astype(bool)
+    adj2 = adj2.astype(bool)
+    n = adj1.shape[0]
 
-    # Find indices where common matrices are True (or non-zero)
-    common = np.where(adj1_bool & adj2_bool)[0]  # Using numpy's logical AND
+    is_symmetric = np.array_equal(adj1, adj1.T) and np.array_equal(adj2, adj2.T)
+    n_possible_links = (n**2 - n) // 2
+    mask = ~np.eye(n, dtype=bool)
 
-    # Find indices where adj1 is True and adj2 is False
-    net1not2 = np.where(adj1_bool & ~adj2_bool)[0]
+    if is_symmetric:
+        mask = np.triu(mask)
 
-    # Find indices where adj2 is True and adj1 is False
-    net2not1 = np.where(adj2_bool & ~adj1_bool)[0]
+    # Find linear indices of links within the masked matrix
+    links1_flat_indices = np.where(adj1[mask].flatten())[0]
+    links2_flat_indices = np.where(adj2[mask].flatten())[0]
 
-    num_common = len(common)
-    num_only_net1 = len(net1not2)
-    num_only_net2 = len(net2not1)
-    num_union = num_common + num_only_net1 + num_only_net2
+    n_links1 = len(links1_flat_indices)
+    n_links2 = len(links2_flat_indices)
 
-    sim_index = num_common / num_union if num_union > 0 else np.nan  # Handle division by zero
+    # Find the number of common links
+    n_both = len(np.intersect1d(links1_flat_indices, links2_flat_indices))
+    n_union = len(np.union1d(links1_flat_indices, links2_flat_indices))
+
+    sim = round(n_both / n_union, 4) if n_union > 0 else np.nan
+
+    # Hypergeometric test: Calculate the MEAN directly
+    if is_symmetric:
+        M = int(n * (n - 1) / 2)
+    else:
+        M = int(n * (n - 1))
+
+    if M > 0:
+        rand_both = (n_links1 * n_links2) / M
+        rand_both = round(rand_both, 4)
+    else:
+        rand_both = np.nan
+
+    cn_both = n_both - rand_both if not np.isnan(rand_both) else np.nan
+    c_sim = round(cn_both / n_union, 4) if n_union > 0 and not np.isnan(cn_both) else np.nan
 
     return {
-        'common': common,
-        'num_common': num_common,
-        'net1not2': net1not2,
-        'num_only_net1': num_only_net1,
-        'net2not1': net2not1,
-        'num_only_net2': num_only_net2,
-        'sim': np.round(sim_index, 3)
+        "npos": M,
+        "nlinks1": n_links1,
+        "nlinks2": n_links2,
+        "nboth": n_both,
+        "nunion": n_union,
+        "sim": sim,
+        "randboth": rand_both,
+        "cnboth": cn_both,
+        "csim": c_sim,
     }
 
 def discorr(dis1: np.ndarray, dis2: np.ndarray):
@@ -198,6 +215,15 @@ def discorr(dis1: np.ndarray, dis2: np.ndarray):
 
 if __name__ == '__main__':
     from pypf.proximity import Proximity
+    from pypf.pfnet import PFnet
+    from pypf.display import NetworkDisplay
+    from pypf.utility import get_parent_dir
+    import os
+
+    psyprx = Proximity(os.path.join(get_parent_dir(), "data", "psy.prx.xlsx"))
+    #bioprx = Proximity(os.path.join(get_parent_dir(), "data", "bio.prx.xlsx"))
+    psy = PFnet(psyprx)
+    #bio = PFnet(bioprx)
 
     # # Example netsim with weighted adjacency matrices
     # adj_matrix1 = np.array([[1.0, 2.0, 0.0], [2.0, 0.0, 3.0], [0.0, 3.0, 0.0]])
