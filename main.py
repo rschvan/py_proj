@@ -1,23 +1,13 @@
-# This is a sample Python script.
-import numpy as np
-
-from pypf import PFnet
 
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-#TODO =
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
 
-    from pypf import PFnet, Proximity
+    from pypf.pfnet import PFnet
+    from pypf.proximity import Proximity
+    import pypf as pf
     psyp = Proximity("data/psy.prx.xlsx")
     psyp.prxprint()
     psy = PFnet(psyp)
@@ -28,10 +18,10 @@ if __name__ == '__main__':
     bio = PFnet(biop)
     bio.netprint()
 
-    from pypf.utility import discorr, netsim
+    from pypf.utility import discorr
     cor = discorr(psyp.dismat,biop.dismat)
     print(f"Discorr: {cor}")
-    sim = netsim(psy.adjmat,bio.adjmat)
+    sim = pf.netsim(psy.adjmat,bio.adjmat)
     print("Netsim: ", sim)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

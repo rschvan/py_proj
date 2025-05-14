@@ -2,18 +2,18 @@
 import numpy as np
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-
+import pypf as pf
 import os.path
 import networkx as nx
 import matplotlib.pyplot as plt
 
-all = True
+all = False
 pic = False
 
 prx = Proximity()
 dis1 = prx.dismat
 prx.prxprint(note="dialog")
-net = pfnet.PFnet(prx)
+net = pf.PFnet(prx)
 net.netprint(note="dialog")
 
 # prx = Proximity(os.path.join("data","psy.prx.csv"))

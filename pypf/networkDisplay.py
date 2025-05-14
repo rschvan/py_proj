@@ -12,7 +12,7 @@ class NetworkDisplay(tk.Canvas):
         self.drag_start_y_canvas = 0
         self.drag_start_node_x_logical = 0
         self.drag_start_node_y_logical = 0
-        self.canvas_height = int(kwargs.get('cheight', 200))
+        self.canvas_height = int(kwargs.get('height', 200))
 
         self.draw_network()
         self.bind("<Configure>", self._on_resize)
@@ -21,7 +21,7 @@ class NetworkDisplay(tk.Canvas):
         self.bind("<ButtonRelease-1>", self.stop_drag)
 
     def _on_resize(self, event):
-        self.canvas_height = event.cheight
+        self.canvas_height = event.height
         self.draw_network()
 
     def _to_canvas_y(self, logical_y):
@@ -103,7 +103,7 @@ class NetworkDisplay(tk.Canvas):
 
 # Example Usage
 if __name__ == "__main__":
-    from pypf.utility import create_network_data
+
     nodes_data = {
         "A": {"x": 50, "y": 50, "label": "Node A"},
         "B": {"x": 150, "y": 50, "label": "Node B"},

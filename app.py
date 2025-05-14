@@ -1,6 +1,6 @@
+import numpy as np
 from flask import Flask, jsonify
 from flask_cors import CORS
-import numpy as np
 from pypf.pfnet import PFnet
 from pypf.proximity import Proximity
 
@@ -39,28 +39,28 @@ def get_network_data():
             nodes.append({'data': {'id': str(i), 'label': term}})
 
         edges = []
-        # adjacency_matrix = network.adjmat
-        # n_nodes = len(network.terms)
-        # for i in range(n_nodes):
-        #     for j in range(i + 1, n_nodes):  # Avoid duplicates for undirected graphs
-        #         if adjacency_matrix[i, j] != 0 and not np.isnan(adjacency_matrix[i, j]):
-        #             n_edges.append({
-        #                 'data': {
-        #                     'source': str(i),
-        #                     'target': str(j),
-        #                     'weight': adjacency_matrix[i, j]  # You can include weights if needed
-        #                 }
-        #             })
-        #     if network.isdirected:  # Handle directed n_edges
-        #         for j in range(n_nodes):
-        #             if i != j and adjacency_matrix[i, j] != 0 and not np.isnan(adjacency_matrix[i, j]):
-        #                 n_edges.append({
-        #                     'data': {
-        #                         'source': str(i),
-        #                         'target': str(j),
-        #                         'weight': adjacency_matrix[i, j]
-        #                     }
-        #                 })
+        adjacency_matrix = network.adjmat
+        n_nodes = len(network.terms)
+        for i in range(n_nodes):
+            for j in range(i + 1, n_nodes):  # Avoid duplicates for undirected graphs
+                if adjacency_matrix[i, j] != 0 and not np.isnan(adjacency_matrix[i, j]):
+                    edges.append({
+                        'data': {
+                            'source': str(i),
+                            'target': str(j),
+                            'weight': adjacency_matrix[i, j]  # You can include weights if needed
+                        }
+                    })
+            if network.isdirected:  # Handle directed n_edges
+                for j in range(n_nodes):
+                    if i != j and adjacency_matrix[i, j] != 0 and not np.isnan(adjacency_matrix[i, j]):
+                        edges.append({
+                            'data': {
+                                'source': str(i),
+                                'target': str(j),
+                                'weight': adjacency_matrix[i, j]
+                            }
+                        })
 
         network_data = {'n_nodes': nodes, 'n_edges': edges}
         return jsonify(network_data)
