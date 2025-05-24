@@ -134,7 +134,7 @@ def graph_from_adjmat(adjmat:npt.NDArray, terms:list):
     if isdirected:
         for i in range(n):
             for j in range(n):
-                if adjmat > 0:
+                if adjmat[i, j] > 0:
                     graph.add_edge(terms[i], terms[j], weight=adjmat[i,j])
     else:
         for i in range(n-1):

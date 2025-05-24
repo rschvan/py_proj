@@ -1,5 +1,3 @@
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
     from pypf.pfnet import PFnet
@@ -14,3 +12,11 @@ if __name__ == '__main__':
     biop = Proximity("data/bio.prx.xlsx")
     bio = PFnet(biop)
     bio.netprint()
+
+
+
+
+        
+
+
+

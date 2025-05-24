@@ -1,4 +1,4 @@
-#from typing import Dict
+# from typing import Dict
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 
@@ -30,4 +30,9 @@ if __name__ == "__main__":
     # from pypf.proximity import Proximity
     # from pypf.pfnet import PFnet
     col = Collection()
-    print(col)
+    px = Proximity("data/psy.prx.xlsx")
+    col.add_proximity(px)
+    pfn = PFnet(px)
+    col.add_pfnet(pfn)
+    print(col.pfnets)
+    print(col.proximities['psy'])
