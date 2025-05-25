@@ -1,10 +1,12 @@
 import tkinter as tk
+import networkx as nx # Import networkx to check graph type
 
 class NetworkDisplay(tk.Canvas):
-    def __init__(self, parent, nodes, edges, **kwargs):
+    def __init__(self, parent, nodes, edges, is_directed=False, **kwargs): # Add is_directed parameter
         super().__init__(parent, **kwargs)
         self.nodes = nodes
         self.edges = edges
+        self.is_directed = is_directed # Store the directed status
         self.node_items = {}
         self.edge_items = {}
         self.dragging_item = None
@@ -54,9 +56,17 @@ class NetworkDisplay(tk.Canvas):
                 x1, y1 = self._get_edge_endpoint(x1_center, y1_center, x2_center, y2_center, x1_min, y1_min, x1_max, y1_max)
                 x2, y2 = self._get_edge_endpoint(x2_center, y2_center, x1_center, y1_center, x2_min, y2_min, x2_max, y2_max)
 
-                sorted_edge = tuple(sorted((id1, id2)))
-                edge_id = self.create_line(x1, y1, x2, y2, fill="gray", tags="edge")
-                self.edge_items[sorted_edge] = edge_id
+                arrow_option = tk.LAST if self.is_directed else tk.NONE # Conditionally add arrow
+                # For directed graphs, the 'edges' list from networkData will already handle the direction
+                # No need to sort if it's a directed graph
+                if self.is_directed: #
+                    edge_id = self.create_line(x1, y1, x2, y2, fill="gray", tags="edge", arrow=arrow_option) # Add arrow option
+                    self.edge_items[(id1, id2)] = edge_id # Store as (id1, id2) for directed
+                else:
+                    sorted_edge = tuple(sorted((id1, id2)))
+                    edge_id = self.create_line(x1, y1, x2, y2, fill="gray", tags="edge", arrow=arrow_option) # Add arrow option
+                    self.edge_items[sorted_edge] = edge_id
+
 
         # Draw nodes (as text) on top of edges
         for node_id, data in self.nodes.items():
@@ -147,7 +157,6 @@ class NetworkDisplay(tk.Canvas):
         self.dragging_item = None
 
     def update_edge_positions(self):
-        # ... (modify this to use _get_edge_endpoint as well if edges need to dynamically adjust during drag)
         updated_edges = set()
         for id1, id2 in self.edges:
             if id1 in self.nodes and id2 in self.nodes:
@@ -167,25 +176,49 @@ class NetworkDisplay(tk.Canvas):
                 x1, y1 = self._get_edge_endpoint(x1_center, y1_center, x2_center, y2_center, x1_min, y1_min, x1_max, y1_max)
                 x2, y2 = self._get_edge_endpoint(x2_center, y2_center, x1_center, y1_center, x2_min, y2_min, x2_max, y2_max)
 
-                sorted_edge = tuple(sorted((id1, id2)))
-                if sorted_edge in self.edge_items and sorted_edge not in updated_edges:
-                    self.coords(self.edge_items[sorted_edge], x1, y1, x2, y2)
-                    updated_edges.add(sorted_edge)
+                arrow_option = tk.LAST if self.is_directed else tk.NONE # Conditionally add arrow
+
+                if self.is_directed: #
+                    edge_key = (id1, id2) # Key for directed graph
+                else:
+                    edge_key = tuple(sorted((id1, id2))) # Key for undirected graph
+
+                if edge_key in self.edge_items and edge_key not in updated_edges:
+                    self.coords(self.edge_items[edge_key], x1, y1, x2, y2)
+                    self.itemconfig(self.edge_items[edge_key], arrow=arrow_option) # Update arrow for existing edges
+                    updated_edges.add(edge_key)
 
 # Example Usage
 if __name__ == "__main__":
-    import matplotlib
     from pypf.networkData import networkData
     from pypf.utility import get_test_pf
-    pfn = get_test_pf("bio")
+    from pypf.pfnet import PFnet # Import PFnet to check graph type
 
-    width = 600
-    height = 600
-    nodes, edges = networkData(pfn, "gravity", canvas_width=width, canvas_height=height)
+    # Test with an undirected graph (default "pf" type from get_test_pf will be undirected if dismat is symmetric)
+    pfn_undirected = get_test_pf("rbank")
+    width_undirected = 600
+    height_undirected = 600
+    # Pass is_directed based on the PFnet's graph type
+    nodes_undirected, edges_undirected = networkData(pfn_undirected, "gravity", canvas_width=width_undirected, canvas_height=height_undirected)
 
-    root = tk.Tk()
-    root.title(pfn.name)
-    root.bordersize = 5
-    network_display = NetworkDisplay(root, nodes, edges, width=width, height=height)
-    network_display.pack(fill=tk.BOTH, expand=True)
-    root.mainloop()
+    root_undirected = tk.Tk()
+    root_undirected.title(f"{pfn_undirected.name} (Undirected)")
+    network_display_undirected = NetworkDisplay(root_undirected, nodes_undirected, edges_undirected,
+                                                is_directed=isinstance(pfn_undirected.graph, nx.DiGraph), # Check if it's a DiGraph
+                                                width=width_undirected, height=height_undirected)
+    network_display_undirected.pack(fill=tk.BOTH, expand=True)
+    # root_undirected.mainloop() # Keep this commented for the moment to allow both windows to open
+
+    # Test with a directed graph (e.g., "nn" type)
+    pfn_directed = PFnet(proximity=get_test_pf("bio").proximity, type="nn") # Create a directed graph
+    width_directed = 600
+    height_directed = 600
+    nodes_directed, edges_directed = networkData(pfn_directed, "gravity", canvas_width=width_directed, canvas_height=height_directed)
+
+    root_directed = tk.Tk()
+    root_directed.title(f"{pfn_directed.name} (Directed)")
+    network_display_directed = NetworkDisplay(root_directed, nodes_directed, edges_directed,
+                                              is_directed=isinstance(pfn_directed.graph, nx.DiGraph), # Check if it's a DiGraph
+                                              width=width_directed, height=height_directed)
+    network_display_directed.pack(fill=tk.BOTH, expand=True)
+    root_directed.mainloop() # Only one mainloop can be active at a time, so put this at the end

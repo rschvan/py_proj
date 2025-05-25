@@ -1,14 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
+from unittest import case
 
-# Assuming these are available from your pypf package
-# You would need to ensure these files (proximity.py, pfnet.py, networkData.py, networkDisplay.py, utility.py)
-# are in a 'pypf' directory in the same location as this script, or accessible via your Python path.
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.networkData import networkData
-from pypf.networkDisplay import NetworkDisplay
+from pypf.shownet import shownet
 from pypf.utility import get_parent_dir  # For default path - now optional initial value
 
 
@@ -80,7 +77,7 @@ class PyPathfinder(tk.Tk):
 
         # Add Proximity Data Button
         add_proximity_button = tk.Button(left_panel, text="Add Proximity Data", command=self._on_add_proximity_data)
-        add_proximity_button.grid(row=1, column=0, columnspan=3, padx=5, pady=10, sticky="ew")
+        add_proximity_button.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
 
         # Proximity Data Display (Listbox for selection)
         # selectmode set to tk.EXTENDED for multi-select
@@ -100,18 +97,18 @@ class PyPathfinder(tk.Tk):
 
         get_proximity_info_button = tk.Button(info_correlations_frame, text="Get Proximity Info",
                                               command=self._on_get_proximity_info)
-        get_proximity_info_button.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        get_proximity_info_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
         data_correlations_button = tk.Button(info_correlations_frame, text="Data Correlations",
                                              command=self._on_data_correlations)
-        data_correlations_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        data_correlations_button.grid(row=0, column=1, columnspan=1, padx=5, pady=5, sticky="ew")
 
         # Average Proximities Button
-        avg_proximities_button = tk.Button(left_panel, text="Average Proximities", command=self._on_average_proximities)
-        avg_proximities_button.grid(row=4, column=0, columnspan=3, padx=5, pady=10, sticky="ew")
+        avg_proximities_button = tk.Button(info_correlations_frame, text="Average Proximities", command=self._on_average_proximities)
+        avg_proximities_button.grid(row=0, column=0, columnspan=1, padx=5, pady=10, sticky="ew")
 
         # Delete Proximity Button
         delete_proximity_button = tk.Button(left_panel, text="Delete Proximity", command=self._on_delete_proximity)
-        delete_proximity_button.grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
+        delete_proximity_button.grid(row=5, column=1, columnspan=1, padx=5, pady=5, sticky="ew")
 
         # --- Right Panel (Network Management) ---
         right_panel = ttk.Frame(self, padding="10")
@@ -123,7 +120,7 @@ class PyPathfinder(tk.Tk):
 
         # Network Type Section
         network_type_frame = ttk.LabelFrame(right_panel, text="Network Type", padding="10")
-        network_type_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
+        network_type_frame.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
         self.network_type_var = tk.StringVar(value="Pathfinder")  # Default selection
         pathfinder_radio = ttk.Radiobutton(network_type_frame, text="Pathfinder", variable=self.network_type_var,
@@ -152,14 +149,7 @@ class PyPathfinder(tk.Tk):
 
         # Derive Network Button
         derive_network_button = tk.Button(right_panel, text="Derive Network", command=self._on_derive_network)
-        derive_network_button.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
-
-        # Force Undirected Checkbox
-        self.force_undirected_var = tk.BooleanVar()
-        force_undirected_check = ttk.Checkbutton(right_panel, text="Force Undirected",
-                                                 variable=self.force_undirected_var,
-                                                 command=self._on_force_undirected_toggle)
-        force_undirected_check.grid(row=1, column=2, padx=5, pady=10, sticky="w")
+        derive_network_button.grid(row=1, column=0, columnspan=1, padx=5, pady=10, sticky="ew")
 
         # Network Display (Listbox for selection)
         # selectmode set to tk.EXTENDED for multi-select
@@ -173,32 +163,32 @@ class PyPathfinder(tk.Tk):
 
         # Network Info Buttons (Stacked vertically on the right)
         network_info_frame = ttk.Frame(right_panel)
-        network_info_frame.grid(row=3, column=0, columnspan=3, padx=5, pady=5, sticky="ew")  # Placed below listbox
+        network_info_frame.grid(row=3, column=0, columnspan=4, padx=5, pady=5, sticky="ew")  # Placed below listbox
         network_info_frame.grid_columnconfigure(0, weight=1)
         network_info_frame.grid_columnconfigure(1, weight=1)
         network_info_frame.grid_columnconfigure(2, weight=1)
 
         get_network_info_button = tk.Button(network_info_frame, text="Get Network Info",
                                             command=self._on_get_network_info)
-        get_network_info_button.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        get_network_info_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         net_properties_button = tk.Button(network_info_frame, text="Net Properties", command=self._on_net_properties)
-        net_properties_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        net_properties_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         merge_networks_button = tk.Button(network_info_frame, text="Merge Networks", command=self._on_merge_networks)
-        merge_networks_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        merge_networks_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
         network_link_list_button = tk.Button(network_info_frame, text="Network Link List",
                                              command=self._on_network_link_list)
-        network_link_list_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        network_link_list_button.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
         network_similarity_button = tk.Button(network_info_frame, text="Network Similarity",
                                               command=self._on_network_similarity)
-        network_similarity_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+        network_similarity_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
 
         # Display Network Button
-        display_network_button = tk.Button(right_panel, text="Display Network", command=self._on_display_network)
-        display_network_button.grid(row=4, column=0, columnspan=3, padx=5, pady=10, sticky="ew")
+        display_network_button = tk.Button(network_info_frame, text="Display Network", command=self._on_display_network)
+        display_network_button.grid(row=0, column=0, columnspan=1, padx=5, pady=10, sticky="ew")
 
         # Delete Network Button
-        delete_network_button = tk.Button(right_panel, text="Delete Network", command=self._on_delete_network)
-        delete_network_button.grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
+        delete_network_button = tk.Button(network_info_frame, text="Delete Network", command=self._on_delete_network)
+        delete_network_button.grid(row=3, column=1, columnspan=1, padx=5, pady=5, sticky="ew")
 
     # --- Utility methods for updating listboxes ---
     def _update_proximity_listbox(self):
@@ -250,30 +240,32 @@ class PyPathfinder(tk.Tk):
 
     def _on_add_proximity_data(self):
         print("Add Proximity Data button clicked!")
-        filepath = filedialog.askopenfilename(
+        filepath = filedialog.askopenfilenames(
             title="Select Proximity Data File",
-            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")]
+            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")],
+
         )
         if filepath:
-            try:
-                prx = Proximity(filepath=filepath)
-                if prx.name in self.proximities:
-                    messagebox.showwarning("Duplicate Proximity",
-                                           f"Proximity '{prx.name}' already exists. Replacing it.")
-                self.proximities[prx.name] = prx
-                self._update_proximity_listbox()  # Update the listbox
+            for f in filepath:
+                try:
+                    prx = Proximity(filepath=f)
+                    if prx.name in self.proximities:
+                        messagebox.showwarning("Duplicate Proximity",
+                                               f"Proximity '{prx.name}' already exists. Replacing it.")
+                    self.proximities[prx.name] = prx
+                    self._update_proximity_listbox()  # Update the listbox
 
-                # Select the newly added item (only one item selected)
-                index = list(sorted(self.proximities.keys())).index(prx.name)
-                self.proximity_listbox.selection_clear(0, tk.END)  # Clear any previous multi-selection
-                self.proximity_listbox.selection_set(index)
-                self.proximity_listbox.see(index)
-                self._on_proximity_select(None)  # Manually trigger selection update
+                    # Select the newly added item (only one item selected)
+                    index = list(sorted(self.proximities.keys())).index(prx.name)
+                    self.proximity_listbox.selection_clear(0, tk.END)  # Clear any previous multi-selection
+                    self.proximity_listbox.selection_set(index)
+                    self.proximity_listbox.see(index)
+                    self._on_proximity_select(None)  # Manually trigger selection update
 
-                print(f"Loaded proximity: {prx.name} from {filepath}")
-            except Exception as e:
-                messagebox.showerror("Error", f"Could not load proximity data: {e}")
-                print(f"Error loading proximity: {e}")
+                    print(f"Loaded proximity: {prx.name} from {filepath}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Could not load proximity data: {e}")
+                    print(f"Error loading proximity: {e}")
 
     def _on_proximity_select(self, event):
         # Get all currently selected items
@@ -292,6 +284,7 @@ class PyPathfinder(tk.Tk):
             info += f"  Terms: {prx.nterms}\n"
             info += f"  Mean Distance: {prx.mean:.2f}\n"
             info += f"  Std Dev: {prx.sd:.2f}\n"
+            info += f"  Coherence: {prx.coh:.3f}\n"
             messagebox.showinfo("Proximity Info", info)
         else:
             messagebox.showwarning("No Proximity Selected", "Please select one or more proximities from the list.")
@@ -352,17 +345,17 @@ class PyPathfinder(tk.Tk):
             q_val_str = self.q_entry.get().strip().lower()
             r_val_str = self.r_entry.get().strip().lower()
 
-            q = int(q_val_str) if q_val_str not in ('inf', 'n-1') else (
-                prx.nterms - 1 if q_val_str == 'n-1' else float('inf'))
+            q = int(q_val_str) if q_val_str != 'inf' else float('inf')
             r = int(r_val_str) if r_val_str != 'inf' else float('inf')
 
-            force_undirected = self.force_undirected_var.get()
-
-            pf = PFnet(proximity=prx, q=q, r=r)
-            if force_undirected:
-                pf.graph = pf.graph.to_undirected()
-                pf.nlinks = pf.graph.number_of_edges()
-                pf.name = f"{pf.name}_undirected"
+            net_type = self.network_type_var.get()
+            match net_type:
+                case "Pathfinder":
+                    pf = PFnet(proximity=prx, q=q, r=r)
+                case "Threshold":
+                    pf = PFnet(proximity=prx, type="th")
+                case "Nearest Neighbor":
+                    pf = PFnet(proximity=prx, type="nn")
 
             original_pf_name = pf.name
             counter = 1
@@ -395,9 +388,6 @@ class PyPathfinder(tk.Tk):
         selected_indices = self.pfnet_listbox.curselection()
         self.current_pfnet_names = [self.pfnet_listbox.get(i) for i in selected_indices]
         print(f"Networks selected: {self.current_pfnet_names}")
-
-    def _on_force_undirected_toggle(self):
-        print(f"Force Undirected checkbox toggled to: {self.force_undirected_var.get()}")
 
     def _on_get_network_info(self):
         print("Get Network Info button clicked!")
@@ -453,48 +443,12 @@ class PyPathfinder(tk.Tk):
     def _on_display_network(self):
         print("Display Network button clicked!")
         if self.current_pfnet_names:
-            # For now, display only the first selected network.
-            # Multi-network display would require more complex visualization logic.
             pf_name = self.current_pfnet_names[0]
             pf = self.pfnets[pf_name]
 
-            display_window = tk.Toplevel(self)
-            display_window.title(f"Network: {pf.name}")
-            display_window.geometry("800x600")
-
-            display_window.grid_rowconfigure(0, weight=1)
-            display_window.grid_columnconfigure(0, weight=1)
-
             try:
-                # Ensure the window is rendered to get accurate dimensions
-                display_window.update_idletasks()
-                canvas_width = display_window.winfo_width()
-                canvas_height = display_window.winfo_height()
-
-                # Fallback in case window dimensions are too small initially
-                if canvas_width < 10 or canvas_height < 10:
-                    canvas_width = 800
-                    canvas_height = 600
-
-                node_data, edge_data = networkData(pf, method="gravity",
-                                                   canvas_width=canvas_width,
-                                                   canvas_height=canvas_height)
-
-                network_canvas = NetworkDisplay(
-                    display_window,
-                    nodes=node_data,
-                    edges=edge_data,
-                    width=canvas_width,
-                    height=canvas_height,
-                    bg="white"
-                )
-                network_canvas.grid(row=0, column=0, sticky="nsew")
-                network_canvas.draw_network()
-
-                # Bind the resize event for the new window
-                network_canvas.bind("<Configure>",
-                                    lambda event, canvas=network_canvas, pf_obj=pf: self._on_network_display_resize(
-                                        event, canvas, pf_obj))
+                # Call the shownet function, passing self (the main Tkinter window) as the parent
+                shownet(self, pf, method="gravity", width=800, height=600)
 
             except Exception as e:
                 messagebox.showerror("Display Error", f"Could not display network: {e}")
@@ -502,21 +456,6 @@ class PyPathfinder(tk.Tk):
         else:
             messagebox.showwarning("No Network Selected",
                                    "Please select one or more networks from the list to display.")
-
-    def _on_network_display_resize(self, event, canvas: NetworkDisplay, pf_obj: PFnet):
-        """Callback for resizing the network display canvas."""
-        print(f"Resizing network canvas to {event.width}x{event.height}")
-        try:
-            # Recalculate layout based on new canvas size
-            node_data, edge_data = networkData(pf_obj, method="force",
-                                               canvas_width=event.width,
-                                               canvas_height=event.height)
-            canvas.nodes = node_data
-            canvas.edges = edge_data
-            canvas.canvas_height = event.height  # Update internal canvas height for correct y-axis inversion
-            canvas.draw_network()  # Redraw the network
-        except Exception as e:
-            print(f"Error during network redraw on resize: {e}")
 
     def _on_delete_network(self):
         print("Delete Network button clicked!")
@@ -532,7 +471,6 @@ class PyPathfinder(tk.Tk):
                 messagebox.showinfo("Deleted", "Selected networks deleted.")
         else:
             messagebox.showwarning("No Network Selected", "No network selected to delete.")
-
 
 if __name__ == "__main__":
     app = PyPathfinder()

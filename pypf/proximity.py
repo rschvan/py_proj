@@ -83,7 +83,7 @@ class Proximity:
         self.dismat[np.isnan(self.dismat)] = np.inf
         self.issymmetric = np.array_equal(self.dismat, self.dismat.T)
         if self.dismat.size > 0:
-            self._calculate_stats()
+            self.calculate_stats()
             self.coh = coherence(self.dismat, self.max if hasattr(self, 'max') else np.nan)
 
     def _read_data_file(self, filepath):
@@ -93,7 +93,7 @@ class Proximity:
         else:
             return pd.read_csv(filepath, header=None)
 
-    def _calculate_stats(self):
+    def calculate_stats(self):
         """
         Calculates descriptive statistics for the off-diagonal distances, excluding infinity and NaN.
         """
@@ -114,13 +114,16 @@ class Proximity:
 
     def prxprint(self, note=None):
         from pypf.proximity import Proximity  #   Import Proximity here
-        print("\nProximity Object:", note)
+        if note is None:
+            note = self.name
+        print("\nProximity:", note)
         print(f"filename: {self.filename}")
         print(f"filepath: {self.filepath}")
         print(f"name: {self.name}")
         print(f"nterms: {self.nterms}")  #   Changed from nterms to n
         print(f"terms[0]: {self.terms[0]}")
         print(f"dismat[0,1]: {self.dismat[0,1]}")
+        print(f"issymmetric: {self.issymmetric}")
         print(f"mean: {self.mean}")
         print(f"sd: {self.sd}")
         print(f"min: {self.min}")

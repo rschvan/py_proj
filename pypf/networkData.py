@@ -45,8 +45,8 @@ def networkData(net:PFnet, method = None, canvas_width: int=600, canvas_height: 
         case _:  # force with gravity
             layout = nx.forceatlas2_layout(net.graph, strong_gravity=True, seed=seed, scaling_ratio=2.0, max_iter=100,
                                            pos=randpos)
-
-    layout = newcoords(layout, canvas_width, canvas_height, 0, 0)
+    sq = -.3
+    layout = newcoords(oldxy=layout, width=canvas_width, height=canvas_height, squeezex=sq, squeezey=sq)
 
     nodes = {}
     for term, (x, y) in layout.items():
@@ -57,25 +57,9 @@ def networkData(net:PFnet, method = None, canvas_width: int=600, canvas_height: 
     return nodes, edges
 
 if __name__ == "__main__":
-    import tkinter as tk
-    from pypf.networkDisplay import NetworkDisplay
     from pypf.utility import get_test_pf
 
     net = get_test_pf()
     net.netprint()
-    # layout = networkData(net, method="force", canvas_width=600, canvas_height=400)
-    # print(layout)
-    root = tk.Tk()
-    root.title("Network with Layout")
-    canvas_width = 400
-    canvas_height = 400
-    network_display = NetworkDisplay(root, nodes={}, edges=[], width=canvas_width,
-                                     height=canvas_height)  # Create NetworkDisplay first
-    network_display.pack(fill=tk.BOTH, expand=True)
-
-    n_nodes, n_edges = networkData(net, method="gravity", canvas_width=canvas_width, canvas_height=canvas_height)
-    network_display.nodes = n_nodes  # Update NetworkDisplay with correct data
-    network_display.edges = n_edges
-    network_display.draw_network()  # Redraw the network
-
-    root.mainloop()
+    layout = networkData(net, method="force", canvas_width=600, canvas_height=400)
+    print(layout)
