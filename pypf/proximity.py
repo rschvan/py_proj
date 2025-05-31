@@ -107,10 +107,21 @@ class Proximity:
         datapoints.flatten()
         datapoints = datapoints[~np.isinf(datapoints)]
         datapoints = datapoints[~np.isnan(datapoints)]
-        self.mean = np.mean(datapoints)
-        self.sd = np.std(datapoints)
+        self.mean = np.mean(datapoints).round(2)
+        self.sd = np.std(datapoints).round(2)
         self.min = np.min(datapoints)
         self.max = np.max(datapoints)
+
+    def get_info(self):
+        info = {}
+        info["name"] = self.name
+        info["nterms"] = self.nterms
+        info["coherence"] = self.coh
+        info["mean"] = self.mean
+        info["sd"] = self.sd
+        info["min"] = self.min
+        info["max"] = self.max
+        return info
 
     def prxprint(self, note=None):
         from pypf.proximity import Proximity  #   Import Proximity here
@@ -131,5 +142,6 @@ class Proximity:
         print(f"coh: {self.coh}")
 
 if __name__ == "__main__":
-    p = Proximity()
+    p = Proximity("data\cities.prx.xlsx")
     p.prxprint()
+    print(p.get_info())

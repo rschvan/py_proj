@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
-from unittest import case
+import pandas as pd
+import numpy as np
 
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 from pypf.shownet import shownet
 from pypf.utility import get_parent_dir  # For default path - now optional initial value
-
 
 class PyPathfinder(tk.Tk):
     def __init__(self):
@@ -193,12 +193,12 @@ class PyPathfinder(tk.Tk):
     # --- Utility methods for updating listboxes ---
     def _update_proximity_listbox(self):
         self.proximity_listbox.delete(0, tk.END)  # Clear current items
-        for name in sorted(self.proximities.keys()):
+        for name in self.proximities.keys():
             self.proximity_listbox.insert(tk.END, name)
 
     def _update_pfnet_listbox(self):
         self.pfnet_listbox.delete(0, tk.END)  # Clear current items
-        for name in sorted(self.pfnets.keys()):
+        for name in self.pfnets.keys():
             self.pfnet_listbox.insert(tk.END, name)
 
     # --- Project Directory Callbacks ---
@@ -213,38 +213,27 @@ class PyPathfinder(tk.Tk):
                 # Limit number of recent directories to, say, 10
                 self.recent_project_dirs = self.recent_project_dirs[:10]
                 self.project_path_combobox['values'] = self.recent_project_dirs  # Update dropdown values
-        print(f"Project directory set to: {selected_dir}")
 
     def _on_new_directory(self):
-        print("New Directory button clicked!")
         new_dir = filedialog.askdirectory(title="Select New Project Directory")
         if new_dir:
             self.project_path_var.set(new_dir)
             self._on_directory_select(None)  # Manually trigger update of recent directories
-            print(f"New project directory: {new_dir}")
             # Here you would typically initialize a new project structure or clear existing data
 
     def _on_open_directory(self):
-        print("Open Directory button clicked!")
-        open_dir = filedialog.askdirectory(title="Open Existing Project Directory")
-        if open_dir:
-            self.project_path_var.set(open_dir)
-            self._on_directory_select(None)  # Manually trigger update of recent directories
-            print(f"Opened project directory: {open_dir}")
-            # Here you would typically load existing project data and populate listboxes
+        dir = self.recent_project_dirs[0] if self.recent_project_dirs else ""
+        if dir:
+            os.startfile(dir) # open dir in explorer
 
     # --- Other Callback Functions ---
     def _on_help_click(self):
-        print("Help button clicked!")
         messagebox.showinfo("Help", "This is a placeholder for help information.")
 
     def _on_add_proximity_data(self):
-        print("Add Proximity Data button clicked!")
         filepath = filedialog.askopenfilenames(
             title="Select Proximity Data File",
-            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")],
-
-        )
+            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")])
         if filepath:
             for f in filepath:
                 try:
@@ -258,71 +247,86 @@ class PyPathfinder(tk.Tk):
                     # Select the newly added item (only one item selected)
                     index = list(sorted(self.proximities.keys())).index(prx.name)
                     self.proximity_listbox.selection_clear(0, tk.END)  # Clear any previous multi-selection
-                    self.proximity_listbox.selection_set(index)
-                    self.proximity_listbox.see(index)
+                    # self.proximity_listbox.selection_set(index)
+                    # self.proximity_listbox.see(index)
                     self._on_proximity_select(None)  # Manually trigger selection update
-
-                    print(f"Loaded proximity: {prx.name} from {filepath}")
                 except Exception as e:
                     messagebox.showerror("Error", f"Could not load proximity data: {e}")
-                    print(f"Error loading proximity: {e}")
 
     def _on_proximity_select(self, event):
         # Get all currently selected items
         selected_indices = self.proximity_listbox.curselection()
         self.current_proximity_names = [self.proximity_listbox.get(i) for i in selected_indices]
-        print(f"Proximities selected: {self.current_proximity_names}")
 
     def _on_get_proximity_info(self):
-        print("Get Proximity Info button clicked!")
-        if self.current_proximity_names:
-            # For now, show info for the first selected proximity if multiple are selected
-            # This logic can be expanded to show info for all, or ask user to pick one
-            prx_name = self.current_proximity_names[0]
+        prxlist = self.proximity_listbox.get(0, tk.END)
+        infolist = []
+        for prx_name in prxlist:
             prx = self.proximities[prx_name]
-            info = f"Proximity: {prx.name}\n"
-            info += f"  Terms: {prx.nterms}\n"
-            info += f"  Mean Distance: {prx.mean:.2f}\n"
-            info += f"  Std Dev: {prx.sd:.2f}\n"
-            info += f"  Coherence: {prx.coh:.3f}\n"
-            messagebox.showinfo("Proximity Info", info)
-        else:
-            messagebox.showwarning("No Proximity Selected", "Please select one or more proximities from the list.")
+            info = prx.get_info() # info is a dictionary
+            infolist.append(info)
+        # create dataframe with no index
+        df = pd.DataFrame(infolist)
+        df.to_csv("proximity_info.csv")
+        os.startfile("proximity_info.csv")
 
     def _on_data_correlations(self):
-        print("Data Correlations button clicked!")
-        if self.current_proximity_names:
-            messagebox.showinfo("Data Correlations",
-                                f"This would show correlations for {', '.join(self.current_proximity_names)}.")
+        from pypf.utility import discorr
+        # get proximity names
+        prxnames = self.proximity_listbox.get(0, tk.END)
+        n = len(prxnames)
+        cors = np.zeros((n,n))
+        # set diagonal to 1
+        np.fill_diagonal(cors, 1)
+        if n > 1:
+            for i in range(n):
+                for j in range(n):
+                    if i == j: continue
+                    dis1 = self.proximities[prxnames[i]].dismat
+                    dis2 = self.proximities[prxnames[j]].dismat
+                    cors[i,j] = discorr(dis1,dis2)
+            df = pd.DataFrame(cors, index=prxnames, columns=prxnames)
+            #messagebox.showinfo("Proximity Correlations", df.to_string())
+            df.to_csv("discorr.csv")
+            os.startfile("discorr.csv")
         else:
-            messagebox.showwarning("No Proximity Selected", "Please select one or more proximities first.")
+            messagebox.showwarning("Too Few Proximities", "Must have at least two.")
 
     def _on_average_proximities(self):
-        print("Average Proximities button clicked!")
-        if len(self.current_proximity_names) > 1:
-            messagebox.showinfo("Average Proximities",
-                                f"This would average selected proximities: {', '.join(self.current_proximity_names)}.")
-        else:
+        from pypf.utility import average_proximity
+        if len(self.current_proximity_names) < 2:
             messagebox.showwarning("Not Enough Proximities", "Please select at least two proximities to average.")
+            return
+        #ans = tk.messagebox.askquestion("Method?","Select Means or Medians",default="yes")
+        yes_no = messagebox.askyesno("Average Proximities", "Yes for means? No for medians")
+        if yes_no:
+            choice = "mean"
+        else:
+            choice = "median"
+        proxes = [self.proximities[p] for p in self.current_proximity_names]
+        ave_prx = average_proximity(proxes, method=choice)
+        if ave_prx is None:
+            messagebox.showwarning("Average Failed", "Proximities not compatible.")
+            return
+        self.proximities[ave_prx.name] = ave_prx
+        self._update_proximity_listbox()  # Update the listbox
+        self._on_proximity_select(None)
 
     def _on_delete_proximity(self):
-        print("Delete Proximity button clicked!")
         if self.current_proximity_names:
             if messagebox.askyesno("Confirm Delete",
                                    f"Delete selected proximities: {', '.join(self.current_proximity_names)}?"):
                 for name in self.current_proximity_names:
                     if name in self.proximities:
                         del self.proximities[name]
-                        print(f"Deleted proximity: {name}")
                 self._update_proximity_listbox()  # Update the listbox
                 self.current_proximity_names = []  # Clear selection
-                messagebox.showinfo("Deleted", "Selected proximities deleted.")
+                #messagebox.showinfo("Deleted", "Selected proximities deleted.")
         else:
             messagebox.showwarning("No Proximity Selected", "No proximity selected to delete.")
 
     def _on_network_type_change(self):
         selected_type = self.network_type_var.get()
-        print(f"Network type changed to: {selected_type}")
         if selected_type == "Pathfinder":
             self.q_entry.config(state="normal")
             self.r_entry.config(state="normal")
@@ -331,81 +335,55 @@ class PyPathfinder(tk.Tk):
             self.r_entry.config(state="disabled")
 
     def _on_derive_network(self):
-        print("Derive Network button clicked!")
-        if not self.current_proximity_names:
-            messagebox.showwarning("Missing Proximity",
-                                   "Please select at least one proximity to derive a network from.")
-            return
+        if self.current_proximity_names:
+            prxlist = self.current_proximity_names
+        else:
+            prxlist = self.proximity_listbox.get(0, tk.END)
 
-        # For now, derive network from the first selected proximity
-        prx_name = self.current_proximity_names[0]
-        prx = self.proximities[prx_name]
+        q_val_str = self.q_entry.get().strip().lower()
+        r_val_str = self.r_entry.get().strip().lower()
+        q = int(q_val_str) if q_val_str != 'inf' else float('inf')
+        r = int(r_val_str) if r_val_str != 'inf' else float('inf')
 
-        try:
-            q_val_str = self.q_entry.get().strip().lower()
-            r_val_str = self.r_entry.get().strip().lower()
-
-            q = int(q_val_str) if q_val_str != 'inf' else float('inf')
-            r = int(r_val_str) if r_val_str != 'inf' else float('inf')
-
-            net_type = self.network_type_var.get()
-            match net_type:
+        for prx_name in prxlist:
+            prx = self.proximities[prx_name]
+            match self.network_type_var.get():
                 case "Pathfinder":
-                    pf = PFnet(proximity=prx, q=q, r=r)
+                    net = PFnet(proximity=prx, q=q, r=r)
                 case "Threshold":
-                    pf = PFnet(proximity=prx, type="th")
+                    net = PFnet(proximity=prx, type="th")
                 case "Nearest Neighbor":
-                    pf = PFnet(proximity=prx, type="nn")
-
-            original_pf_name = pf.name
+                    net = PFnet(proximity=prx, type="nn")
+            name = net.name
             counter = 1
-            while pf.name in self.pfnets:
-                pf.name = f"{original_pf_name}_{counter}"
+            while net.name in self.pfnets:
+                net.name = f"{name}_{counter}"
                 counter += 1
 
-            self.pfnets[pf.name] = pf
+            self.pfnets[net.name] = net
             self._update_pfnet_listbox()
-
-            # Select the newly derived item (only one item selected)
-            index = list(sorted(self.pfnets.keys())).index(pf.name)
-            self.pfnet_listbox.selection_clear(0, tk.END)  # Clear any previous multi-selection
-            self.pfnet_listbox.selection_set(index)
-            self.pfnet_listbox.see(index)
-            self._on_pfnet_select(None)  # Manually trigger selection update
-
-            print(f"Derived network: {pf.name}")
-
-        except ValueError as e:
-            messagebox.showerror("Input Error",
-                                 f"Invalid input for q or r: {e}\nPlease enter an integer or 'inf'. For q, 'n-1' is also allowed.")
-            print(f"Input error: {e}")
-        except Exception as e:
-            messagebox.showerror("Error Deriving Network", f"Error: {e}")
-            print(f"Error deriving network: {e}")
+            self.pfnet_listbox.selection_clear(0, tk.END)
+            self._on_pfnet_select(None)
 
     def _on_pfnet_select(self, event):
         # Get all currently selected items
         selected_indices = self.pfnet_listbox.curselection()
         self.current_pfnet_names = [self.pfnet_listbox.get(i) for i in selected_indices]
-        print(f"Networks selected: {self.current_pfnet_names}")
 
     def _on_get_network_info(self):
-        print("Get Network Info button clicked!")
-        if self.current_pfnet_names:
-            # For now, show info for the first selected network
-            pf_name = self.current_pfnet_names[0]
-            pf = self.pfnets[pf_name]
-            info = f"Network: {pf.name}\n"
-            info += f"  Nodes: {pf.nnodes}\n"
-            info += f"  Links: {pf.nlinks}\n"
-            info += f"  q: {pf.q}\n"
-            info += f"  r: {pf.r}\n"
-            messagebox.showinfo("Network Info", info)
+        nets = self.pfnet_listbox.get(0, tk.END)
+        n = len(nets)
+        if nets:
+            df = self.pfnets[nets[0]].get_info()
         else:
-            messagebox.showwarning("No Network Selected", "Please select one or more networks from the list.")
+            return
+        for i in range(1,n):
+            net = self.pfnets[nets[i]]
+            df = pd.concat([df, net.get_info()], axis=0)
+        df.to_csv("network_info.csv")
+        os.startfile("network_info.csv")
 
     def _on_net_properties(self):
-        print("Net Properties button clicked!")
         if self.current_pfnet_names:
             messagebox.showinfo("Net Properties",
                                 f"This would display properties for {', '.join(self.current_pfnet_names)}.")
@@ -413,35 +391,60 @@ class PyPathfinder(tk.Tk):
             messagebox.showwarning("No Network Selected", "Please select one or more networks first.")
 
     def _on_merge_networks(self):
-        print("Merge Networks button clicked!")
-        if len(self.current_pfnet_names) > 1:
-            messagebox.showinfo("Merge Networks",
-                                f"This would merge selected networks: {', '.join(self.current_pfnet_names)}.")
+        from pypf.utility import merge_networks
+        netnames = self.current_pfnet_names
+        nets = []
+        if len(netnames) > 1:
+            for name in netnames:
+                nets.append(self.pfnets[name])
+            mrg = merge_networks(nets)
+            self.pfnets[mrg.name] = mrg
+            self._update_pfnet_listbox()
+            # self.on_pfnet_select(None)
         else:
             messagebox.showwarning("Not Enough Networks", "Please select at least two networks to merge.")
 
     def _on_network_link_list(self):
-        print("Network Link List button clicked!")
         if self.current_pfnet_names:
             # For now, show link list for the first selected network
             pf_name = self.current_pfnet_names[0]
             pf = self.pfnets[pf_name]
-            link_list = "\n".join([f"{u} - {v}" for u, v in pf.graph.edges()])
-            messagebox.showinfo("Network Link List",
-                                f"Links in {pf.name}:\n{link_list[:500]}...")  # Show first 500 chars
+            link_list = list(pf.graph.edges())
+            df = pd.DataFrame(link_list, columns=["from", "to"])
+            df.to_csv("link_list.csv")
+            os.startfile("link_list.csv")
+            #messagebox.showinfo("Network Link List",
+            #                    f"Links in {pf.name}:\n{link_list[:500]}...")  # Show first 500 chars
         else:
             messagebox.showwarning("No Network Selected", "Please select one or more networks first.")
 
     def _on_network_similarity(self):
-        print("Network Similarity button clicked!")
-        if len(self.current_pfnet_names) > 1:
-            messagebox.showinfo("Network Similarity",
-                                f"This would compare similarities between networks: {', '.join(self.current_pfnet_names)}.")
+        from pypf.utility import netsim
+        netlist = self.pfnet_listbox.get(0, tk.END)
+        n = len(netlist)
+        if n > 1:
+            simmat = np.zeros((n,n))
+            for i in range(n):
+                inet = self.pfnets[netlist[i]]
+                for j in range(n):
+                    jnet = self.pfnets[netlist[j]]
+                    if i == j:
+                        simmat[i,j] = 1
+                    elif inet.nnodes != jnet.nnodes:
+                        simmat[i,j] = np.nan
+                    else:
+                        sim = netsim(inet.adjmat, jnet.adjmat)
+                        simmat[i,j] = sim["similarity"]
         else:
-            messagebox.showwarning("Not Enough Networks", "Please select at least two networks to compare similarity.")
+            messagebox.showwarning("Not Enough Networks", "Must have at least two networks for similarity.")
+        df = pd.DataFrame(simmat, index=netlist, columns=netlist)
+        #messagebox.showinfo("Network Similarity", df.to_string())
+        # write df to a file
+        pd.DataFrame(simmat, index=netlist, columns=netlist).to_csv("netsim.csv")
+        # open the file
+        os.startfile("netsim.csv")
 
     def _on_display_network(self):
-        print("Display Network button clicked!")
         if self.current_pfnet_names:
             pf_name = self.current_pfnet_names[0]
             pf = self.pfnets[pf_name]
@@ -452,23 +455,19 @@ class PyPathfinder(tk.Tk):
 
             except Exception as e:
                 messagebox.showerror("Display Error", f"Could not display network: {e}")
-                print(f"Error displaying network: {e}")
         else:
             messagebox.showwarning("No Network Selected",
-                                   "Please select one or more networks from the list to display.")
+                                   "Please select a network from the list to display.")
 
     def _on_delete_network(self):
-        print("Delete Network button clicked!")
         if self.current_pfnet_names:
             if messagebox.askyesno("Confirm Delete",
                                    f"Delete selected networks: {', '.join(self.current_pfnet_names)}?"):
                 for name in self.current_pfnet_names:
                     if name in self.pfnets:
                         del self.pfnets[name]
-                        print(f"Deleted network: {name}")
                 self._update_pfnet_listbox()  # Update the listbox
                 self.current_pfnet_names = []  # Clear selection
-                messagebox.showinfo("Deleted", "Selected networks deleted.")
         else:
             messagebox.showwarning("No Network Selected", "No network selected to delete.")
 

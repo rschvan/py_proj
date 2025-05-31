@@ -1,8 +1,9 @@
 #pypf/pfnet.py
 import numpy as np
 from pypf.proximity import Proximity
-from pypf.utility import floyd, dijkstra, graph_from_adjmat, get_lower, get_off_diagonal
+from pypf.utility import floyd, dijkstra, graph_from_adjmat, get_lower, get_off_diagonal, eccentricity
 import networkx as nx
+from networkx.drawing.nx_pydot import graphviz_layout
 
 class PFnet:
     """
@@ -27,7 +28,7 @@ class PFnet:
         """
         self.q = q # Inf yields nterms-1
         self.r = r
-        self.infchar = "\u221E"
+        #self.infchar = "\u221E"
         self.terms = []  # node labels
         self.nnodes = 0
         self.nlinks = 0
@@ -37,8 +38,10 @@ class PFnet:
         self.isdirected = False  # true for directed graph
         self.name = "default"  # Initialize the name property
         self.graph = nx.Graph()
-        self.layers = list  # nodes in each shell
+        self.layers = None  # nodes in each shell
+        self.eccentricity = None
         self.type = type
+        self.coords = np.array([])
 
         if proximity is None:
             proximity = Proximity()
@@ -53,16 +56,11 @@ class PFnet:
 
             match self.type:
                 case "pf":
-                    if self.q >= self.nnodes -1:
-                        self.q = np.inf
-                        self.name = self.name + "_q" + self.infchar
-                    else:
+                    self.name = self.name + "_pf"
+                    if self.q < self.nnodes - 1:
                         self.name = self.name + "_q" + str(self.q)
-                    if self.r == np.inf:
-                        self.name = self.name + "_r" + self.infchar
-                    else:
+                    if self.r != np.inf:
                         self.name = self.name + "_r" + str(self.r)
-
                     self.isdirected = not np.array_equal(self.dismat, self.dismat.T)
                     self.mindis = self._getmindis(self.q, self.r, self.dismat)
                     links = (self.dismat < np.inf) & (self.dismat == self.mindis)
@@ -71,8 +69,6 @@ class PFnet:
                     self.nlinks = np.count_nonzero(self.adjmat)
                     if not self.isdirected:
                         self.nlinks = self.nlinks / 2
-                    ecc = self.eccentricity()
-                    self.layers = self.shells(ecc["center"])
                 case "nn": # nearest neighbor
                     self.isdirected = True
                     self.q = None
@@ -105,12 +101,15 @@ class PFnet:
                     self.adjmat = np.copy(self.dismat)
                     self.adjmat = self.adjmat * links
                     self.nlinks = np.count_nonzero(self.adjmat)
-                    self.graph = graph_from_adjmat(self.adjmat, self.terms)
+                    if not self.isdirected:
+                        self.nlinks = self.nlinks / 2
                 case _:
-                    print("Error: type not valid")
+                    print("Error: PFnet type not valid")
+            self.eccentricity = eccentricity(self.adjmat)
+            self.layers = self.shells(source=self.eccentricity["center"])
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
-
+            self.coords = self.get_layout() # get standard gravity coordinates
         else:
             print("Error: proximity not valid")
 
@@ -120,10 +119,6 @@ class PFnet:
         else:
             mindis = dijkstra(dis, q, r)
         return mindis
-
-    def eccentricity(self):
-        from pypf.utility import eccentricity
-        return eccentricity(self.adjmat)
 
     def shells(self, source) -> list:
         """
@@ -158,6 +153,77 @@ class PFnet:
 
         return lists
 
+    def get_info(self):
+        from pypf.utility import prop_table
+        info = prop_table([self],["name", "nnodes", "nlinks", "isdirected", "type", "q", "r"])
+        return info # a DataFrame
+
+    def get_layout(self, method="gravity") -> np.ndarray:
+        """
+        Creates layout coordinates for PFnet visualization and returns a layout dictionary.
+        """
+        from pypf.utility import canonical
+        graph = self.graph
+        graph.name = "temp"  # avoid illegal characters in graphviz names
+        seed = np.random.randint(1000000)
+        center = None
+        randpos = nx.random_layout(graph, seed=seed)
+        # root = None
+        # rootid = self.eccentricity["center"] if self.eccentricity else None
+        root = self.eccentricity["center"] if self.eccentricity else None
+        # if isinstance(rootid, (np.ndarray, list, tuple)):
+        #     root = int(rootid[0])
+        # else:
+        #     root = int(rootid)
+        # #root = self.terms[root] if root else None - ok for root to be a node index or term label
+
+        layout = None  # Initialize layout
+        try:
+            match method:
+                case "gravity":
+                    layout = nx.forceatlas2_layout(graph, strong_gravity=True, seed=seed, scaling_ratio=2.0,
+                                                   max_iter=100, pos=randpos)
+                case "arf":  # too many crossings
+                    layout = nx.arf_layout(graph, seed=seed, max_iter=1000)
+                case "spring": # gravity is better
+                    layout = nx.spring_layout(graph, iterations=50, seed=seed, pos=randpos, center=center)
+                case "circle":
+                    layout = nx.circular_layout(graph, scale=1, center=center)
+                case "shells":
+                    from pypf.utility import map_indices_to_terms
+                    nlist = map_indices_to_terms(self.layers, self.terms)
+                    layout = nx.shell_layout(graph, nlist=nlist, scale=1, center=center)
+                case "kamda-kawai":
+                    layout = nx.kamada_kawai_layout(graph, weight=None, pos=randpos, center=center)
+                case "spiral":
+                    layout = nx.spiral_layout(graph, resolution=0.5, scale=1, center=center, equidistant=True)
+                case "force":
+                    layout = nx.forceatlas2_layout(graph, strong_gravity=False, seed=seed, scaling_ratio=2.0,
+                                                   max_iter=100, pos=randpos)
+                case "dot":
+                    layout = graphviz_layout(graph, prog='dot', root=root)
+                case "neato":
+                    layout = graphviz_layout(graph, prog='neato', root=root)
+                case "fdp":
+                    layout = graphviz_layout(graph, prog='fdp', root=root)
+                case "circo":
+                    layout = graphviz_layout(graph, prog='circo', root=root)
+        except Exception as e:
+            print(f"Error in get_layout: {e}")
+
+        if layout is None:  # Fallback if initial method somehow didn't set a layout
+            layout = nx.forceatlas2_layout(graph, strong_gravity=True, seed=seed, scaling_ratio=2.0, max_iter=100,
+                                           pos=randpos)
+        graph.name = self.name  # Restore original name
+        coord = np.ndarray(shape=(self.nnodes, 2))
+        count = 0
+        for node in graph.nodes:
+            coord[count, :] = layout[node]
+            count += 1
+        coord = canonical(coord)
+        self.coords = coord
+        return coord
+
     def netprint(self, note=None):
         print("\nPFnet Object:", note)
         print(f"proximity: {self.proximity}")
@@ -173,20 +239,29 @@ class PFnet:
         print(f"layers: {self.layers}")
 
 if __name__ == '__main__':
+    from pypf.proximity import Proximity
+    from pypf.pfnet import PFnet
     from pypf.utility import get_test_pf
     import matplotlib.pyplot as plt
     import networkx as nx
+    prx = Proximity("data/psy.prx.xlsx")
+    net = PFnet(prx,type="nn")
+    print(net.coords)
+    c = net.get_layout()
+    print(c == net.coords)
+    print(c)
 
-    psy = get_test_pf("rbank")
-    psy.netprint()
-    seed = np.random.randint(1000000)
+    # net.netprint()
+    # print(net.get_info())
+    # eccentricity = eccentricity(net.adjmat)
+    # print(eccentricity)
+
+
+    #seed = np.random.randint(1000000)
     # layout = nx.forceatlas2_layout(psy.graph, strong_gravity=True, seed=seed, scaling_ratio=2.0, max_iter=1000)
     # nx.draw_networkx(psy.graph, pos=layout, with_labels=True, node_size=0, arrows=True, min_source_margin=100,
     #                  min_target_margin=100, node_color="white", font_size=9)
 
-
-
-    pos = nx.drawing.nx_pydot.pydot_layout(psy.graph, prog='dot')  # 'dot' is for layered
-    nx.draw(psy.graph, pos, with_labels=True, node_size=800, node_color='skyblue', font_size=12)
-
-    plt.show()
+    # pos = nx.drawing.nx_pydot.pydot_layout(psy.graph, prog='dot')  # 'dot' is for layered
+    # nx.draw(psy.graph, pos, with_labels=True, node_size=800, node_color='skyblue', font_size=12)
+    # plt.show()

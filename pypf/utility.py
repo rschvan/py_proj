@@ -1,23 +1,7 @@
 # pypf/utility.py
-# average_proximity
-# coherence
-# dijkstra
-# discorr
-# eccentricity
-# floyd
-# get_lower
-# get_off_diagonal
-# get_parent_dir
-# get_test_pf
-# graph_from_adjmat
-# map_indices_to_terms
-# minkowski
-# netsim
-# newcoords
-# pwcorr
-
+# df = pd.DataFrame(matrix, index=rows, columns=col) - creates table with row and col labels
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -44,16 +28,16 @@ def average_proximity(proxes:list, method="mean"):
     """
     from pypf.proximity import Proximity
     import copy
-    ave_prx = copy.deepcopy(proxes[0])
+    numprx = len(proxes)
+    if numprx < 2:
+        return None
+    ave_prx:Proximity = copy.deepcopy(proxes[0])
     ave_prx.filename = None
     ave_prx.filepath = None
-    numprx = len(proxes)
-    ave_prx.name = method + "_" + numprx.__str__()
+    ave_prx.name = method + "_" + numprx.__str__() + "_" + ave_prx.name + "_" + proxes[numprx-1].name
     for prx in proxes:
-        ave_prx.name += "_" + prx.name
         if prx.terms != ave_prx.terms:
-            print(f"Proximity terms do not match")
-            return
+            return None
     nterms = ave_prx.nterms
     # set ave to square matrix of zeros
     ave = np.zeros((nterms,nterms))
@@ -72,6 +56,30 @@ def average_proximity(proxes:list, method="mean"):
     ave_prx.calculate_stats()
     ave_prx.coh = coherence(ave_prx.dismat, ave_prx.max)
     return ave_prx
+
+def canonical(coords:np.ndarray) -> np.ndarray:
+# returns canonical coordinates (-1 to 1) from input coordinates
+    fcoords = coords.astype(np.float64)
+    if fcoords.shape[1] != 2:
+        print(f"error: Incorrect coord shape")
+        return None
+
+    def trans(old: np.ndarray) -> np.ndarray:
+        low = np.min(old)
+        high = np.max(old)
+        new = np.zeros_like(old, dtype=np.float64)
+        if low == high:
+            new[:] = 0.0
+        else:
+            # transform to 0 to 1 range then to -1 to 1 range
+            new = (old - low) / (high - low)
+            new = 2*new - 1
+        return new
+
+    canonical_coords = np.zeros_like(fcoords)
+    canonical_coords[:,0] = trans(fcoords[:,0])
+    canonical_coords[:,1] = trans(fcoords[:,1])
+    return canonical_coords
 
 def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[float]:
     """
@@ -162,9 +170,9 @@ def discorr(dis1: np.ndarray, dis2: np.ndarray):
         empty.
     """
     if dis1.shape != dis2.shape:
-        raise ValueError("Proximities differ in size")
+        return np.nan
     elif dis1.size == 0:
-        raise ValueError("Invalid Data")
+       return np.nan
 
     if np.array_equal(dis1, dis1.T) and np.array_equal(dis2, dis2.T):
         # both symmetric: use half-matrix
@@ -203,13 +211,16 @@ def eccentricity(adjmat: np.ndarray) -> dict:
     dis = np.full((n, n), np.inf)
     dis[links] = 1
     np.fill_diagonal(dis, 0)
-
     dist_matrix = floyd(dis, 1)
-
-    ecc = np.max(dist_matrix, axis=1)
-    radius = np.min(ecc)
+    dist_noinf = dist_matrix.copy()
+    dist_noinf[np.isinf(dist_noinf)] = 0
+    ecc = np.max(dist_noinf, axis=1)
+    radius = np.min(ecc[ecc>0])
     diameter = np.max(ecc)
-    center = np.where(ecc == radius)[0]
+    center = np.where(ecc == radius)[0].tolist()
+    ecc = ecc.astype(int).tolist()
+    radius = int(radius.astype(int))
+    diameter = int(diameter.astype(int))
 
     return {
         'ecc': ecc,
@@ -287,8 +298,8 @@ def get_test_pf(name="psy"):
     from pypf.pfnet import PFnet
     from pypf.proximity import Proximity
     filepath = os.path.join("data", name + ".prx.xlsx")
-    psyprx = Proximity(filepath)
-    pf = PFnet(psyprx)
+    prx = Proximity(filepath)
+    pf = PFnet(prx)
     return pf
 
 def graph_from_adjmat(adjmat:npt.NDArray, terms:list):
@@ -338,6 +349,42 @@ def map_indices_to_terms(list_of_index_lists: list[list[int]], terms: list[str])
                 raise IndexError(f"Index {index} is out of bounds for terms list of length {len(terms)}")
         result_list.append(term_list)
     return result_list
+
+def merge_networks(nets):
+    from pypf.pfnet import PFnet
+    from pypf.utility import graph_from_adjmat
+    import copy
+    n = len(nets)
+    if n < 2:
+        return None
+    mrg:PFnet = copy.deepcopy(nets[0])
+    mrg.type = "merged"
+    # extract adjmat and convert to bool
+    adj = nets[0].adjmat
+    adj = adj.astype(bool)
+    mrg.name = "Merged_" + mrg.name
+    for i in range(1, n):
+        if mrg.terms != nets[i].terms:
+            return None
+        addon = nets[i].adjmat
+        addon = addon.astype(bool)
+        adj = adj | addon
+        mrg.name += "_" + nets[i].name
+    mrg.nlinks = adj.sum()
+    mrg.dismat = None
+    mrg.mindis = None
+    mrg.q = None
+    mrg.r = None
+    mrg.isdirected = not (adj == adj.T).all()
+    if not mrg.isdirected:
+        mrg.nlinks = mrg.nlinks // 2
+    mrg.graph = graph_from_adjmat(adj, mrg.terms)
+    mrg.graph.name = mrg.name
+    mrg.eccentricity = eccentricity(adj)
+    mrg.layers = mrg.shells(mrg.eccentricity["center"])
+    mrg.adjmat = adj
+    mrg.coords = mrg.get_layout()
+    return mrg
 
 def minkowski(dis1, dis2, r):
     if r == 1:
@@ -422,71 +469,45 @@ def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
         "adjsimilarity": adjsim,
     }
 
-def newcoords(oldxy: dict, width: float, height: float, squeezex: float, squeezey: float) -> dict:
+def newcoords(canonicalxy: np.ndarray, width: float, height: float, squeezex: float, squeezey: float) -> np.ndarray:
     """
-    Transforms and normalizes a dictionary of 2D coordinates to fit within a defined
+    Transforms an ndarray of canonical 2D coordinates to fit within a defined
     width and height, applying squeeze factors to adjust the scaling of the
     transformation.
-
-    The function uses a helper method to process and transform the x and y
-    coordinates separately using numpy arrays to increase efficiency. Each coordinate
-    dimension is normalized around its mid-point and then scaled according to the
-    given squeeze factor and bounding box size.
-
-    :param oldxy: A dictionary with keys as node identifiers and values as tuples
-        representing 2D coordinates (x, y).
-    :type oldxy: dict
+    :param canonicalxy: An ndarray of canonical 2D coordinates (x, y).
     :param width: The width of the bounding box representing the target area for
         the transformed x-coordinates.
-    :type width: float
     :param height: The height of the bounding box representing the target area for
         the transformed y-coordinates.
-    :type height: float
-    :param squeezex: A scaling factor applied to the x-dimension during transformation,
-        ranging from 0 (no squeeze) to 1 (maximum squeeze).
-    :type squeezex: float
-    :param squeezey: A scaling factor applied to the y-dimension during transformation,
-        ranging from 0 (no squeeze) to 1 (maximum squeeze).
-    :type squeezey: float
-    :return: A dictionary of transformed coordinates with the same keys as the input
-        dictionary and transformed (x, y) tuples as values.
-    :rtype: dict
-
+    :params squeezex and squeeze y: Scaling factors applied to the dimensions during transformation,
+        ranging from -1 (no squeeze) to 1 (maximum squeeze).  Positive values shrink, negative values expand.
+    :return: A ndarray of transformed coordinates
     """
-    def _trans(old: np.ndarray, half: float, squeeze: float) -> np.ndarray:
-        """
-        Helper function to transform a single coordinate dimension (x or y).
-        Args:
-            old (np.ndarray): A 1D numpy array of the coordinates to transform.
-            half (float): Half of the width or height.
-            squeeze (float): The squeeze factor for this dimension.
-        Returns:
-            np.ndarray: The transformed coordinates.
-        """
-        low = np.min(old)
-        high = np.max(old)
-        if low == high:
-            new = np.zeros_like(old)  # Correct way to create zeros with the same shape
-        else:
-            mid = (low + high) / 2
-            new = (old - mid) / (high - low)
-        new = new * (1 - squeeze)
-        new = new * half
-        new = new + half
-        return new
+    # get new coordinates from old coordinates
+    half_width = width / 2
+    half_height = height / 2
+    newx = (canonicalxy[:,0] * (1 - squeezex)) * half_width + half_width
+    newy = (canonicalxy[:,1] * (1 - squeezey)) * half_height + half_height
+    newxy = np.column_stack((newx, newy))
+    newxy = np.round(newxy, 3)
 
-    # Extract coordinates into numpy arrays for efficient processing
-    node_ids = list(oldxy.keys())
-    oldx = np.array([oldxy[node_id][0] for node_id in node_ids])
-    oldy = np.array([oldxy[node_id][1] for node_id in node_ids])
+    return newxy
 
-    # Transform x and y coordinates
-    newx = _trans(oldx, (width) / 2, squeezex)
-    newy = _trans(oldy, (height) / 2, squeezey)
-
-    # Rebuild the dictionary with transformed coordinates
-    newxy_dict = {node_id: (newx[i], newy[i]) for i, node_id in enumerate(node_ids)}
-    return newxy_dict
+def prop_table(objs: list, props: list) -> pd.DataFrame:
+    """
+    Creates a Pandas DataFrame where rows are objects and columns are their properties
+    Args:
+        objs (list): A list of objects.
+        props (list): A list of strings, where each string is the name of a property.
+    Returns:
+        pd.DataFrame: A DataFrame with object properties.
+    """
+    data = []
+    for obj in objs:
+        row_data = [getattr(obj, prp, None) for prp in props] # None for missing attrs
+        data.append(row_data)
+    df = pd.DataFrame(data, columns=props)
+    return df
 
 def pwcorr(dis: np.ndarray = np.array([])) -> np.ndarray:
     """
@@ -523,11 +544,17 @@ if __name__ == '__main__':
     bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
     psy = PFnet(psyprx)
     bio = PFnet(bioprx)
-
-    prxset = [psyprx, bioprx]
-    aveprx = average_proximity(prxset, method="mean")
-    aveprx.prxprint()
-
+    # nc = newcoords(psy.coords,600,600,.1,.1)
+    # print(nc)
+    # ecc = eccentricity(bio.adjmat)
+    # print(ecc)
+    # df = prop_table([psy,bio], ["name","nnodes", "q", "r"])
+    # print(df)
+    # prxset = [psyprx, bioprx]
+    netset = [psy, bio]
+    mrg = merge_networks(netset)
+    print(mrg.netprint())
+    # aveprx = average_proximity(prxset, method="mean")
+    # aveprx.prxprint()
     # tl = map_indices_to_terms(psy.layers, psy.terms)
-    # print(psy.layers)
     # print(tl)

@@ -190,35 +190,9 @@ class NetworkDisplay(tk.Canvas):
 
 # Example Usage
 if __name__ == "__main__":
-    from pypf.networkData import networkData
     from pypf.utility import get_test_pf
     from pypf.pfnet import PFnet # Import PFnet to check graph type
 
     # Test with an undirected graph (default "pf" type from get_test_pf will be undirected if dismat is symmetric)
     pfn_undirected = get_test_pf("rbank")
-    width_undirected = 600
-    height_undirected = 600
-    # Pass is_directed based on the PFnet's graph type
-    nodes_undirected, edges_undirected = networkData(pfn_undirected, "gravity", canvas_width=width_undirected, canvas_height=height_undirected)
 
-    root_undirected = tk.Tk()
-    root_undirected.title(f"{pfn_undirected.name} (Undirected)")
-    network_display_undirected = NetworkDisplay(root_undirected, nodes_undirected, edges_undirected,
-                                                is_directed=isinstance(pfn_undirected.graph, nx.DiGraph), # Check if it's a DiGraph
-                                                width=width_undirected, height=height_undirected)
-    network_display_undirected.pack(fill=tk.BOTH, expand=True)
-    # root_undirected.mainloop() # Keep this commented for the moment to allow both windows to open
-
-    # Test with a directed graph (e.g., "nn" type)
-    pfn_directed = PFnet(proximity=get_test_pf("bio").proximity, type="nn") # Create a directed graph
-    width_directed = 600
-    height_directed = 600
-    nodes_directed, edges_directed = networkData(pfn_directed, "gravity", canvas_width=width_directed, canvas_height=height_directed)
-
-    root_directed = tk.Tk()
-    root_directed.title(f"{pfn_directed.name} (Directed)")
-    network_display_directed = NetworkDisplay(root_directed, nodes_directed, edges_directed,
-                                              is_directed=isinstance(pfn_directed.graph, nx.DiGraph), # Check if it's a DiGraph
-                                              width=width_directed, height=height_directed)
-    network_display_directed.pack(fill=tk.BOTH, expand=True)
-    root_directed.mainloop() # Only one mainloop can be active at a time, so put this at the end
