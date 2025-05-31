@@ -405,6 +405,8 @@ class PyPathfinder(tk.Tk):
             messagebox.showwarning("Not Enough Networks", "Please select at least two networks to merge.")
 
     def _on_network_link_list(self):
+
+
         if self.current_pfnet_names:
             # For now, show link list for the first selected network
             pf_name = self.current_pfnet_names[0]
