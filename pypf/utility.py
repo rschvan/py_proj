@@ -6,6 +6,10 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import networkx as nx
+import re
+import keyword
+import shutil
+import inspect # Used to find the path of the current module
 
 def average_proximity(proxes:list, method="mean"):
     """
@@ -183,10 +187,8 @@ def discorr(dis1: np.ndarray, dis2: np.ndarray):
         off_diag_mask = ~np.eye(dis1.shape[0], dtype=bool)
         dis1 = dis1[off_diag_mask]
         dis2 = dis2[off_diag_mask]
-
     pair = np.vstack((dis1, dis2))
     pair = pair.T
-
     cor = pwcorr(pair)
     return cor[0,1] if cor.shape[0] == 2 else np.nan
 
@@ -266,6 +268,34 @@ def floyd(dismat, r):
                     mindis[row, col] = indirect
     return mindis
 
+def gen_var_name(proposed:str, exclude:list[str]=None) -> str:
+    """
+    Generates a valid and unique variable name based on a proposed name. It ensures the
+    generated name adheres to identifier rules in Python and avoids conflicts with existing
+    names provided in the list. The function will automatically replace invalid characters,
+    prepend an underscore if the name starts with a digit, and append an underscore if the
+    name conflicts with a Python keyword or an existing name.
+
+    :param proposed: The proposed name for the variable.
+    :type proposed: str
+    :param exclude: A list of existing variable names to check against to ensure uniqueness.
+                     Defaults to None if uniqueness is not required.
+    :type exclude: list[str], optional
+    :return: A valid and unique Python variable name derived from the proposed name.
+    :rtype: str
+    """
+    legal = re.sub(r'[^a-zA-Z0-9_]', '_', proposed)
+    if legal[0].isdigit():
+        legal = "v_" + legal
+    if keyword.iskeyword(legal):
+        legal = legal + "_"
+    count = 0
+    if exclude is not None:
+        while legal in exclude:
+            legal = legal + str(count)
+            count += 1
+    return legal
+
 def get_lower(m: np.ndarray, diag: int = -1) -> np.ndarray:
     """
     Extracts the lower triangle of a matrix.
@@ -293,6 +323,12 @@ def get_parent_dir():
     this_dir = os.path.abspath(os.path.dirname(__file__))
     proj_dir = os.path.dirname(this_dir)
     return proj_dir
+
+def get_termsid(terms:list):
+    n = len(terms)
+    termsid = "n_" + str(n) + terms[0] + terms[1] + terms[-1]
+    termsid = re.sub(r'[^a-zA-Z0-9_]', '_', termsid)
+    return termsid
 
 def get_test_pf(name="psy"):
     from pypf.pfnet import PFnet
@@ -397,6 +433,57 @@ def minkowski(dis1, dis2, r):
         dis = round(dis, 12)
     return dis
 
+def mypfnets_dir() -> str:
+    """
+    Determines the user's home directory and whether the directory, 'mypfnets', is present.
+    If so, returns the path to the 'mypfnets' directory.
+    If the directory does not exist, the directory will be created and the files in the
+    'data' directory within the 'pypf' package will be copied into the 'mypfnets' directory.
+
+    Returns:
+        str: The absolute path to the 'mypfnets' directory.
+    """
+    # 1. Determine the user's home directory
+    user_home_dir = os.path.expanduser("~")
+
+    # 2. Define the path to the 'mypfnets' directory within the user's home
+    mypfnets_path = os.path.join(user_home_dir, "mypfnets")
+
+    # 3. Check if the 'mypfnets' directory exists
+    if not os.path.exists(mypfnets_path):
+        print(f"Creating user data directory: {mypfnets_path}")
+        try:
+            # Create the directory
+            os.makedirs(mypfnets_path)
+
+            # 4. If the directory does not exist, copy files from pypf/data
+            #    Find the path of the current module (utility.py)
+            current_module_file = inspect.getfile(mypfnets_dir)
+            # Go one level up to get the pypf package root directory
+            pypf_package_root = os.path.dirname(current_module_file)
+            # Construct the path to the 'data' directory within pypf
+            source_data_dir = os.path.join(pypf_package_root, "data")
+
+            if os.path.exists(source_data_dir) and os.path.isdir(source_data_dir):
+                print(f"Copying initial data from {source_data_dir} to {mypfnets_path}")
+                for item_name in os.listdir(source_data_dir):
+                    source_item_path = os.path.join(source_data_dir, item_name)
+                    destination_item_path = os.path.join(mypfnets_path, item_name)
+
+                    if os.path.isfile(source_item_path):
+                        shutil.copy2(source_item_path, destination_item_path)
+                    elif os.path.isdir(source_item_path):
+                        # If there are subdirectories in 'data', copy them recursively
+                        shutil.copytree(source_item_path, destination_item_path, dirs_exist_ok=True)
+            else:
+                print(f"Warning: Source data directory '{source_data_dir}' not found within the pypf package.")
+
+        except OSError as e:
+            print(f"Error creating or copying files to {mypfnets_path}: {e}")
+
+    # 5. Return the path to the 'mypfnets' directory
+    return mypfnets_path
+
 def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
     """
     Calculates network similarity between two adjacency matrices.
@@ -490,7 +577,6 @@ def newcoords(canonicalxy: np.ndarray, width: float, height: float, squeezex: fl
     newy = (canonicalxy[:,1] * (1 - squeezey)) * half_height + half_height
     newxy = np.column_stack((newx, newy))
     newxy = np.round(newxy, 3)
-
     return newxy
 
 def prop_table(objs: list, props: list) -> pd.DataFrame:
@@ -526,7 +612,7 @@ def pwcorr(dis: np.ndarray = np.array([])) -> np.ndarray:
         for j in range(num_cols):
             col1 = dis[:, i]
             col2 = dis[:, j]
-            valid_indices = ~np.isnan(col1) & ~np.isnan(col2)
+            valid_indices = ~np.isnan(col1) & ~np.isnan(col2) & ~np.isinf(col1) & ~np.isinf(col2)
             if np.sum(valid_indices) > 1:
                 corr = np.corrcoef(col1[valid_indices], col2[valid_indices])
                 if corr.shape == (2, 2):
@@ -538,12 +624,16 @@ def pwcorr(dis: np.ndarray = np.array([])) -> np.ndarray:
     return np.round(corrs, 3)
 
 if __name__ == '__main__':
-    from pypf.pfnet import PFnet
-    from pypf.proximity import Proximity
-    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    psy = PFnet(psyprx)
-    bio = PFnet(bioprx)
+    # from pypf.pfnet import PFnet
+    # from pypf.proximity import Proximity
+    # psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
+    # bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
+    # psy = PFnet(psyprx)
+    # bio = PFnet(bioprx)
+
+    pth = mypfnets_dir()
+    print(pth)
+
     # nc = newcoords(psy.coords,600,600,.1,.1)
     # print(nc)
     # ecc = eccentricity(bio.adjmat)
@@ -551,10 +641,21 @@ if __name__ == '__main__':
     # df = prop_table([psy,bio], ["name","nnodes", "q", "r"])
     # print(df)
     # prxset = [psyprx, bioprx]
-    netset = [psy, bio]
-    mrg = merge_networks(netset)
-    print(mrg.netprint())
+
+    # netset = [psy, bio]
+    # mrg = merge_networks(netset)
+    # print(mrg.netprint())
+
+
     # aveprx = average_proximity(prxset, method="mean")
     # aveprx.prxprint()
     # tl = map_indices_to_terms(psy.layers, psy.terms)
     # print(tl)
+
+
+    # s1 = gen_var_name(s)
+    # s2 = gen_var_name(s, exclude=[s1])
+    # s3 = gen_var_name(s, exclude=[s1, s2])
+    # print(s, s1, s2, s3)
+    # s4 = gen_var_name(s3)
+    # print(s4)

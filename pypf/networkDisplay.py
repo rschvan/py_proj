@@ -185,7 +185,7 @@ class NetworkDisplay(tk.Canvas):
 
                 if edge_key in self.edge_items and edge_key not in updated_edges:
                     self.coords(self.edge_items[edge_key], x1, y1, x2, y2)
-                    self.itemconfig(self.edge_items[edge_key], arrow=arrow_option) # Update arrow for existing edges
+                    self.itemconfig(self.edge_items[edge_key], arrow=arrow_option) # Update arrow for exclude edges
                     updated_edges.add(edge_key)
 
 # Example Usage

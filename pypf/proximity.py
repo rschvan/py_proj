@@ -1,5 +1,5 @@
 #   pypf/proximity.py
-from pypf.utility import coherence, get_off_diagonal, get_lower
+from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid
 import pandas as pd
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
@@ -24,6 +24,7 @@ class Proximity:
             name (str, optional): A name for the proximity object. If None, uses the filename (if available) or the first term in the list. Defaults to None.
         """
         self.terms = []
+        self.termsid = ""
         self.nterms = 0
         self.dismat = np.array([])
         self.mean = np.nan
@@ -73,6 +74,8 @@ class Proximity:
                 return
         self.terms = terms
         self.nterms = len(self.terms)
+        self.termsid = get_termsid(self.terms)
+
         if name is not None:
             self.name = name
         self.dismat = np.copy(dismat)
@@ -133,6 +136,7 @@ class Proximity:
         print(f"name: {self.name}")
         print(f"nterms: {self.nterms}")  #   Changed from nterms to n
         print(f"terms[0]: {self.terms[0]}")
+        print(f"termsid: {self.termsid}")
         print(f"dismat[0,1]: {self.dismat[0,1]}")
         print(f"issymmetric: {self.issymmetric}")
         print(f"mean: {self.mean}")
@@ -142,6 +146,6 @@ class Proximity:
         print(f"coh: {self.coh}")
 
 if __name__ == "__main__":
-    p = Proximity("data\cities.prx.xlsx")
+    p = Proximity("data\psy.prx.xlsx")
     p.prxprint()
     print(p.get_info())

@@ -7,7 +7,7 @@ import numpy as np
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 from pypf.shownet import shownet
-from pypf.utility import get_parent_dir  # For default path - now optional initial value
+from pypf.utility import mypfnets_dir  # directory for sample data and help
 
 class PyPathfinder(tk.Tk):
     def __init__(self):
@@ -30,20 +30,16 @@ class PyPathfinder(tk.Tk):
         self.current_pfnet_names: list[str] = []
 
         # List to store recent project directories for the dropdown
+        userdir = mypfnets_dir()
+        self.mypfnets_dir = userdir
         self.recent_project_dirs = []
-        # Optionally add the initial parent directory if it's not empty, or leave blank
-        initial_parent_dir = get_parent_dir()
-        if initial_parent_dir and os.path.isdir(initial_parent_dir):  # Check if it's a valid directory
-            self.recent_project_dirs.append(initial_parent_dir)
+        self.recent_project_dirs.append(userdir)
 
         self._create_widgets()
-        # Initialize the project path combobox with a blank default
-        self.project_path_var.set("")  # Start with a blank default
+        # Initialize the project path combobox
+        self.project_path_var.set(userdir)
 
     def _create_widgets(self):
-        # --- Help Button (Top Right) ---
-        help_button = tk.Button(self, text="Help", command=self._on_help_click)
-        help_button.grid(row=0, column=2, padx=10, pady=5, sticky="ne")
 
         # --- Left Panel (Proximity Management) ---
         left_panel = ttk.Frame(self, padding="10")
@@ -63,8 +59,7 @@ class PyPathfinder(tk.Tk):
             project_dir_frame,
             textvariable=self.project_path_var,
             values=self.recent_project_dirs,  # Set initial dropdown values
-            state="editable"  # Allows typing and selecting from dropdown
-        )
+            state="readonly")
         self.project_path_combobox.grid(row=0, column=0, padx=5, pady=2, sticky="ew")
         self.project_path_combobox.bind("<<ComboboxSelected>>", self._on_directory_select)
         # Bind for when user types and leaves the entry (focus out)
@@ -120,7 +115,7 @@ class PyPathfinder(tk.Tk):
 
         # Network Type Section
         network_type_frame = ttk.LabelFrame(right_panel, text="Network Type", padding="10")
-        network_type_frame.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+        network_type_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
 
         self.network_type_var = tk.StringVar(value="Pathfinder")  # Default selection
         pathfinder_radio = ttk.Radiobutton(network_type_frame, text="Pathfinder", variable=self.network_type_var,
@@ -133,6 +128,10 @@ class PyPathfinder(tk.Tk):
                                                  variable=self.network_type_var, value="Nearest Neighbor",
                                                  command=self._on_network_type_change)
         nearest_neighbor_radio.grid(row=2, column=0, sticky="w", padx=5, pady=2)
+
+        # --- Help Button (Top Right) ---
+        help_button = tk.Button(network_type_frame, text="Help", command=self._on_help_click)
+        help_button.grid(row=2, column=4, padx=20, pady=5, sticky="ne")
 
         # q and r inputs
         q_label = tk.Label(network_type_frame, text="q =")
@@ -171,13 +170,12 @@ class PyPathfinder(tk.Tk):
         get_network_info_button = tk.Button(network_info_frame, text="Get Network Info",
                                             command=self._on_get_network_info)
         get_network_info_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        net_properties_button = tk.Button(network_info_frame, text="Net Properties", command=self._on_net_properties)
-        net_properties_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
         merge_networks_button = tk.Button(network_info_frame, text="Merge Networks", command=self._on_merge_networks)
         merge_networks_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
         network_link_list_button = tk.Button(network_info_frame, text="Network Link List",
                                              command=self._on_network_link_list)
-        network_link_list_button.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        network_link_list_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         network_similarity_button = tk.Button(network_info_frame, text="Network Similarity",
                                               command=self._on_network_similarity)
         network_similarity_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
@@ -219,21 +217,23 @@ class PyPathfinder(tk.Tk):
         if new_dir:
             self.project_path_var.set(new_dir)
             self._on_directory_select(None)  # Manually trigger update of recent directories
-            # Here you would typically initialize a new project structure or clear existing data
+            # Here you would typically initialize a new project structure or clear exclude data
 
     def _on_open_directory(self):
-        dir = self.recent_project_dirs[0] if self.recent_project_dirs else ""
+        dir = self.project_path_var.get()
         if dir:
             os.startfile(dir) # open dir in explorer
 
     # --- Other Callback Functions ---
     def _on_help_click(self):
-        messagebox.showinfo("Help", "This is a placeholder for help information.")
+        #messagebox.showinfo("Help", "This is a placeholder for help information.")
+        os.startfile(os.path.join(self.mypfnets_dir,"pypfhelp.pdf"))
 
     def _on_add_proximity_data(self):
         filepath = filedialog.askopenfilenames(
             title="Select Proximity Data File",
-            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")])
+            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")],
+            initialdir=self.project_path_var.get() if self.project_path_var else "")
         if filepath:
             for f in filepath:
                 try:
@@ -267,8 +267,9 @@ class PyPathfinder(tk.Tk):
             infolist.append(info)
         # create dataframe with no index
         df = pd.DataFrame(infolist)
-        df.to_csv("proximity_info.csv")
-        os.startfile("proximity_info.csv")
+        f = os.path.join(self.project_path_var.get(),"proximity_info.csv")
+        df.to_csv(f)
+        os.startfile(f)
 
     def _on_data_correlations(self):
         from pypf.utility import discorr
@@ -286,9 +287,9 @@ class PyPathfinder(tk.Tk):
                     dis2 = self.proximities[prxnames[j]].dismat
                     cors[i,j] = discorr(dis1,dis2)
             df = pd.DataFrame(cors, index=prxnames, columns=prxnames)
-            #messagebox.showinfo("Proximity Correlations", df.to_string())
-            df.to_csv("discorr.csv")
-            os.startfile("discorr.csv")
+            f = os.path.join(self.project_path_var.get(), "proximity_corrs.csv")
+            df.to_csv(f)
+            os.startfile(f)
         else:
             messagebox.showwarning("Too Few Proximities", "Must have at least two.")
 
@@ -380,15 +381,9 @@ class PyPathfinder(tk.Tk):
         for i in range(1,n):
             net = self.pfnets[nets[i]]
             df = pd.concat([df, net.get_info()], axis=0)
-        df.to_csv("network_info.csv")
-        os.startfile("network_info.csv")
-
-    def _on_net_properties(self):
-        if self.current_pfnet_names:
-            messagebox.showinfo("Net Properties",
-                                f"This would display properties for {', '.join(self.current_pfnet_names)}.")
-        else:
-            messagebox.showwarning("No Network Selected", "Please select one or more networks first.")
+            f = os.path.join(self.project_path_var.get(), "network_info.csv")
+        df.to_csv(f)
+        os.startfile(f)
 
     def _on_merge_networks(self):
         from pypf.utility import merge_networks
@@ -406,17 +401,15 @@ class PyPathfinder(tk.Tk):
 
     def _on_network_link_list(self):
 
-
         if self.current_pfnet_names:
             # For now, show link list for the first selected network
             pf_name = self.current_pfnet_names[0]
             pf = self.pfnets[pf_name]
             link_list = list(pf.graph.edges())
             df = pd.DataFrame(link_list, columns=["from", "to"])
-            df.to_csv("link_list.csv")
-            os.startfile("link_list.csv")
-            #messagebox.showinfo("Network Link List",
-            #                    f"Links in {pf.name}:\n{link_list[:500]}...")  # Show first 500 chars
+            f = os.path.join(self.project_path_var.get(), "link_list.csv")
+            df.to_csv(f)
+            os.startfile(f)
         else:
             messagebox.showwarning("No Network Selected", "Please select one or more networks first.")
 
@@ -442,9 +435,10 @@ class PyPathfinder(tk.Tk):
         df = pd.DataFrame(simmat, index=netlist, columns=netlist)
         #messagebox.showinfo("Network Similarity", df.to_string())
         # write df to a file
-        pd.DataFrame(simmat, index=netlist, columns=netlist).to_csv("netsim.csv")
+        f = os.path.join(self.project_path_var.get(), "net_sim.csv")
+        pd.DataFrame(simmat, index=netlist, columns=netlist).to_csv(f)
         # open the file
-        os.startfile("netsim.csv")
+        os.startfile(f)
 
     def _on_display_network(self):
         if self.current_pfnet_names:

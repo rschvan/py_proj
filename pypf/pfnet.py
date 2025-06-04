@@ -1,7 +1,7 @@
 #pypf/pfnet.py
 import numpy as np
 from pypf.proximity import Proximity
-from pypf.utility import floyd, dijkstra, graph_from_adjmat, get_lower, get_off_diagonal, eccentricity
+from pypf.utility import floyd, dijkstra, graph_from_adjmat, get_lower, get_off_diagonal, eccentricity, get_termsid
 import networkx as nx
 from networkx.drawing.nx_pydot import graphviz_layout
 
@@ -30,6 +30,7 @@ class PFnet:
         self.r = r
         #self.infchar = "\u221E"
         self.terms = []  # node labels
+        self.termsid = ""
         self.nnodes = 0
         self.nlinks = 0
         self.dismat = np.array([])  # distance matrix
@@ -45,14 +46,15 @@ class PFnet:
 
         if proximity is None:
             proximity = Proximity()
-        if hasattr(proximity, 'name'):
-            self.name = proximity.name
         if hasattr(proximity, 'terms') and hasattr(proximity, 'dismat'):
+            self.name = proximity.name
             self.proximity = proximity
             self.terms = proximity.terms
             self.nnodes = len(self.terms)
             self.dismat = np.array(proximity.dismat)
-            self.proximity = proximity
+            self.termsid = proximity.termsid
+            if self.termsid == "":
+                self.termsid = get_termsid(self.terms)
 
             match self.type:
                 case "pf":
@@ -230,6 +232,7 @@ class PFnet:
         print(f"name: {self.name}")
         print(f"type: {self.type}")
         print(f"terms[0]: {self.terms[0]}")
+        print(f"termsid: {self.termsid}")
         print(f"nnodes: {self.nnodes}")
         print(f"q: {self.q}")
         print(f"r: {self.r}")
@@ -246,10 +249,12 @@ if __name__ == '__main__':
     import networkx as nx
     prx = Proximity("data/psy.prx.xlsx")
     net = PFnet(prx,type="nn")
-    print(net.coords)
-    c = net.get_layout()
-    print(c == net.coords)
-    print(c)
+    net.netprint()
+
+    # print(net.coords)
+    # c = net.get_layout()
+    # print(c == net.coords)
+    # print(c)
 
     # net.netprint()
     # print(net.get_info())
