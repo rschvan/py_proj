@@ -6,6 +6,7 @@ import numpy as np
 
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
+from pypf.collection import Collection
 from pypf.shownet import shownet
 from pypf.utility import mypfnets_dir  # directory for sample data and help
 
@@ -21,23 +22,12 @@ class PyPathfinder(tk.Tk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
 
-        # Internal data storage (dictionaries to store objects by name)
-        self.proximities: dict[str, Proximity] = {}
-        self.pfnets: dict[str, PFnet] = {}
-
-        # Changed to store a list of selected names for multi-select
-        self.current_proximity_names: list[str] = []
-        self.current_pfnet_names: list[str] = []
-
-        # List to store recent project directories for the dropdown
-        userdir = mypfnets_dir()
-        self.mypfnets_dir = userdir
-        self.recent_project_dirs = []
-        self.recent_project_dirs.append(userdir)
+        # Internal data storage (dictionaries to store objects by name) in Collection col
+        self.col: Collection = Collection()
 
         self._create_widgets()
         # Initialize the project path combobox
-        self.project_path_var.set(userdir)
+        self.project_path_var.set(self.col.project_dirs[0])
 
     def _create_widgets(self):
 
@@ -58,7 +48,7 @@ class PyPathfinder(tk.Tk):
         self.project_path_combobox = ttk.Combobox(
             project_dir_frame,
             textvariable=self.project_path_var,
-            values=self.recent_project_dirs,  # Set initial dropdown values
+            values=self.col.mypfnets_dir,  # Set initial dropdown value
             state="readonly")
         self.project_path_combobox.grid(row=0, column=0, padx=5, pady=2, sticky="ew")
         self.project_path_combobox.bind("<<ComboboxSelected>>", self._on_directory_select)
@@ -169,20 +159,20 @@ class PyPathfinder(tk.Tk):
 
         get_network_info_button = tk.Button(network_info_frame, text="Get Network Info",
                                             command=self._on_get_network_info)
-        get_network_info_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        get_network_info_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         merge_networks_button = tk.Button(network_info_frame, text="Merge Networks", command=self._on_merge_networks)
-        merge_networks_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+        merge_networks_button.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
         network_link_list_button = tk.Button(network_info_frame, text="Network Link List",
                                              command=self._on_network_link_list)
-        network_link_list_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        network_link_list_button.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
         network_similarity_button = tk.Button(network_info_frame, text="Network Similarity",
                                               command=self._on_network_similarity)
-        network_similarity_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
+        network_similarity_button.grid(row=2, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
 
         # Display Network Button
         display_network_button = tk.Button(network_info_frame, text="Display Network", command=self._on_display_network)
-        display_network_button.grid(row=0, column=0, columnspan=1, padx=5, pady=10, sticky="ew")
+        display_network_button.grid(row=1, column=0, columnspan=1, padx=5, pady=10, sticky="ew")
 
         # Delete Network Button
         delete_network_button = tk.Button(network_info_frame, text="Delete Network", command=self._on_delete_network)
@@ -191,12 +181,12 @@ class PyPathfinder(tk.Tk):
     # --- Utility methods for updating listboxes ---
     def _update_proximity_listbox(self):
         self.proximity_listbox.delete(0, tk.END)  # Clear current items
-        for name in self.proximities.keys():
+        for name in self.col.proximities.keys():
             self.proximity_listbox.insert(tk.END, name)
 
     def _update_pfnet_listbox(self):
         self.pfnet_listbox.delete(0, tk.END)  # Clear current items
-        for name in self.pfnets.keys():
+        for name in self.col.pfnets.keys():
             self.pfnet_listbox.insert(tk.END, name)
 
     # --- Project Directory Callbacks ---
@@ -206,11 +196,11 @@ class PyPathfinder(tk.Tk):
         if selected_dir:
             # Normalize path (e.g., remove trailing slashes) for consistent storage
             selected_dir = os.path.normpath(selected_dir)
-            if os.path.isdir(selected_dir) and selected_dir not in self.recent_project_dirs:
-                self.recent_project_dirs.insert(0, selected_dir)  # Add to top of recent list
+            if os.path.isdir(selected_dir) and selected_dir not in self.col.project_dirs:
+                self.col.project_dirs.insert(0, selected_dir)  # Add to top of recent list
                 # Limit number of recent directories to, say, 10
-                self.recent_project_dirs = self.recent_project_dirs[:10]
-                self.project_path_combobox['values'] = self.recent_project_dirs  # Update dropdown values
+                self.col.project_dirs = self.col.project_dirs[:10]
+                self.project_path_combobox['values'] = self.col.project_dirs  # Update dropdown values
 
     def _on_new_directory(self):
         new_dir = filedialog.askdirectory(title="Select New Project Directory")
@@ -227,7 +217,7 @@ class PyPathfinder(tk.Tk):
     # --- Other Callback Functions ---
     def _on_help_click(self):
         #messagebox.showinfo("Help", "This is a placeholder for help information.")
-        os.startfile(os.path.join(self.mypfnets_dir,"pypfhelp.pdf"))
+        os.startfile(os.path.join(self.col.mypfnets_dir,"pypfhelp.pdf"))
 
     def _on_add_proximity_data(self):
         filepath = filedialog.askopenfilenames(
@@ -238,93 +228,44 @@ class PyPathfinder(tk.Tk):
             for f in filepath:
                 try:
                     prx = Proximity(filepath=f)
-                    if prx.name in self.proximities:
+                    if prx.name in self.col.proximities:
                         messagebox.showwarning("Duplicate Proximity",
                                                f"Proximity '{prx.name}' already exists. Replacing it.")
-                    self.proximities[prx.name] = prx
+                    self.col.proximities[prx.name] = prx
                     self._update_proximity_listbox()  # Update the listbox
-
-                    # Select the newly added item (only one item selected)
-                    index = list(sorted(self.proximities.keys())).index(prx.name)
-                    self.proximity_listbox.selection_clear(0, tk.END)  # Clear any previous multi-selection
-                    # self.proximity_listbox.selection_set(index)
-                    # self.proximity_listbox.see(index)
-                    self._on_proximity_select(None)  # Manually trigger selection update
+                    self.col.selected_prxs = []
                 except Exception as e:
                     messagebox.showerror("Error", f"Could not load proximity data: {e}")
 
     def _on_proximity_select(self, event):
-        # Get all currently selected items
         selected_indices = self.proximity_listbox.curselection()
-        self.current_proximity_names = [self.proximity_listbox.get(i) for i in selected_indices]
+        self.col.selected_prxs = [self.proximity_listbox.get(i) for i in selected_indices]
 
     def _on_get_proximity_info(self):
-        prxlist = self.proximity_listbox.get(0, tk.END)
-        infolist = []
-        for prx_name in prxlist:
-            prx = self.proximities[prx_name]
-            info = prx.get_info() # info is a dictionary
-            infolist.append(info)
-        # create dataframe with no index
-        df = pd.DataFrame(infolist)
-        f = os.path.join(self.project_path_var.get(),"proximity_info.csv")
-        df.to_csv(f)
-        os.startfile(f)
+        self.col.get_proximity_info()
+        # prxlist = self.proximity_listbox.get(0, tk.END)
+        # infolist = []
+        # for prx_name in prxlist:
+        #     prx = self.proximities[prx_name]
+        #     info = prx.get_info() # info is a dictionary
+        #     infolist.append(info)
+        # # create dataframe with no index
+        # df = pd.DataFrame(infolist)
+        # f = os.path.join(self.project_path_var.get(),"proximity_info.csv")
+        # df.to_csv(f)
+        # os.startfile(f)
 
     def _on_data_correlations(self):
-        from pypf.utility import discorr
-        # get proximity names
-        prxnames = self.proximity_listbox.get(0, tk.END)
-        n = len(prxnames)
-        cors = np.zeros((n,n))
-        # set diagonal to 1
-        np.fill_diagonal(cors, 1)
-        if n > 1:
-            for i in range(n):
-                for j in range(n):
-                    if i == j: continue
-                    dis1 = self.proximities[prxnames[i]].dismat
-                    dis2 = self.proximities[prxnames[j]].dismat
-                    cors[i,j] = discorr(dis1,dis2)
-            df = pd.DataFrame(cors, index=prxnames, columns=prxnames)
-            f = os.path.join(self.project_path_var.get(), "proximity_corrs.csv")
-            df.to_csv(f)
-            os.startfile(f)
-        else:
-            messagebox.showwarning("Too Few Proximities", "Must have at least two.")
+        self.col.get_proximity_correlations()
 
     def _on_average_proximities(self):
-        from pypf.utility import average_proximity
-        if len(self.current_proximity_names) < 2:
-            messagebox.showwarning("Not Enough Proximities", "Please select at least two proximities to average.")
-            return
-        #ans = tk.messagebox.askquestion("Method?","Select Means or Medians",default="yes")
-        yes_no = messagebox.askyesno("Average Proximities", "Yes for means? No for medians")
-        if yes_no:
-            choice = "mean"
-        else:
-            choice = "median"
-        proxes = [self.proximities[p] for p in self.current_proximity_names]
-        ave_prx = average_proximity(proxes, method=choice)
-        if ave_prx is None:
-            messagebox.showwarning("Average Failed", "Proximities not compatible.")
-            return
-        self.proximities[ave_prx.name] = ave_prx
-        self._update_proximity_listbox()  # Update the listbox
-        self._on_proximity_select(None)
+        self.col.average_proximities()
+        self._update_proximity_listbox()
+        self.col.selected_prxs = []
 
     def _on_delete_proximity(self):
-        if self.current_proximity_names:
-            if messagebox.askyesno("Confirm Delete",
-                                   f"Delete selected proximities: {', '.join(self.current_proximity_names)}?"):
-                for name in self.current_proximity_names:
-                    if name in self.proximities:
-                        del self.proximities[name]
-                self._update_proximity_listbox()  # Update the listbox
-                self.current_proximity_names = []  # Clear selection
-                #messagebox.showinfo("Deleted", "Selected proximities deleted.")
-        else:
-            messagebox.showwarning("No Proximity Selected", "No proximity selected to delete.")
+        self.col.delete_proximity()
+        self._update_proximity_listbox()
 
     def _on_network_type_change(self):
         selected_type = self.network_type_var.get()
@@ -336,10 +277,10 @@ class PyPathfinder(tk.Tk):
             self.r_entry.config(state="disabled")
 
     def _on_derive_network(self):
-        if self.current_proximity_names:
-            prxlist = self.current_proximity_names
+        if self.col.selected_prxs:
+            prxlist = self.col.selected_prxs
         else:
-            prxlist = self.proximity_listbox.get(0, tk.END)
+            prxlist = list(self.col.proximities.keys())
 
         q_val_str = self.q_entry.get().strip().lower()
         r_val_str = self.r_entry.get().strip().lower()
@@ -347,7 +288,7 @@ class PyPathfinder(tk.Tk):
         r = int(r_val_str) if r_val_str != 'inf' else float('inf')
 
         for prx_name in prxlist:
-            prx = self.proximities[prx_name]
+            prx = self.col.proximities[prx_name]
             match self.network_type_var.get():
                 case "Pathfinder":
                     net = PFnet(proximity=prx, q=q, r=r)
@@ -357,98 +298,40 @@ class PyPathfinder(tk.Tk):
                     net = PFnet(proximity=prx, type="nn")
             name = net.name
             counter = 1
-            while net.name in self.pfnets:
+            while net.name in self.col.pfnets:
                 net.name = f"{name}_{counter}"
                 counter += 1
 
-            self.pfnets[net.name] = net
+            self.col.pfnets[net.name] = net
             self._update_pfnet_listbox()
             self.pfnet_listbox.selection_clear(0, tk.END)
-            self._on_pfnet_select(None)
+            self.col.selected_prxs = []
 
     def _on_pfnet_select(self, event):
-        # Get all currently selected items
         selected_indices = self.pfnet_listbox.curselection()
-        self.current_pfnet_names = [self.pfnet_listbox.get(i) for i in selected_indices]
+        self.col.selected_nets = [self.pfnet_listbox.get(i) for i in selected_indices]
 
     def _on_get_network_info(self):
-        nets = self.pfnet_listbox.get(0, tk.END)
-        n = len(nets)
-        if nets:
-            df = self.pfnets[nets[0]].get_info()
-        else:
-            return
-        for i in range(1,n):
-            net = self.pfnets[nets[i]]
-            df = pd.concat([df, net.get_info()], axis=0)
-            f = os.path.join(self.project_path_var.get(), "network_info.csv")
-        df.to_csv(f)
-        os.startfile(f)
+        self.col.get_pfnet_info()
 
     def _on_merge_networks(self):
-        from pypf.utility import merge_networks
-        netnames = self.current_pfnet_names
-        nets = []
-        if len(netnames) > 1:
-            for name in netnames:
-                nets.append(self.pfnets[name])
-            mrg = merge_networks(nets)
-            self.pfnets[mrg.name] = mrg
-            self._update_pfnet_listbox()
-            # self.on_pfnet_select(None)
-        else:
-            messagebox.showwarning("Not Enough Networks", "Please select at least two networks to merge.")
+        self.col.merge_networks()
+        self._update_pfnet_listbox()
+        self.col.selected_nets = []
 
     def _on_network_link_list(self):
-
-        if self.current_pfnet_names:
-            # For now, show link list for the first selected network
-            pf_name = self.current_pfnet_names[0]
-            pf = self.pfnets[pf_name]
-            link_list = list(pf.graph.edges())
-            df = pd.DataFrame(link_list, columns=["from", "to"])
-            f = os.path.join(self.project_path_var.get(), "link_list.csv")
-            df.to_csv(f)
-            os.startfile(f)
-        else:
-            messagebox.showwarning("No Network Selected", "Please select one or more networks first.")
+        self.col.network_link_list()
 
     def _on_network_similarity(self):
-        from pypf.utility import netsim
-        netlist = self.pfnet_listbox.get(0, tk.END)
-        n = len(netlist)
-        if n > 1:
-            simmat = np.zeros((n,n))
-            for i in range(n):
-                inet = self.pfnets[netlist[i]]
-                for j in range(n):
-                    jnet = self.pfnets[netlist[j]]
-                    if i == j:
-                        simmat[i,j] = 1
-                    elif inet.nnodes != jnet.nnodes:
-                        simmat[i,j] = np.nan
-                    else:
-                        sim = netsim(inet.adjmat, jnet.adjmat)
-                        simmat[i,j] = sim["similarity"]
-        else:
-            messagebox.showwarning("Not Enough Networks", "Must have at least two networks for similarity.")
-        df = pd.DataFrame(simmat, index=netlist, columns=netlist)
-        #messagebox.showinfo("Network Similarity", df.to_string())
-        # write df to a file
-        f = os.path.join(self.project_path_var.get(), "net_sim.csv")
-        pd.DataFrame(simmat, index=netlist, columns=netlist).to_csv(f)
-        # open the file
-        os.startfile(f)
+        self.col.network_similarity()
 
     def _on_display_network(self):
-        if self.current_pfnet_names:
-            pf_name = self.current_pfnet_names[0]
-            pf = self.pfnets[pf_name]
-
+        if self.col.selected_nets:
+            pf_name = self.col.selected_nets[0]
+            pf = self.col.pfnets[pf_name]
             try:
                 # Call the shownet function, passing self (the main Tkinter window) as the parent
                 shownet(self, pf, method="gravity", width=800, height=600)
-
             except Exception as e:
                 messagebox.showerror("Display Error", f"Could not display network: {e}")
         else:
@@ -456,16 +339,8 @@ class PyPathfinder(tk.Tk):
                                    "Please select a network from the list to display.")
 
     def _on_delete_network(self):
-        if self.current_pfnet_names:
-            if messagebox.askyesno("Confirm Delete",
-                                   f"Delete selected networks: {', '.join(self.current_pfnet_names)}?"):
-                for name in self.current_pfnet_names:
-                    if name in self.pfnets:
-                        del self.pfnets[name]
-                self._update_pfnet_listbox()  # Update the listbox
-                self.current_pfnet_names = []  # Clear selection
-        else:
-            messagebox.showwarning("No Network Selected", "No network selected to delete.")
+        self.col.delete_pfnet()
+        self._update_pfnet_listbox()
 
 if __name__ == "__main__":
     app = PyPathfinder()

@@ -156,9 +156,15 @@ class PFnet:
         return lists
 
     def get_info(self):
-        from pypf.utility import prop_table
-        info = prop_table([self],["name", "nnodes", "nlinks", "isdirected", "type", "q", "r"])
-        return info # a DataFrame
+        info: dict = {}
+        info["name"] = self.name
+        info["nnodes"] = self.nnodes
+        info["nlinks"] = self.nlinks
+        info["isdirected"] = self.isdirected
+        info["type"] = self.type
+        info["q"] = self.q
+        info["r"] = self.r
+        return info # a list
 
     def get_layout(self, method="gravity") -> np.ndarray:
         """
