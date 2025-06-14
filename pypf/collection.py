@@ -7,7 +7,7 @@ from pypf.utility import mypfnets_dir
 
 class Collection:
 
-    def __init__(self):
+    def __init__(self, to_csv:bool=False):
         self.proximities: dict[str, Proximity] = {}
         self.pfnets: dict[str, PFnet] = {}
         self.selected_prxs: list[str] = []
@@ -15,6 +15,7 @@ class Collection:
         self.mypfnets_dir: str = mypfnets_dir() # directory for sample data and help
         self.project_dirs: list[str] = [] # list of directories
         self.project_dirs.append(self.mypfnets_dir)
+        self.to_csv = to_csv # if true output to csv files will be generated
 
     def add_proximity(self, prx:Proximity):
         if prx.name in self.proximities:
@@ -50,9 +51,11 @@ class Collection:
             prx = self.proximities[prx_name]
             infolist.append(prx.get_info())
         df = pd.DataFrame(infolist)
-        f = os.path.join(self.mypfnets_dir, "proximity_info.csv")
-        df.to_csv(f, index=False)
-        os.startfile(f)
+        if self.to_csv:
+            f = os.path.join(self.mypfnets_dir, "proximity_info.csv")
+            df.to_csv(f, index=False)
+            os.startfile(f)
+        return df
 
     def get_pfnet_info(self):
         infolist = []
@@ -60,9 +63,11 @@ class Collection:
             net = self.pfnets[net_name]
             infolist.append(net.get_info())
         df = pd.DataFrame(infolist)
-        f = os.path.join(self.mypfnets_dir, "pfnet_info.csv")
-        df.to_csv(f, index=False)
-        os.startfile(f)
+        if self.to_csv:
+            f = os.path.join(self.mypfnets_dir, "pfnet_info.csv")
+            df.to_csv(f, index=False)
+            os.startfile(f)
+        return df
 
     def get_proximity_correlations(self):
         from pypf.utility import discorr
@@ -78,11 +83,14 @@ class Collection:
                     disj = self.proximities[prxs[j]].dismat
                     cors[i,j] = discorr(disi, disj)
             df = pd.DataFrame(cors, columns=prxs, index=prxs)
-            f = os.path.join(self.mypfnets_dir, "proximity_correlations.csv")
-            df.to_csv(f, index=True)
-            os.startfile(f)
+            if self.to_csv:
+                f = os.path.join(self.mypfnets_dir, "proximity_correlations.csv")
+                df.to_csv(f, index=True)
+                os.startfile(f)
+            return df
         else:
             print("Too few proximities for correlations.")
+            return None
 
     def average_proximities(self, choice:str="mean"):
         from pypf.utility import average_proximity
@@ -117,12 +125,15 @@ class Collection:
                     else:
                         sim = netsim(inet.adjmat, jnet.adjmat)
                         simmat[i,j] = sim["similarity"]
+            df = pd.DataFrame(simmat, index=netlist, columns=netlist)
+            if self.to_csv:
+                f = os.path.join(self.mypfnets_dir, "net_sim.csv")
+                pd.DataFrame(simmat, index=netlist, columns=netlist).to_csv(f)
+                os.startfile(f)
+            return df
         else:
             print("Not Enough Networks", "Must have at least two networks for similarity.")
-        df = pd.DataFrame(simmat, index=netlist, columns=netlist)
-        f = os.path.join(self.mypfnets_dir, "net_sim.csv")
-        pd.DataFrame(simmat, index=netlist, columns=netlist).to_csv(f)
-        os.startfile(f)
+            return None
 
     def network_link_list(self):
         if self.selected_nets:
@@ -131,11 +142,14 @@ class Collection:
             pf = self.pfnets[pf_name]
             link_list = list(pf.graph.edges())
             df = pd.DataFrame(link_list, columns=["from", "to"])
-            f = os.path.join(self.mypfnets_dir, "link_list.csv")
-            df.to_csv(f)
-            os.startfile(f)
+            if self.to_csv:
+                f = os.path.join(self.mypfnets_dir, "link_list.csv")
+                df.to_csv(f)
+                os.startfile(f)
+            return df
         else:
             print("No Network Selected", "Please select one or more networks first.")
+            return None
 
     def merge_networks(self):
         from pypf.utility import merge_networks

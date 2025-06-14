@@ -120,8 +120,8 @@ class Proximity:
         info["name"] = self.name
         info["nterms"] = self.nterms
         info["coherence"] = self.coh
-        info["mean"] = self.mean
-        info["sd"] = self.sd
+        info["mean"] = round(self.mean, 2)
+        info["sd"] = round(self.sd, 2)
         info["min"] = self.min
         info["max"] = self.max
         return info

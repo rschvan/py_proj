@@ -70,7 +70,7 @@ class PFnet:
                     self.adjmat[~links] = 0
                     self.nlinks = np.count_nonzero(self.adjmat)
                     if not self.isdirected:
-                        self.nlinks = self.nlinks / 2
+                        self.nlinks = int(self.nlinks / 2)
                 case "nn": # nearest neighbor
                     self.isdirected = True
                     self.q = None
@@ -104,7 +104,7 @@ class PFnet:
                     self.adjmat = self.adjmat * links
                     self.nlinks = np.count_nonzero(self.adjmat)
                     if not self.isdirected:
-                        self.nlinks = self.nlinks / 2
+                        self.nlinks = int(self.nlinks / 2)
                 case _:
                     print("Error: PFnet type not valid")
             self.eccentricity = eccentricity(self.adjmat)
