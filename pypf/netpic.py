@@ -47,9 +47,8 @@ class Netpic:
                 - end_point (np.ndarray): The [x, y] coordinates for the end of the link.
                 - mid_point (np.ndarray): The [x, y] coordinates for the midpoint of the link.
         """
-        fig = self.fig
         ax = self.ax
-        renderer = fig.canvas.get_renderer()
+        renderer = self.fig.canvas.get_renderer()
 
         # Get the text positions (which are the centers due to ha/va='center')
         s_pos = s.get_position()
@@ -107,7 +106,7 @@ class Netpic:
 
         # Find the intersection points for source and target
         start_point = _find_intersection(s_bbox_data, (delta_x, delta_y))
-        end_point = _find_intersection(t_bbox_data, (-delta_x, -delta_y))  # Use reversed direction for target
+        end_point = _find_intersection(t_bbox_data, (-delta_x, -delta_y)) # reversed direction for target
 
         mid_point = (start_point + end_point) / 2
         return start_point, end_point, mid_point
@@ -216,6 +215,7 @@ class Netpic:
         self.fig.canvas.draw_idle()
 
     # The drag-and-drop methods remain the same as they handle in-plot interactivity
+    import streamlit as st
     def _on_press(self, event):
         if event.inaxes != self.ax: return
         for text_obj in self.text_objects.values():

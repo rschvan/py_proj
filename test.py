@@ -6,8 +6,11 @@ import pypf as pf
 import os.path
 import networkx as nx
 import matplotlib.pyplot as plt
+import _tkinter
 
-all = True
+TclError = _tkinter.TclError
+
+all = False
 pic = False
 
 prx = Proximity()
@@ -49,4 +52,4 @@ if pic:
     pos = nx.spring_layout(graph)
     nx.draw_networkx_labels(graph, pos, labels=labels, font_size=8)
     nx.draw_networkx_edges(graph, pos)
-    plt.show()
+    plt.show(graph)
