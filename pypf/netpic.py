@@ -116,7 +116,7 @@ class Netpic:
         Creates and returns a matplotlib figure with the network plot.
         The plot's properties are determined by the input arguments.
         """
-        self.fig, self.ax = plt.subplots(figsize=(10, 10))
+        self.fig, self.ax = plt.subplots(figsize=(9, 9))
         self.ax.set_aspect('equal', adjustable='box')
         self.ax.set_xlim(-1.1, 1.1)
         self.ax.set_ylim(-1.1, 1.1)
@@ -140,9 +140,12 @@ class Netpic:
         self._draw_edges_and_weights(font_size)
         self.ax.margins(0.1)
 
-        self.fig.canvas.mpl_connect('button_press_event', self._on_press)
-        self.fig.canvas.mpl_connect('motion_notify_event', self._on_motion)
-        self.fig.canvas.mpl_connect('button_release_event', self._on_release)
+        # from stapp import clickedevent
+        # self.fig.canvas.mpl_connect('button_press_event', clickedevent)
+
+        # self.fig.canvas.mpl_connect('button_press_event', self._on_press)
+        # self.fig.canvas.mpl_connect('motion_notify_event', self._on_motion)
+        # self.fig.canvas.mpl_connect('button_release_event', self._on_release)
 
         return self.fig
 
@@ -215,7 +218,6 @@ class Netpic:
         self.fig.canvas.draw_idle()
 
     # The drag-and-drop methods remain the same as they handle in-plot interactivity
-    import streamlit as st
     def _on_press(self, event):
         if event.inaxes != self.ax: return
         for text_obj in self.text_objects.values():

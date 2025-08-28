@@ -1,8 +1,11 @@
 # stapp.py: streamlit interface
 import sys
 import os
-from pypf.netpic import Netpic
 import streamlit as st
+# --- Streamlit Application Layout (MUST BE FIRST Streamlit command) ---
+st.set_page_config(layout="wide")
+
+from pypf.netpic import Netpic
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,9 +23,6 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 # Add the project root to sys.path
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-# --- Streamlit Application Layout (MUST BE FIRST Streamlit commands) ---
-st.set_page_config(layout="wide")
 
 # --- Global Initialization (runs once per user session) ---
 @st.cache_resource
@@ -45,7 +45,14 @@ def get_collection_instance():
     st.session_state.lastlo = st.session_state.layout
     st.session_state.new_layout = True
     st.session_state.count = 0
+    st.session_state.q_param = np.inf
+    st.session_state.r_param = np.inf
+    st.session_state.ekey = None
     return col, sample_col, sample_sources, prx_file_format
+
+def clickedevent(event):
+    st.session_state.ekey = event.key
+    st.write(event.key)
 
 def add_demo(col):
     for px in sample_col.proximities.values():
@@ -83,21 +90,21 @@ with st.sidebar:
             rval = st.text_input("r-value", value="inf", key="rval")
         qval = qval.lower()
         if qval == "" or qval == "inf" or qval.__contains__("n"):
-            q_param = np.inf
+            st.session_state.q_param = np.inf
         else:
             try:
-                q_param = int(qval)
+                st.session_state.q_param = int(qval)
             except:
-                q_param = np.inf
+                st.session_state.q_param = np.inf
                 qval = "inf"
         rval = rval.lower()
         if rval == "" or rval == "inf":
-            r_param = np.inf
+            st.session_state.r_param = np.inf
         else:
             try:
-                r_param = float(rval)
+                st.session_state.r_param = float(rval)
             except:
-                r_param = np.inf
+                st.session_state.r_param = np.inf
                 rval = "inf"
     st.write("layout:")
 
@@ -143,9 +150,6 @@ with st.sidebar:
 # --- Main Content Area ---
 
 st.title("PyPathfinder")
-
-r_param = np.inf
-q_param = np.inf
 
 # Intro Info
 if show_intro_info:
@@ -247,7 +251,7 @@ with prxlist:
         else:
             col.selected_prxs = []
 
-        delprx, dernet, aveprx = st.columns(3)
+        delprx, aveprx, dernet = st.columns(3)
         with delprx:
             if st.button("Delete Proximities", key="delete_prx_btn"):
                 if col.selected_prxs:
@@ -269,7 +273,7 @@ with prxlist:
                             prx = col.proximities[prx_name]
                             match net_type:
                                 case "Pathfinder":
-                                    pf = PFnet(prx, q=q_param, r=r_param)
+                                    pf = PFnet(prx, q=st.session_state.q_param, r=st.session_state.r_param)
                                 case "Threshold":
                                     pf = PFnet(prx, type="th")
                                 case "Nearest Neighbor":
@@ -354,10 +358,10 @@ if st.session_state.pf_name:
         st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
 
     st.session_state.count += 1
+    st.session_state.view = st.pyplot(fig=st.session_state.fig)
     st.write(f"{pf.name}: {pf.nnodes} nodes {pf.nlinks} links, "
             f"using {st.session_state.layout} layout {st.session_state.count}")
-    st.session_state.view = st.pyplot(fig=st.session_state.fig)
     st.session_state.new_layout = False
-    # st.write("rerun")
+    #st.write(f"Event: {st.session_state.ekey}")
 else:
     st.warning("No network selected.")
