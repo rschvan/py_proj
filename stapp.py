@@ -41,7 +41,8 @@ def get_collection_instance():
     pf.get_layout(method=st.session_state.layout)
     st.session_state.pic = Netpic(pf)
     st.session_state.font_size = 10
-    st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+    #st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+    make_fig(font_size=st.session_state.font_size)
     st.session_state.lastlo = st.session_state.layout
     st.session_state.new_layout = True
     st.session_state.count = 0
@@ -50,9 +51,16 @@ def get_collection_instance():
     st.session_state.ekey = None
     return col, sample_col, sample_sources, prx_file_format
 
-def clickedevent(event):
-    st.session_state.ekey = event.key
+def cb(event):
     st.write(event.key)
+
+def make_fig(font_size=10):
+    pic = st.session_state.pic
+    fig = pic.create_view(font_size=font_size)
+    fig.canvas.mpl_connect('button_press_event', cb)
+    fig.canvas.mpl_connect('motion_notify_event', pic._on_motion)
+    fig.canvas.mpl_connect('button_release_event', pic._on_release)
+    st.session_state.fig = fig
 
 def add_demo(col):
     for px in sample_col.proximities.values():
@@ -355,7 +363,8 @@ if st.session_state.pf_name:
     if st.session_state.new_layout:
         pf.get_layout(method=st.session_state.layout)
         st.session_state.pic = Netpic(net=pf)
-        st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+        #st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+        make_fig(font_size=st.session_state.font_size)
 
     st.session_state.count += 1
     st.session_state.view = st.pyplot(fig=st.session_state.fig)

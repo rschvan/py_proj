@@ -122,12 +122,13 @@ class Netpic:
         self.ax.set_ylim(-1.1, 1.1)
         self.ax.axis('off')
 
+        # add nodes as text objects
         self.text_objects.clear()
         self.node_positions.clear()
         coords = self.net.coords
         if coords is None:
             coords = np.random.rand(len(self.nodes), 2) * 2 - 1
-        # draw nodes as text
+
         for i, node in enumerate(self.nodes):
             x, y = coords[i]
             text_obj = self.ax.text(x, y, node, ha='center', va='center', fontsize=font_size,
