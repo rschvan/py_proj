@@ -128,11 +128,9 @@ with st.sidebar:
             st.session_state.pic.net.coords[:, [0, 1]] = st.session_state.pic.net.coords[:, [1, 0]]
             st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
 
-    @st.fragment()
     def toggle_weights():
         st.session_state.pic.toggle_weights()
 
-    @st.fragment()
     def change_font_size():
         st.session_state.pic.change_font_size(st.session_state.font_size)
 
