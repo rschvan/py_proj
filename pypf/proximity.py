@@ -2,7 +2,7 @@
 from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid
 import pandas as pd
 #from tkinter import Tk
-from tkinter.filedialog import askopenfilename
+#from tkinter.filedialog import askopenfilename
 import numpy as np
 import os  #   To work with file paths
 
