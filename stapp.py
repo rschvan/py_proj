@@ -128,9 +128,12 @@ with st.sidebar:
             st.session_state.pic.net.coords[:, [0, 1]] = st.session_state.pic.net.coords[:, [1, 0]]
             st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
 
+    @st.fragment
     def toggle_weights():
         st.session_state.pic.toggle_weights()
 
+
+    @st.fragment
     def change_font_size():
         st.session_state.pic.change_font_size(st.session_state.font_size)
 
@@ -138,17 +141,16 @@ with st.sidebar:
     with tw:
         if st.button('toggle weights'):
             toggle_weights()
-            #setlo(False)
 
         st.number_input("font Size", min_value=5, max_value=20,step=1, key="font_size",
-                        on_change=change_font_size())
+                        on_change=change_font_size)
     with red:
         if st.button("redraw net"):
             st.session_state.new_layout = True
 
         st.selectbox("layout method", ["kamada_kawai", "dot", "neato", "circo", "gravity", "spring",
                                        "distance"], index=0, key="layout",)
-        # on_change=setlo(True) was executing whether a change was made or not, thus the following
+
         if st.session_state.lastlo != st.session_state.layout:
             st.session_state.lastlo = st.session_state.layout
             st.session_state.new_layout = True
