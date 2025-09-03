@@ -150,10 +150,10 @@ with st.sidebar:
 
         st.selectbox("layout method", ["kamada_kawai", "dot", "neato", "circo", "gravity", "spring",
                                        "distance"], index=0, key="layout",)
-
-        if st.session_state.lastlo != st.session_state.layout:
-            st.session_state.lastlo = st.session_state.layout
-            st.session_state.new_layout = True
+        if "laslo" in st.session_state and "layout" in st.session_state:
+            if st.session_state.lastlo != st.session_state.layout:
+                st.session_state.lastlo = st.session_state.layout
+                st.session_state.new_layout = True
 
 # --- Main Content Area ---
 
