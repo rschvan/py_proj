@@ -41,7 +41,6 @@ def get_collection_instance():
     pf.get_layout(method=st.session_state.layout)
     st.session_state.pic = Netpic(pf)
     st.session_state.font_size = 10
-    #st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
     make_fig(font_size=st.session_state.font_size)
     st.session_state.lastlo = st.session_state.layout
     st.session_state.new_layout = True
@@ -150,10 +149,10 @@ with st.sidebar:
 
         st.selectbox("layout method", ["kamada_kawai", "dot", "neato", "circo", "gravity", "spring",
                                        "distance"], index=0, key="layout",)
-        if "laslo" in st.session_state and "layout" in st.session_state:
-            if st.session_state.lastlo != st.session_state.layout:
-                st.session_state.lastlo = st.session_state.layout
-                st.session_state.new_layout = True
+
+        if st.session_state.lastlo != st.session_state.layout:
+            st.session_state.lastlo = st.session_state.layout
+            st.session_state.new_layout = True
 
 # --- Main Content Area ---
 
