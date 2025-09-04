@@ -35,19 +35,19 @@ def get_collection_instance():
     col = copy.deepcopy(sample_col) # copy for info runs
     sample_sources:pd.DataFrame = sample["sources"] # DataFrame with sources of sample Proximities
     prx_file_format:pd.DataFrame = file_format() # DataFrame with sample .xlsx proximity file contents
-    st.session_state.pf_name = col.pfnets["bank6_pf"].name
-    pf = col.pfnets[st.session_state.pf_name]
-    st.session_state.layout = "kamada_kawai"
-    pf.get_layout(method=st.session_state.layout)
-    st.session_state.pic = Netpic(pf)
-    st.session_state.font_size = 10
-    make_fig(font_size=st.session_state.font_size)
-    st.session_state.lastlo = st.session_state.layout
-    st.session_state.new_layout = True
-    st.session_state.count = 0
-    st.session_state.q_param = np.inf
-    st.session_state.r_param = np.inf
-    st.session_state.ekey = None
+    #st.session_state.pf_name = col.pfnets["bank6_pf"].name
+    #pf = col.pfnets[st.session_state.pf_name]
+    #st.session_state.layout = "kamada_kawai"
+    #pf.get_layout(method=st.session_state.layout)
+    #st.session_state.pic = Netpic(pf)
+    #st.session_state.font_size = 10
+    #make_fig(font_size=st.session_state.font_size)
+    #st.session_state.lastlo = st.session_state.layout
+    #st.session_state.new_layout = True
+    #st.session_state.count = 0
+    #st.session_state.q_param = np.inf
+    #st.session_state.r_param = np.inf
+    #st.session_state.ekey = None
     return col, sample_col, sample_sources, prx_file_format
 
 def cb(event):
@@ -77,6 +77,34 @@ def del_demo(col):
 
 # get app data and initialize st.session_state
 col, sample_col, sample_sources, prx_file_format = get_collection_instance()
+
+# --- Initialize session state (runs once per user session) ---
+if 'pf_name' not in st.session_state:
+    st.session_state.pf_name = col.pfnets["bank6_pf"].name
+if 'layout' not in st.session_state:
+    st.session_state.layout = "kamada_kawai"
+if 'pic' not in st.session_state:
+    st.session_state.pic = Netpic(col.pfnets[st.session_state.pf_name])
+if 'font_size' not in st.session_state:
+    st.session_state.font_size = 10
+if 'lastlo' not in st.session_state:
+    st.session_state.lastlo = st.session_state.layout
+if 'new_layout' not in st.session_state:
+    st.session_state.new_layout = True
+if 'count' not in st.session_state:
+    st.session_state.count = 0
+if 'q_param' not in st.session_state:
+    st.session_state.q_param = np.inf
+if 'r_param' not in st.session_state:
+    st.session_state.r_param = np.inf
+if 'ekey' not in st.session_state:
+    st.session_state.ekey = None
+if 'fig' not in st.session_state:
+    pf = col.pfnets[st.session_state.pf_name]
+    pf.get_layout(method=st.session_state.layout)
+    st.session_state.pic = Netpic(pf)
+    make_fig(font_size=st.session_state.font_size)
+
 # --- Sidebar for Global Actions ---
 with st.sidebar:
     st.subheader("App Controls")
