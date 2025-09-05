@@ -58,9 +58,10 @@ def del_demo(col):
     for demoprx in sample_col.proximities.keys():
         if demoprx in col.proximities:
             col.proximities.pop(demoprx)
-        pf = demoprx + "_pf"
-        if pf in col.pfnets:
-            col.pfnets.pop(pf)
+    for demopf in sample_col.pfnets.keys():
+        if demopf in col.pfnets:
+            del col.pfnets[demopf]
+
 
 # get app data and initialize st.session_state
 col, sample_col, sample_sources, prx_file_format = get_collection_instance()
@@ -80,7 +81,6 @@ if 'pf_name' not in st.session_state:
     st.session_state.count = 0
     st.session_state.q_param = np.inf
     st.session_state.r_param = np.inf
-    st.session_state.ekey = None
 
 # --- Sidebar for Global Actions ---
 with st.sidebar:
@@ -166,9 +166,10 @@ st.title("PyPathfinder")
 if show_intro_info:
     st.subheader("Welcome to PyPathfinder!")
     st.info("Intro info adds an example of the required Proximity file format and sample "
-            "Proximities and PFnets for demo purposes.  The file format and file sources will be deleted "
-            "when you uncheck the Intro Info box. You can delete the demo Proximities and PFnets by "
-            "selecting them and clicking the Delete Proximities or Delete Networks buttons.  "
+            "Proximities and PFnets for demo purposes.  The examples will be deleted "
+            "when you uncheck the Intro Info box.  "
+            "The examples will be added back when you check the Intro Info box again. "
+            'Anything you add will be preserved when you uncheck the Intro Info box. '
             "Use the examples to explore the functionality of the application.  Load your own "
             "data files whenever you like.  Enjoy!"
     )
@@ -201,8 +202,8 @@ if show_intro_info:
     st.subheader("Required .xlsx Proximity File Format")
     st.info("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
     st.dataframe(prx_file_format, use_container_width=False, hide_index=False)
-# else:
-#     del_demo(col)
+else:
+    del_demo(col)
 
 st.subheader("Proximity Information")
 prx_info_df = col.get_proximity_info()
@@ -361,19 +362,19 @@ with netlist:
 
 # --- net Visualization
 # This block will execute if pf_name is present
-if st.session_state.pf_name:
+if st.session_state.pf_name and st.session_state.pf_name in col.pfnets:
     pf = col.pfnets[st.session_state.pf_name]
     if st.session_state.new_layout:
         pf.get_layout(method=st.session_state.layout)
         st.session_state.pic = Netpic(net=pf)
-        #st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
         make_fig(font_size=st.session_state.font_size)
 
-    st.session_state.count += 1
-    st.session_state.view = st.pyplot(fig=st.session_state.fig, use_container_width=False)
     st.write(f"{pf.name}: {pf.nnodes} nodes {pf.nlinks} links, "
-            f"using {st.session_state.layout} layout {st.session_state.count}")
+              f"using {st.session_state.layout} layout {st.session_state.count}")
+
+    st.session_state.view = st.pyplot(fig=st.session_state.fig, use_container_width=False)
+
     st.session_state.new_layout = False
-    #st.write(f"Event: {st.session_state.ekey}")
+    st.session_state.count += 1
 else:
-    st.warning("No network selected.")
+    st.warning("No network created.")
