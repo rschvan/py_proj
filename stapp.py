@@ -35,19 +35,6 @@ def get_collection_instance():
     col = copy.deepcopy(sample_col) # copy for info runs
     sample_sources:pd.DataFrame = sample["sources"] # DataFrame with sources of sample Proximities
     prx_file_format:pd.DataFrame = file_format() # DataFrame with sample .xlsx proximity file contents
-    #st.session_state.pf_name = col.pfnets["bank6_pf"].name
-    #pf = col.pfnets[st.session_state.pf_name]
-    #st.session_state.layout = "kamada_kawai"
-    #pf.get_layout(method=st.session_state.layout)
-    #st.session_state.pic = Netpic(pf)
-    #st.session_state.font_size = 10
-    #make_fig(font_size=st.session_state.font_size)
-    #st.session_state.lastlo = st.session_state.layout
-    #st.session_state.new_layout = True
-    #st.session_state.count = 0
-    #st.session_state.q_param = np.inf
-    #st.session_state.r_param = np.inf
-    #st.session_state.ekey = None
     return col, sample_col, sample_sources, prx_file_format
 
 def cb(event):
@@ -81,29 +68,19 @@ col, sample_col, sample_sources, prx_file_format = get_collection_instance()
 # --- Initialize session state (runs once per user session) ---
 if 'pf_name' not in st.session_state:
     st.session_state.pf_name = col.pfnets["bank6_pf"].name
-if 'layout' not in st.session_state:
     st.session_state.layout = "kamada_kawai"
-if 'pic' not in st.session_state:
-    st.session_state.pic = Netpic(col.pfnets[st.session_state.pf_name])
-if 'font_size' not in st.session_state:
     st.session_state.font_size = 10
-if 'lastlo' not in st.session_state:
-    st.session_state.lastlo = st.session_state.layout
-if 'new_layout' not in st.session_state:
-    st.session_state.new_layout = True
-if 'count' not in st.session_state:
-    st.session_state.count = 0
-if 'q_param' not in st.session_state:
-    st.session_state.q_param = np.inf
-if 'r_param' not in st.session_state:
-    st.session_state.r_param = np.inf
-if 'ekey' not in st.session_state:
-    st.session_state.ekey = None
-if 'fig' not in st.session_state:
+    # Initial figure creation
     pf = col.pfnets[st.session_state.pf_name]
     pf.get_layout(method=st.session_state.layout)
     st.session_state.pic = Netpic(pf)
     make_fig(font_size=st.session_state.font_size)
+    st.session_state.lastlo = st.session_state.layout
+    st.session_state.new_layout = True
+    st.session_state.count = 0
+    st.session_state.q_param = np.inf
+    st.session_state.r_param = np.inf
+    st.session_state.ekey = None
 
 # --- Sidebar for Global Actions ---
 with st.sidebar:
@@ -159,7 +136,6 @@ with st.sidebar:
     def toggle_weights():
         st.session_state.pic.toggle_weights()
 
-
     #@st.fragment
     def change_font_size():
         st.session_state.pic.change_font_size(st.session_state.font_size)
@@ -169,7 +145,7 @@ with st.sidebar:
         if st.button('toggle weights'):
             toggle_weights()
 
-        st.number_input("font Size", min_value=5, max_value=20,step=1, key="font_size",
+        st.number_input("font size", min_value=5, max_value=20,step=1, key="font_size",
                         on_change=change_font_size)
     with red:
         if st.button("redraw net"):
@@ -394,7 +370,7 @@ if st.session_state.pf_name:
         make_fig(font_size=st.session_state.font_size)
 
     st.session_state.count += 1
-    st.session_state.view = st.pyplot(fig=st.session_state.fig)
+    st.session_state.view = st.pyplot(fig=st.session_state.fig, use_container_width=False)
     st.write(f"{pf.name}: {pf.nnodes} nodes {pf.nlinks} links, "
             f"using {st.session_state.layout} layout {st.session_state.count}")
     st.session_state.new_layout = False
