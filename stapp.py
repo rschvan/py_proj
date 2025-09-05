@@ -71,6 +71,19 @@ if 'pf_name' not in st.session_state:
     st.session_state.pf_name = col.pfnets["bank6_pf"].name
     st.session_state.layout = "kamada_kawai"
     st.session_state.font_size = 10
+    delold = []
+    for prx in col.proximities.keys():
+        if prx not in sample_col.proximities.keys():
+            delold.append(prx)
+    for prx in delold:
+        col.proximities.pop(prx)
+    delold = []
+    for pf in col.pfnets.keys():
+        if pf not in sample_col.pfnets.keys():
+            delold.append(pf)
+    for pf in delold:
+        col.pfnets.pop(pf)
+
     # Initial figure creation
     pf = col.pfnets[st.session_state.pf_name]
     pf.get_layout(method=st.session_state.layout)
