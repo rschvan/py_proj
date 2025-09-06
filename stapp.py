@@ -259,7 +259,7 @@ with prxlist:
     if not prx_names:
         st.info("No Proximity objects loaded yet.")
     else:
-        st.info("Click in first column to select:")
+        st.info("Click in first column (not Name) to select:")
         prx_df = pd.DataFrame({"Name": prx_names})
         selected_prxs_data = st.dataframe(
             prx_df,
