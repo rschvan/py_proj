@@ -178,6 +178,7 @@ st.title("PyPathfinder")
 # Intro Info
 if show_intro_info:
     st.subheader("Welcome to PyPathfinder!")
+    st.link_button("Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
     st.info("Intro info adds an example of the required Proximity file format and sample "
             "Proximities and PFnets for demo purposes.  The examples will be deleted "
             "when you uncheck the Intro Info box.  "
