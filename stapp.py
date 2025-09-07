@@ -32,18 +32,14 @@ def get_collection_instance():
     """
     sample = sample_data()
     sample_col:Collection = sample["collection"] # Collection with sample Proximitys and PFnets
-    col = copy.deepcopy(sample_col) # copy for info runs
     sample_sources:pd.DataFrame = sample["sources"] # DataFrame with sources of sample Proximities
     prx_file_format:pd.DataFrame = file_format() # DataFrame with sample .xlsx proximity file contents
-    return col, sample_col, sample_sources, prx_file_format
-
-def cb(event):
-    st.write(event.key)
+    return sample_col, sample_sources, prx_file_format
 
 def make_fig(font_size=10):
     pic = st.session_state.pic
     fig = pic.create_view(font_size=font_size)
-    fig.canvas.mpl_connect('button_press_event', cb)
+    fig.canvas.mpl_connect('button_press_event', pic._on_press)
     fig.canvas.mpl_connect('motion_notify_event', pic._on_motion)
     fig.canvas.mpl_connect('button_release_event', pic._on_release)
     st.session_state.fig = fig
@@ -62,27 +58,16 @@ def del_demo(col):
         if demopf in col.pfnets:
             del col.pfnets[demopf]
 
+# get app data
+sample_col, sample_sources, prx_file_format = get_collection_instance()
 
-# get app data and initialize st.session_state
-col, sample_col, sample_sources, prx_file_format = get_collection_instance()
-
-# --- Initialize session state (runs once per user session) ---
+# initialize session state (runs once per user session)
 if 'pf_name' not in st.session_state:
+    st.session_state.col = copy.deepcopy(sample_col)
+    col = st.session_state.col
     st.session_state.pf_name = col.pfnets["bank6_pf"].name
     st.session_state.layout = "kamada_kawai"
     st.session_state.font_size = 10
-    delold = []
-    for prx in col.proximities.keys():
-        if prx not in sample_col.proximities.keys():
-            delold.append(prx)
-    for prx in delold:
-        col.proximities.pop(prx)
-    delold = []
-    for pf in col.pfnets.keys():
-        if pf not in sample_col.pfnets.keys():
-            delold.append(pf)
-    for pf in delold:
-        col.pfnets.pop(pf)
 
     # Initial figure creation
     pf = col.pfnets[st.session_state.pf_name]
@@ -94,6 +79,8 @@ if 'pf_name' not in st.session_state:
     st.session_state.count = 0
     st.session_state.q_param = np.inf
     st.session_state.r_param = np.inf
+
+col = st.session_state.col # alias for easy reference
 
 # --- Sidebar for Global Actions ---
 with st.sidebar:
@@ -188,7 +175,7 @@ if show_intro_info:
             "data files whenever you like.  Enjoy!"
     )
 
-# ---Upload Files---
+# ---Upload Files and Create Proximities---
 uploaded_files =  None
 st.subheader("Add Proximity Files")
 uploaded_files = st.file_uploader("Upload Proximity Excel (.xlsx)", type=["xlsx"], accept_multiple_files=True,
@@ -204,7 +191,6 @@ for uploaded_file in uploaded_files:
                 f.write(uploaded_file.getbuffer())
             new_prx = Proximity(temp_file_path)
             col.add_proximity(new_prx)
-            #st.success(f"Proximity '{new_prx.name}' added successfully!")
             os.remove(temp_file_path)
         except Exception as e:
             st.error(f"Error processing file: {e}")
