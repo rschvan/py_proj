@@ -165,15 +165,24 @@ st.title("PyPathfinder")
 # Intro Info
 if show_intro_info:
     st.subheader("Welcome to PyPathfinder!")
-    st.link_button("Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
-    st.info("Intro info adds an example of the required Proximity file format and sample "
-            "Proximities and PFnets for demo purposes.  The examples will be deleted "
+    st.link_button("Pathfinder Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
+    if st.button("PyPathfinder Demo Video", key="vid_button"):
+        st.video("pypf/data/pypf demo.mp4")
+    st.info("Intro info adds access to information about Pathfinder and a video demo of the app.  "
+            "It also loads an example of the required Proximity file format and sample "
+            "Proximities and PFnets for demo purposes.  These elements will be deleted "
             "when you uncheck the Intro Info box.  "
-            "The examples will be added back when you check the Intro Info box again. "
+            "The elements will be added back when you check the Intro Info box again. "
             'Anything you add will be preserved when you uncheck the Intro Info box. '
             "Use the examples to explore the functionality of the application.  Load your own "
             "data files whenever you like.  Enjoy!"
     )
+    add_demo(col)
+    st.subheader("Required .xlsx Proximity File Format")
+    st.info("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
+    st.dataframe(prx_file_format, use_container_width=False, hide_index=False)
+else:
+    del_demo(col)
 
 # ---Upload Files and Create Proximities---
 uploaded_files =  None
@@ -196,15 +205,6 @@ for uploaded_file in uploaded_files:
             st.error(f"Error processing file: {e}")
 uploaded_files = []
 
-# ---show intro if checked---
-if show_intro_info:
-    add_demo(col)
-    st.subheader("Required .xlsx Proximity File Format")
-    st.info("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
-    st.dataframe(prx_file_format, use_container_width=False, hide_index=False)
-else:
-    del_demo(col)
-
 st.subheader("Proximity Information")
 prx_info_df = col.get_proximity_info()
 if not prx_info_df.empty:
@@ -214,6 +214,7 @@ else:
 
 # ---conditional displays---
 if show_intro_info:
+    st.subheader("Sources of sample Proximities")
     st.dataframe(sample_sources, use_container_width=False, hide_index=True)
 
 if show_corrs and len(col.proximities) > 1:
