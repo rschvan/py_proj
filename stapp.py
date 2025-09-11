@@ -84,7 +84,7 @@ col = st.session_state.col # alias for easy reference
 
 # --- Sidebar for Global Actions ---
 with st.sidebar:
-    st.subheader("App Controls")
+    #st.subheader("App Controls")
     show_intro_info = st.checkbox("Intro Info", value=True, key="show_intro_info")
     show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
     show_net_info = st.checkbox("Network Info", value=False, key="show_net_info")
@@ -120,7 +120,7 @@ with st.sidebar:
                 rval = "inf"
     st.write("layout:")
 
-    fx, fy, sxy = st.columns(3)
+    fx, fy, sxy = st.columns([5,5,6], gap="small")
     with fx:
         if st.button("flipx"):
             st.session_state.fig.axes[0].invert_xaxis()
@@ -145,18 +145,19 @@ with st.sidebar:
         if st.button('toggle weights'):
             toggle_weights()
 
-        st.number_input("font size", min_value=5, max_value=20,step=1, key="font_size",
-                        on_change=change_font_size)
     with red:
         if st.button("redraw net"):
             st.session_state.new_layout = True
 
-        st.selectbox("layout method", ["kamada_kawai", "dot", "neato", "circo", "gravity", "spring",
-                                       "distance"], index=0, key="layout",)
+    st.selectbox("layout method", ["kamada_kawai", "dot", "neato", "circo", "gravity", "spring",
+                                   "distance"], index=0, key="layout",)
 
-        if st.session_state.lastlo != st.session_state.layout:
-            st.session_state.lastlo = st.session_state.layout
-            st.session_state.new_layout = True
+    if st.session_state.lastlo != st.session_state.layout:
+        st.session_state.lastlo = st.session_state.layout
+        st.session_state.new_layout = True
+
+    st.number_input("font size", min_value=5, max_value=20,step=1, key="font_size",
+                    on_change=change_font_size)
 
 # --- Main Content Area ---
 
@@ -185,25 +186,27 @@ else:
     del_demo(col)
 
 # ---Upload Files and Create Proximities---
-uploaded_files =  None
 st.subheader("Add Proximity Files")
-uploaded_files = st.file_uploader("Upload Proximity Excel (.xlsx)", type=["xlsx"], accept_multiple_files=True,
-                        help="Upload one or more Proximity Excel files (.xlsx) to add to the collection.")
-for uploaded_file in uploaded_files:
-    if uploaded_file is not None:
-        try:
-            # Save uploaded file temporarily for processing
-            temp_dir = "temp_uploads"
-            os.makedirs(temp_dir, exist_ok=True)
-            temp_file_path = os.path.join(temp_dir, uploaded_file.name)
-            with open(temp_file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            new_prx = Proximity(temp_file_path)
-            col.add_proximity(new_prx)
-            os.remove(temp_file_path)
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-uploaded_files = []
+uploaded_files = st.file_uploader("Upload Proximity Excel (.xlsx)", type=["xlsx","xls"],
+                    accept_multiple_files=True,
+                    help="Upload one or more Proximity Excel files (.xlsx) to add to the collection.",
+                    key=None)
+if uploaded_files is not None:
+    for uploaded_file in uploaded_files:
+        if uploaded_file is not None:
+            try:
+                # Save uploaded file temporarily for processing
+                temp_dir = "temp_uploads"
+                os.makedirs(temp_dir, exist_ok=True)
+                temp_file_path = os.path.join(temp_dir, uploaded_file.name)
+                with open(temp_file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                new_prx = Proximity(temp_file_path)
+                col.add_proximity(new_prx)
+                os.remove(temp_file_path)
+            except Exception as e:
+                st.error(f"Error processing file: {e}")
+uploaded_files = None
 
 st.subheader("Proximity Information")
 prx_info_df = col.get_proximity_info()
