@@ -173,7 +173,7 @@ with st.sidebar:
 
     with fs:
         st.number_input("font size", min_value=5, max_value=20, step=1, key="font_size",
-                        value=st.session_state.font_size, on_change=change_font_size)
+                        on_change=change_font_size)
 
 # --- Main Content Area ---
 
