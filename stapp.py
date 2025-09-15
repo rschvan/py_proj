@@ -1,4 +1,5 @@
 # stapp.py: streamlit interface
+import math
 import sys
 import os
 import streamlit as st
@@ -58,6 +59,26 @@ def del_demo(col):
         if demopf in col.pfnets:
             del col.pfnets[demopf]
 
+def do_rotation():
+    rotation = st.session_state.rotation
+    coords = st.session_state.pic.net.coords
+    # rotate code
+    theta_rad = math.radians(rotation)
+    # Create the 2x2 rotation matrix
+    cos_theta = np.cos(theta_rad)
+    sin_theta = np.sin(theta_rad)
+    rotation_matrix = np.array([[cos_theta, -sin_theta],
+                                [sin_theta, cos_theta]])
+    # Perform the rotation by matrix multiplication
+    # (n x 2) @ (2 x 2) -> (n x 2)
+    st.session_state.pic.net.coords = coords @ rotation_matrix
+    st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+    st.session_state.new_layout = False
+    time.sleep(0.5)
+    st.session_state.rotation = 0
+    #st.write(rotation)
+
+
 # get app data
 sample_col, sample_sources, prx_file_format = get_collection_instance()
 
@@ -87,77 +108,72 @@ with st.sidebar:
     #st.subheader("App Controls")
     show_intro_info = st.checkbox("Intro Info", value=True, key="show_intro_info")
     show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
-    show_net_info = st.checkbox("Network Info", value=False, key="show_net_info")
+    show_net_info = False #st.checkbox("Network Info", value=False, key="show_net_info")
     show_netsim = st.checkbox("Network Similarity", value=False, key="show_netsim")
     ave_method = st.radio("Averaging Method",["mean","median"], index=0, )
-    #st.markdown("")
-    net_type = st.radio("Network Type",["Pathfinder","Threshold", "Nearest Neighbor"],
+
+    type, params = st.columns([4, 5])
+    with type:
+        net_type = st.radio("Network Type",["Pathfinder","Threshold", "Nearest Neighbor"],
                         index=0, )
-    if net_type == "Pathfinder":
-        qv, rv = st.columns(2)
-        with qv:
-            qval = st.text_input("q-value", value="inf", key="qval")
-        with rv:
-
-            rval = st.text_input("r-value", value="inf", key="rval")
-        qval = qval.lower()
-        if qval == "" or qval == "inf" or qval.__contains__("n"):
-            st.session_state.q_param = np.inf
-        else:
-            try:
-                st.session_state.q_param = int(qval)
-            except:
+        st.subheader("Layout")
+    with params:
+        if net_type == "Pathfinder":
+            qval = st.text_input("q-value (2 - inf)", value="inf", key="qval")
+            rval = st.text_input("r-value (1.0 - inf)", value="inf", key="rval")
+            qval = qval.lower()
+            if qval == "" or qval == "inf" or qval.__contains__("n"):
                 st.session_state.q_param = np.inf
-                qval = "inf"
-        rval = rval.lower()
-        if rval == "" or rval == "inf":
-            st.session_state.r_param = np.inf
-        else:
-            try:
-                st.session_state.r_param = float(rval)
-            except:
+            else:
+                try:
+                    st.session_state.q_param = int(qval)
+                except:
+                    st.session_state.q_param = np.inf
+                    qval = "inf"
+            rval = rval.lower()
+            if rval == "" or rval == "inf":
                 st.session_state.r_param = np.inf
-                rval = "inf"
-    st.write("layout:")
+            else:
+                try:
+                    st.session_state.r_param = float(rval)
+                except:
+                    st.session_state.r_param = np.inf
+                    rval = "inf"
 
-    fx, fy, sxy = st.columns([5,5,6], gap="small")
+    fx, fy, red = st.columns([5,5,6], gap="small")
     with fx:
         if st.button("flipx"):
             st.session_state.fig.axes[0].invert_xaxis()
     with fy:
         if st.button("flipy"):
             st.session_state.fig.axes[0].invert_yaxis()
-    with sxy:
-        if st.button("swapxy"):
-            st.session_state.pic.net.coords[:, [0, 1]] = st.session_state.pic.net.coords[:, [1, 0]]
-            st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
-
-    #@st.fragment
-    def toggle_weights():
-        st.session_state.pic.toggle_weights()
-
-    #@st.fragment
-    def change_font_size():
-        st.session_state.pic.change_font_size(st.session_state.font_size)
-
-    tw, red = st.columns(2)
-    with tw:
-        if st.button('toggle weights'):
-            toggle_weights()
-
     with red:
-        if st.button("redraw net"):
+        if st.button("redraw"):
             st.session_state.new_layout = True
+            # st.session_state.pic.net.coords[:, [0, 1]] = st.session_state.pic.net.coords[:, [1, 0]]
+            # st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+    # rotation
+    rotate = st.slider("clockwise rotation by degrees (0 - 360)", 0, 360, key="rotation", on_change=do_rotation)
 
-    st.selectbox("layout method", ["kamada_kawai", "dot", "neato", "circo", "gravity", "spring",
+    st.selectbox("layout method", ["kamada_kawai", "neato", "force", "gravity", "spring", "spiral", "circle",
                                    "distance"], index=0, key="layout",)
 
     if st.session_state.lastlo != st.session_state.layout:
         st.session_state.lastlo = st.session_state.layout
         st.session_state.new_layout = True
 
-    st.number_input("font size", min_value=5, max_value=20,step=1, key="font_size",
-                    on_change=change_font_size)
+    #@st.fragment
+    def change_font_size():
+        st.session_state.pic.change_font_size(st.session_state.font_size)
+
+    tw, fs = st.columns([3, 3])
+    with tw:
+        if st.button('toggle weights'):
+            st.session_state.pic.toggle_weights()
+
+    with fs:
+        st.number_input("font size", min_value=5, max_value=20, step=1, key="font_size",
+                        value=st.session_state.font_size, on_change=change_font_size)
 
 # --- Main Content Area ---
 
@@ -179,17 +195,17 @@ if show_intro_info:
             "data files whenever you like.  Enjoy!"
     )
     add_demo(col)
-    st.subheader("Required .xlsx Proximity File Format")
+    st.subheader("Required .xlsx or .csv Proximity File Format")
     st.info("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
-    st.dataframe(prx_file_format, use_container_width=False, hide_index=False)
+    st.dataframe(prx_file_format, width='content', hide_index=False)
 else:
     del_demo(col)
 
 # ---Upload Files and Create Proximities---
 st.subheader("Add Proximity Files")
-uploaded_files = st.file_uploader("Upload Proximity Excel (.xlsx)", type=["xlsx","xls"],
+uploaded_files = st.file_uploader("Upload Proximity Files (.xlsx or .csv)", type=["xlsx","csv"],
                     accept_multiple_files=True,
-                    help="Upload one or more Proximity Excel files (.xlsx) to add to the collection.",
+                    help="Upload one or more Proximity files (.xlsx or .csv) to add to the collection.",
                     key=None)
 if uploaded_files is not None:
     for uploaded_file in uploaded_files:
@@ -206,31 +222,31 @@ if uploaded_files is not None:
                 os.remove(temp_file_path)
             except Exception as e:
                 st.error(f"Error processing file: {e}")
-uploaded_files = None
+    uploaded_files.clear()
 
 st.subheader("Proximity Information")
 prx_info_df = col.get_proximity_info()
 if not prx_info_df.empty:
-    st.dataframe(prx_info_df, use_container_width=False, hide_index=True)
+    st.dataframe(prx_info_df, width='content', hide_index=True)
 else:
     st.info("No Proximity objects loaded yet.")
 
 # ---conditional displays---
 if show_intro_info:
     st.subheader("Sources of sample Proximities")
-    st.dataframe(sample_sources, use_container_width=False, hide_index=True)
+    st.dataframe(sample_sources, width='content', hide_index=True)
 
 if show_corrs and len(col.proximities) > 1:
     st.subheader("Proximity Correlations")
     prx_corrs_df = col.get_proximity_correlations()
     if not prx_corrs_df.empty:
-        st.dataframe(prx_corrs_df, use_container_width=False, hide_index=False)
+        st.dataframe(prx_corrs_df, width='content', hide_index=False)
 
 if show_net_info and len(col.pfnets) > 0:
     st.subheader("Network Information")
     pfnet_info_df = col.get_pfnet_info()
     if not pfnet_info_df.empty:
-        st.dataframe(pfnet_info_df, use_container_width=False, hide_index=True)
+        st.dataframe(pfnet_info_df, width='content', hide_index=True)
     else:
         st.info("No PFnet objects loaded yet.")
 
@@ -238,7 +254,7 @@ if show_netsim and len(col.pfnets) > 1:
     st.subheader("Network Similarity")
     sim_df = col.network_similarity()
     if not sim_df.empty:
-        st.dataframe(sim_df, use_container_width=False, hide_index=False)
+        st.dataframe(sim_df, width='content', hide_index=False)
     else:
         st.info("No PFnet objects loaded yet.")
 
@@ -250,11 +266,11 @@ with prxlist:
     if not prx_names:
         st.info("No Proximity objects loaded yet.")
     else:
-        st.info("Click in first column (not Name) to select:")
+        st.info("Click in box left of Name column to select:")
         prx_df = pd.DataFrame({"Name": prx_names})
         selected_prxs_data = st.dataframe(
             prx_df,
-            use_container_width=True,
+            width='stretch',
             height=400,  # Set a fixed height to make it look more like a listbox
             hide_index=True,  # Hide index as 'Name' column is present
             selection_mode=["multi-row"],  # Enable multi-row selection, using working syntax
@@ -320,7 +336,7 @@ with netlist:
 
         selected_nets_data = st.dataframe(
             pfnet_df,
-            use_container_width=True,
+            width='stretch',
             height=400,  # Set a fixed height
             hide_index=True,  # Hide index
             selection_mode=["multi-row"],  # Enable multi-row selection, using working syntax
@@ -355,7 +371,7 @@ with netlist:
                     except Exception as e:
                         st.error(f"Error merging networks: {e}")
                 else:
-                    st.warning("Please select at least two PFnets to merge.")
+                    st.warning("Please select at least two networks to merge.")
         with dispnet:
             if st.button("Display Network", key="display_net_btn"):
                 if len(col.selected_nets) == 1:
@@ -376,7 +392,7 @@ if st.session_state.pf_name and st.session_state.pf_name in col.pfnets:
     st.write(f"{pf.name}: {pf.nnodes} nodes {pf.nlinks} links, "
               f"using {st.session_state.layout} layout {st.session_state.count}")
 
-    st.session_state.view = st.pyplot(fig=st.session_state.fig, use_container_width=False)
+    st.pyplot(fig=st.session_state.fig, width='content')
 
     st.session_state.new_layout = False
     st.session_state.count += 1
