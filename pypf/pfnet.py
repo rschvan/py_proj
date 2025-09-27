@@ -84,7 +84,7 @@ class PFnet:
                     self.adjmat = np.copy(self.dismat)
                     for i in range(self.nnodes):
                         for j in range(self.nnodes):
-                            if self.dismat[i,j] != min_neighbor_val[i]:
+                            if self.dismat[i,j] == np.inf or self.dismat[i,j] != min_neighbor_val[i]:
                                 self.adjmat[i,j] = 0
                     self.nlinks = np.count_nonzero(self.adjmat)
                 case "th": # threshold
@@ -101,7 +101,8 @@ class PFnet:
                     cut = values[self.nnodes-1]
                     links = (self.dismat < np.inf) & (self.dismat <= cut)
                     self.adjmat = np.copy(self.dismat)
-                    self.adjmat = self.adjmat * links
+                    #self.adjmat = self.adjmat * links
+                    self.adjmat[~links] = 0
                     self.nlinks = np.count_nonzero(self.adjmat)
                     if not self.isdirected:
                         self.nlinks = int(self.nlinks / 2)
@@ -210,6 +211,8 @@ class PFnet:
                     layout = graphviz_layout(graph, prog='fdp', root=root)
                 case "circo":
                     layout = graphviz_layout(graph, prog='circo', root=root)
+                case "link distances":
+                    layout = nx.kamada_kawai_layout(graph, weight='weight', pos=randpos)
                 case "distance":
                     dis = self.dismat.copy()
                     # make dis symmetrical using min
@@ -261,12 +264,16 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import networkx as nx
     from pypf.netpic import Netpic
-    prx = Proximity("data/statecaps.prx.xlsx")
-    net = PFnet(prx, q=2, r=2, type="pf")
-    net.get_layout(method="kamda-kawai")
-    pic = Netpic(net)
-    fig = pic.create_view()
-    fig.show()
+    ap = Proximity("data/attn_example.csv")
+    an = PFnet(ap)
+    an.netprint()
+
+    # prx = Proximity("data/statecaps.prx.xlsx")
+    # net = PFnet(prx, q=2, r=2, type="pf")
+    # net.get_layout(method="kamda-kawai")
+    # pic = Netpic(net)
+    # fig = pic.create_view()
+    # fig.show()
 
 
     # print(net.coords)

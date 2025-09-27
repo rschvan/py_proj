@@ -61,7 +61,7 @@ def average_proximity(proxes:list, method="mean"):
     ave_prx.coh = coherence(ave_prx.dismat, ave_prx.max)
     return ave_prx
 
-def canonical(coords:np.ndarray) -> np.ndarray:
+def canonical(coords:np.ndarray) -> np.ndarray | None:
 # returns canonical coordinates (-1 to 1) from input coordinates
     fcoords = coords.astype(np.float64)
     if fcoords.shape[1] != 2:
@@ -398,7 +398,6 @@ def map_indices_to_terms(list_of_index_lists: list[list[int]], terms: list[str])
 
 def merge_networks(nets):
     from pypf.pfnet import PFnet
-    from pypf.utility import graph_from_adjmat
     import copy
     n = len(nets)
     if n < 2:
@@ -421,7 +420,7 @@ def merge_networks(nets):
     mrg.mindis = None
     mrg.q = None
     mrg.r = None
-    mrg.isdirected = not (adj == adj.T).all()
+    mrg.isdirected = not np.array_equal(adj, adj.T)
     if not mrg.isdirected:
         mrg.nlinks = mrg.nlinks // 2
     mrg.graph = graph_from_adjmat(adj, mrg.terms)
@@ -509,14 +508,13 @@ def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
 
     if adj1.shape != adj2.shape:
         print("Incompatible nets")
-        return None
 
     adj1 = adj1.astype(bool)
     adj2 = adj2.astype(bool)
     n = adj1.shape[0]
 
     is_symmetric = np.array_equal(adj1, adj1.T) and np.array_equal(adj2, adj2.T)
-    n_possible_links = (n**2 - n) // 2
+    #n_possible_links = (n**2 - n) // 2
     mask = ~np.eye(n, dtype=bool)
 
     if is_symmetric:
@@ -549,6 +547,7 @@ def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
         variance = round(variance, 4)
     else:
         mean = np.nan
+        variance = np.nan
 
     adjcommon = common - mean if not np.isnan(mean) else np.nan
     adjsim = round(adjcommon / union, 4) if union > 0 and not np.isnan(adjcommon) else np.nan
@@ -566,7 +565,8 @@ def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
         "adjsimilarity": adjsim,
     }
 
-def newcoords(canonicalxy: np.ndarray, width: float, height: float, squeezex: float, squeezey: float) -> np.ndarray:
+def newcoords(canonicalxy: np.ndarray, width: float, height: float,
+              squeezex: float, squeezey: float) -> np.ndarray:
     """
     Transforms an ndarray of canonical 2D coordinates to fit within a defined
     width and height, applying squeeze factors to adjust the scaling of the

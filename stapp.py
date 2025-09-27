@@ -108,7 +108,7 @@ with st.sidebar:
     #st.subheader("App Controls")
     show_intro_info = st.checkbox("Intro Info", value=True, key="show_intro_info")
     show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
-    show_net_info = False #st.checkbox("Network Info", value=False, key="show_net_info")
+    show_net_info = st.checkbox("Network Info", value=False, key="show_net_info")
     show_netsim = st.checkbox("Network Similarity", value=False, key="show_netsim")
     ave_method = st.radio("Averaging Method",["mean","median"], index=0, )
 
@@ -181,23 +181,50 @@ st.title("PyPathfinder")
 
 # Intro Info
 if show_intro_info:
-    st.subheader("Welcome to PyPathfinder!")
-    st.link_button("Pathfinder Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
+    wel, wik = st.columns([3, 3])
+    with wel:
+        st.subheader("Welcome to PyPathfinder!")
+    with wik:
+        st.link_button("Pathfinder Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
     if st.button("PyPathfinder Demo Video", key="vid_button"):
-        st.video("pypf/data/pypf demo.mp4")
-    st.info("Intro info adds access to information about Pathfinder and a video demo of the app.  "
-            "It also loads an example of the required Proximity file format and sample "
-            "Proximities and PFnets for demo purposes.  These elements will be deleted "
-            "when you uncheck the Intro Info box.  "
-            "The elements will be added back when you check the Intro Info box again. "
-            'Anything you add will be preserved when you uncheck the Intro Info box. '
-            "Use the examples to explore the functionality of the application.  Load your own "
-            "data files whenever you like.  Enjoy!"
+        st.video("pypf/data/video_demo.mp4")
+
+    st.info('''Intro info adds access to information about Pathfinder and a video demo of the app. 
+            It also loads an example of the required Proximity file format and sample 
+            Proximities and PFnets for demo purposes.  These elements will be deleted 
+            when you uncheck the Intro Info box. The elements will be added back when you check 
+            the Intro Info box again. 
+            Anything you add will be preserved when you uncheck the Intro Info box. 
+            Use the examples to explore the functionality of the application.  Load your own 
+            data files whenever you like.  Enjoy!
+            '''
     )
     add_demo(col)
     st.subheader("Required .xlsx or .csv Proximity File Format")
-    st.info("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
+    st.write("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
     st.dataframe(prx_file_format, width='content', hide_index=False)
+    if st.button("More About Data Files"):
+        st.info(
+            """
+            Organize your data files just as shown in the example.  With n terms, the spreadsheet must consist 
+            of  n+1 rows and n+1 columns.  The first column must contain the n terms starting in row 2, 
+            the first row must contain the n terms starting in column 2.  The remaining cells contain the distances 
+            with 0’s on the diagonal, representing zero distance between an item and itself.  If the off-diagonal 
+            distances are symmetric around the diagonal, Pathfinder networks will be undirected.  Non-symmetric 
+            distances will result in directed Pathfinder networks.
+              
+            The values in the data matrix must 
+            be distances or dissimilarities where lower values mean smaller distances.  If your original data 
+            measure similarity, invert them to produce the data for PyPathfinder.  For example, invert measures 
+            like correlation or cosine using the formula ( d = 1 – c ) where d is distance and c is correlation 
+            or cosine.  If your data are similarities with higher values meaning more similar or more related, 
+            they can be transformed  using ( d = min + max – s ) where d is distance and s = similarity, 
+            min is the minimum s and max is the maximum s.  The minimum and maximum will remain the same with 
+            the order of values inverted.  An infinite distance 
+            results when anything other than a number is in a distance cell.  The cell can be empty or have 
+            the string “nan” or “inf” or “na” etcetera.   Infinite distances can never become a link in the networks 
+            created.
+            """)
 else:
     del_demo(col)
 
@@ -266,12 +293,13 @@ with prxlist:
     if not prx_names:
         st.info("No Proximity objects loaded yet.")
     else:
-        st.info("Click in box left of Name column to select:")
+        st.write("Click in the box left of Name column to select:")
+        height = min(600, 40 + 35*len(col.proximities))
         prx_df = pd.DataFrame({"Name": prx_names})
         selected_prxs_data = st.dataframe(
             prx_df,
             width='stretch',
-            height=400,  # Set a fixed height to make it look more like a listbox
+            height=height,  # Set a height to reflect contents
             hide_index=True,  # Hide index as 'Name' column is present
             selection_mode=["multi-row"],  # Enable multi-row selection, using working syntax
             key="prx_selection_df",
@@ -331,13 +359,14 @@ with netlist:
     if not pfnet_names:
         st.info("No PFnet objects loaded yet.")
     else:
-        st.info("Clicking at the top selects or deselects all:")
+        st.write("Clicking at the top selects or deselects all:")
+        height = min(600, 40 + 35 * len(col.pfnets))
         pfnet_df = pd.DataFrame({"Name": pfnet_names})
 
         selected_nets_data = st.dataframe(
             pfnet_df,
             width='stretch',
-            height=400,  # Set a fixed height
+            height=height,  # Set a fixed height
             hide_index=True,  # Hide index
             selection_mode=["multi-row"],  # Enable multi-row selection, using working syntax
             key="pfnet_selection_df",
