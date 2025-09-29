@@ -194,9 +194,14 @@ class Netpic:
                     self.ax.add_patch(edge)
                     self.edge_lines[(self.nodes[i], self.nodes[j])] = edge
 
+                    # add link weight at midpoint, initally not visible
+                    if (weight == round(weight)) or (weight < 1.0e-10):
+                        weight_string = f"{weight:.0f}"
+                    else:
+                        weight_string = f"{weight:.4g}"
                     weight_text = self.ax.text(
                         midpoint[0], midpoint[1],
-                        f'{weight:.0f}',
+                        weight_string,
                         ha='center', va='center',
                         fontsize=font_size * 0.8,
                         bbox=dict(facecolor='white', alpha=1, edgecolor='white',

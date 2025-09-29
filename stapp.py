@@ -265,6 +265,7 @@ if show_intro_info:
 
 if show_corrs and len(col.proximities) > 1:
     st.subheader("Proximity Correlations")
+    st.info("""Correlations of the distance data in pairs of equal sized data sets""")
     prx_corrs_df = col.get_proximity_correlations()
     if not prx_corrs_df.empty:
         st.dataframe(prx_corrs_df, width='content', hide_index=False)
@@ -279,6 +280,8 @@ if show_net_info and len(col.pfnets) > 0:
 
 if show_netsim and len(col.pfnets) > 1:
     st.subheader("Network Similarity")
+    st.info("""Similarity is the number of shared links 
+        divided by the number of unique links in two networks.""")
     sim_df = col.network_similarity()
     if not sim_df.empty:
         st.dataframe(sim_df, width='content', hide_index=False)

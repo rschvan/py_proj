@@ -56,6 +56,9 @@ class PFnet:
             if self.termsid == "":
                 self.termsid = get_termsid(self.terms)
 
+            links = np.full((self.nnodes, self.nnodes), True, dtype=bool)
+            np.fill_diagonal(links, False)
+
             match self.type:
                 case "pf":
                     self.name = self.name + "_pf"
@@ -86,7 +89,8 @@ class PFnet:
                         for j in range(self.nnodes):
                             if self.dismat[i,j] == np.inf or self.dismat[i,j] != min_neighbor_val[i]:
                                 self.adjmat[i,j] = 0
-                    self.nlinks = np.count_nonzero(self.adjmat)
+                                links[i,j] = 0
+                    self.nlinks = np.count_nonzero(links)
                 case "th": # threshold
                     self.q = None
                     self.r = None
@@ -99,15 +103,17 @@ class PFnet:
                         self.isdirected = True
                     values = np.sort(values)
                     cut = values[self.nnodes-1]
-                    links = (self.dismat < np.inf) & (self.dismat <= cut)
+                    links[self.dismat > cut] = False
                     self.adjmat = np.copy(self.dismat)
-                    #self.adjmat = self.adjmat * links
                     self.adjmat[~links] = 0
                     self.nlinks = np.count_nonzero(self.adjmat)
                     if not self.isdirected:
                         self.nlinks = int(self.nlinks / 2)
                 case _:
                     print("Error: PFnet type not valid")
+
+            np.fill_diagonal(links, False)
+            self.adjmat[links & (self.adjmat == 0)] = 1.0e-20
             self.eccentricity = eccentricity(self.adjmat)
             self.layers = self.shells(source=self.eccentricity["center"])
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
@@ -264,7 +270,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import networkx as nx
     from pypf.netpic import Netpic
-    ap = Proximity("data/attn_example.csv")
+    ap = Proximity("data/attn_example (14).csv")
     an = PFnet(ap)
     an.netprint()
 
