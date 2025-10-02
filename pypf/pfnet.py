@@ -168,9 +168,9 @@ class PFnet:
         info["nlinks"] = self.nlinks
         info["isdirected"] = self.isdirected
         info["type"] = self.type
-        info["q"] = self.q
-        info["r"] = self.r
-        return info # a list
+        info["q"] = f"{self.q:.0f}" if self.q else None
+        info["r"] = f"{self.r:g}" if self.r else None
+        return info # a dictionary
 
     def get_layout(self, method="gravity") -> dict:
         """
@@ -249,8 +249,9 @@ class PFnet:
         return {"layout": layout, "coord": coord, "canonical_coord": ccoord, "cannonical_layout": canonlo}
 
     def netprint(self, note=None):
-        print("\nPFnet Object:", note)
-        print(f"proximity: {self.proximity}")
+        if note is None:
+            note = self.name
+        print(f"Network: {note}")
         print(f"name: {self.name}")
         print(f"type: {self.type}")
         print(f"terms[0]: {self.terms[0]}")
@@ -270,9 +271,10 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import networkx as nx
     from pypf.netpic import Netpic
-    ap = Proximity("data/attn_example (14).csv")
+    ap = Proximity("data/psy.prx.xlsx")
     an = PFnet(ap)
     an.netprint()
+    print(an.get_info())
 
     # prx = Proximity("data/statecaps.prx.xlsx")
     # net = PFnet(prx, q=2, r=2, type="pf")

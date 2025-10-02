@@ -3,9 +3,6 @@ import math
 import sys
 import os
 import streamlit as st
-# --- Streamlit Application Layout (MUST BE FIRST Streamlit command) ---
-st.set_page_config(layout="wide")
-
 from pypf.netpic import Netpic
 import pandas as pd
 import numpy as np
@@ -17,6 +14,9 @@ from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 from pypf.utility import sample_data, file_format
 import time
+
+# --- Streamlit Application Layout (MUST BE FIRST Streamlit command) ---
+st.set_page_config(layout="wide")
 
 # Get the absolute path of the directory containing 'stapp.py' (which should be 'py_proj')
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -181,22 +181,30 @@ st.title("PyPathfinder")
 
 # Intro Info
 if show_intro_info:
+    if st.button("PyPathfinder Demo Video", key="vid_button"):
+        st.video("pypf/data/video_demo.mp4")
     wel, wik = st.columns([3, 3])
     with wel:
         st.subheader("Welcome to PyPathfinder!")
     with wik:
         st.link_button("Pathfinder Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
-    if st.button("PyPathfinder Demo Video", key="vid_button"):
-        st.video("pypf/data/video_demo.mp4")
 
-    st.info('''Intro info adds access to information about Pathfinder and a video demo of the app. 
+    st.info('''Intro info adds access to information about Pathfinder and the app 
+            including a video demo. 
             It also loads an example of the required Proximity file format and sample 
             Proximities and PFnets for demo purposes.  These elements will be deleted 
             when you uncheck the Intro Info box. The elements will be added back when you check 
             the Intro Info box again. 
             Anything you add will be preserved when you uncheck the Intro Info box. 
-            Use the examples to explore the functionality of the application.  Load your own 
-            data files whenever you like.  Enjoy!
+            Your files are not saved over sessions, but you can re-add them easily. 
+            \nDownload any table into a csv file by hovering at the top of the table and
+            clicking on the download icon. 
+            \nDownload a network figure into a png file by right clicking on it and selecting "Save image as".
+            \n Threshold networks show the links with smaller distances.  
+            \nLinks in Nearest neighbor networks point from a node to the nearest other node or nodes 
+            if there are ties.  
+            \nExplore the functionality of the application with the examples. Load your own 
+            data files whenever you like.
             '''
     )
     add_demo(col)
@@ -212,18 +220,17 @@ if show_intro_info:
             with 0’s on the diagonal, representing zero distance between an item and itself.  If the off-diagonal 
             distances are symmetric around the diagonal, Pathfinder networks will be undirected.  Non-symmetric 
             distances will result in directed Pathfinder networks.
-              
-            The values in the data matrix must 
+            \nThe values in the data matrix must 
             be distances or dissimilarities where lower values mean smaller distances.  If your original data 
             measure similarity, invert them to produce the data for PyPathfinder.  For example, invert measures 
             like correlation or cosine using the formula ( d = 1 – c ) where d is distance and c is correlation 
             or cosine.  If your data are similarities with higher values meaning more similar or more related, 
-            they can be transformed  using ( d = min + max – s ) where d is distance and s = similarity, 
+            they can be transformed  using ( d = min + max – s ) where d is dissimilarity and s = similarity, 
             min is the minimum s and max is the maximum s.  The minimum and maximum will remain the same with 
-            the order of values inverted.  An infinite distance 
-            results when anything other than a number is in a distance cell.  The cell can be empty or have 
-            the string “nan” or “inf” or “na” etcetera.   Infinite distances can never become a link in the networks 
-            created.
+            the order of values inverted. 
+            \nAn infinite distance results when anything other than a number is in a distance cell. 
+            The cell can be empty or have the string “nan” or “inf” or “na” etcetera. Infinite distances will 
+            never become links in the networks created.
             """)
 else:
     del_demo(col)
@@ -413,7 +420,6 @@ with netlist:
                     st.warning("Please select one network to display.")
 
 # --- net Visualization
-# This block will execute if pf_name is present
 if st.session_state.pf_name and st.session_state.pf_name in col.pfnets:
     pf = col.pfnets[st.session_state.pf_name]
     if st.session_state.new_layout:

@@ -139,10 +139,10 @@ class Proximity:
         print(f"termsid: {self.termsid}")
         print(f"dismat[0,1]: {self.dismat[0,1]}")
         print(f"issymmetric: {self.issymmetric}")
-        print(f"mean: {self.mean}")
-        print(f"sd: {self.sd}")
-        print(f"min: {self.min}")
-        print(f"max: {self.max}")
+        print(f"mean: {self.mean:.6g}")
+        print(f"sd: {self.sd:.6g}")
+        print(f"min: {self.min:.6g}")
+        print(f"max: {self.max:.6g}")
         print(f"coh: {self.coh}")
 
 if __name__ == "__main__":
