@@ -111,11 +111,12 @@ class Netpic:
         mid_point = (start_point + end_point) / 2
         return start_point, end_point, mid_point
 
-    def create_view(self, font_size=10):
+    def create_view(self, font_size=10) -> plt.Figure:
         """
         Creates and returns a matplotlib figure with the network plot.
         The plot's properties are determined by the input arguments.
         """
+        from pypf.utility import split_long_term
         self.fig, self.ax = plt.subplots(figsize=(9, 9))
         self.ax.set_aspect('equal', adjustable='box')
         self.ax.set_xlim(-1.1, 1.1)
@@ -131,7 +132,8 @@ class Netpic:
 
         for i, node in enumerate(self.nodes):
             x, y = coords[i]
-            text_obj = self.ax.text(x, y, node, ha='center', va='center', fontsize=font_size,
+            plot_node = split_long_term(node)
+            text_obj = self.ax.text(x, y, plot_node, ha='center', va='center', fontsize=font_size,
                                     bbox=dict(facecolor='white', alpha=0, edgecolor='white',
                                     boxstyle='round,pad=0.3',),
                                     picker=True, alpha=1, zorder=2, visible=True,)

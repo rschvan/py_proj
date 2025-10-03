@@ -666,6 +666,32 @@ def sample_data() -> dict:
     dic["net_plot"] = Netpic(ex)
     return dic
 
+def split_long_term(term):
+    n = len(term)
+    if n < 14:
+        return term
+    sep = [' ','_','-', '.',',']
+    mid = n/2
+    loc = []
+    for i in range(n):
+        if term[i] in sep:
+            loc.append(i)
+    if loc:
+        mind = n + 1
+        minp = loc[0]
+        for pos in loc:
+            dis = abs(pos-mid)
+            if dis < mind:
+                mind = dis
+                minp = pos
+        return term[0:minp] + '\n' + term[minp+1:n]
+    else:
+        if n > 20:
+            mid = round(n/2)
+            return term[0:mid] + '-\n' + term[mid+1:n]
+        else:
+            return term
+
 if __name__ == '__main__':
     # from pypf.pfnet import PFnet
     # from pypf.proximity import Proximity

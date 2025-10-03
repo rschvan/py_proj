@@ -211,7 +211,7 @@ if show_intro_info:
     st.subheader("Required .xlsx or .csv Proximity File Format")
     st.write("Example file ( bank6.prx.xlsx ): terms on Rows and Columns.  Distance values in Matrix.")
     st.dataframe(prx_file_format, width='content', hide_index=False)
-    if st.button("More About Data Files"):
+    if True: #st.button("More About Data Files"):
         st.info(
             """
             Organize your data files just as shown in the example.  With n terms, the spreadsheet must consist 
@@ -219,17 +219,18 @@ if show_intro_info:
             the first row must contain the n terms starting in column 2.  The remaining cells contain the distances 
             with 0’s on the diagonal, representing zero distance between an item and itself.  If the off-diagonal 
             distances are symmetric around the diagonal, Pathfinder networks will be undirected.  Non-symmetric 
-            distances will result in directed Pathfinder networks.
+            distances will result in directed Pathfinder networks where row items point to column items.
             \nThe values in the data matrix must 
             be distances or dissimilarities where lower values mean smaller distances.  If your original data 
             measure similarity, invert them to produce the data for PyPathfinder.  For example, invert measures 
-            like correlation or cosine using the formula ( d = 1 – c ) where d is distance and c is correlation 
-            or cosine.  If your data are similarities with higher values meaning more similar or more related, 
+            like correlation, cosine, or probability using the formula ( d = 1 – c ) where d is distance and c 
+            is correlation, cosine, or probability.
+            If your data are similarities with higher values meaning more similar or more related, 
             they can be transformed  using ( d = min + max – s ) where d is dissimilarity and s = similarity, 
             min is the minimum s and max is the maximum s.  The minimum and maximum will remain the same with 
             the order of values inverted. 
-            \nAn infinite distance results when anything other than a number is in a distance cell. 
-            The cell can be empty or have the string “nan” or “inf” or “na” etcetera. Infinite distances will 
+            \nAn infinite distance results when anything other than a finite real number is in a distance cell. 
+            The cell can be empty or have the string “nan” or “inf” or “na” etc. Infinite distances will 
             never become links in the networks created.
             """)
 else:
