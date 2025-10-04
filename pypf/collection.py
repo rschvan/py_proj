@@ -181,6 +181,7 @@ if __name__ == "__main__":
     bpf = PFnet(bx)
     col.add_pfnet(bpf)
     col.selected_prxs = ["psy", "bio"]
+
     col.selected_nets = ["psy_pf", "bio_pf"]
     #
     # col.network_link_list()

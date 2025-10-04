@@ -37,19 +37,13 @@ def get_collection_instance():
     prx_file_format:pd.DataFrame = file_format() # DataFrame with sample .xlsx proximity file contents
     return sample_col, sample_sources, prx_file_format
 
-def make_fig(font_size=10):
-    pic = st.session_state.pic
-    fig = pic.create_view(font_size=font_size)
-    fig.canvas.mpl_connect('button_press_event', pic._on_press)
-    fig.canvas.mpl_connect('motion_notify_event', pic._on_motion)
-    fig.canvas.mpl_connect('button_release_event', pic._on_release)
-    st.session_state.fig = fig
-
 def add_demo(col):
     for px in sample_col.proximities.values():
-        col.add_proximity(px)
+        if px.name not in st.session_state.deleted_prxs:
+            col.add_proximity(px)
     for pf in sample_col.pfnets.values():
-        col.add_pfnet(pf)
+        if pf.name not in st.session_state.deleted_pfnets:
+            col.add_pfnet(pf)
 
 def del_demo(col):
     for demoprx in sample_col.proximities.keys():
@@ -72,12 +66,11 @@ def do_rotation():
     # Perform the rotation by matrix multiplication
     # (n x 2) @ (2 x 2) -> (n x 2)
     st.session_state.pic.net.coords = coords @ rotation_matrix
-    st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+    st.session_state.pic.create_view(font_size=st.session_state.font_size)
     st.session_state.new_layout = False
     time.sleep(0.5)
     st.session_state.rotation = 0
     #st.write(rotation)
-
 
 # get app data
 sample_col, sample_sources, prx_file_format = get_collection_instance()
@@ -89,12 +82,14 @@ if 'pf_name' not in st.session_state:
     st.session_state.pf_name = col.pfnets["bank6_pf"].name
     st.session_state.layout = "kamada_kawai"
     st.session_state.font_size = 10
+    st.session_state.deleted_prxs = []
+    st.session_state.deleted_pfnets = []
 
     # Initial figure creation
     pf = col.pfnets[st.session_state.pf_name]
     pf.get_layout(method=st.session_state.layout)
-    st.session_state.pic = Netpic(pf)
-    make_fig(font_size=st.session_state.font_size)
+    st.session_state.pic = Netpic(net=pf)
+    st.session_state.pic.create_view(font_size=st.session_state.font_size)
     st.session_state.lastlo = st.session_state.layout
     st.session_state.new_layout = True
     st.session_state.count = 0
@@ -112,7 +107,7 @@ with st.sidebar:
     show_netsim = st.checkbox("Network Similarity", value=False, key="show_netsim")
     ave_method = st.radio("Averaging Method",["mean","median"], index=0, )
 
-    type, params = st.columns([4, 5])
+    type, params = st.columns([6, 4])
     with type:
         net_type = st.radio("Network Type",["Pathfinder","Threshold", "Nearest Neighbor"],
                         index=0, )
@@ -143,15 +138,14 @@ with st.sidebar:
     fx, fy, red = st.columns([5,5,6], gap="small")
     with fx:
         if st.button("flipx"):
-            st.session_state.fig.axes[0].invert_xaxis()
+            st.session_state.pic.fig.axes[0].invert_xaxis()
     with fy:
         if st.button("flipy"):
-            st.session_state.fig.axes[0].invert_yaxis()
+            st.session_state.pic.fig.axes[0].invert_yaxis()
     with red:
         if st.button("redraw"):
             st.session_state.new_layout = True
-            # st.session_state.pic.net.coords[:, [0, 1]] = st.session_state.pic.net.coords[:, [1, 0]]
-            # st.session_state.fig = st.session_state.pic.create_view(font_size=st.session_state.font_size)
+
     # rotation
     rotate = st.slider("clockwise rotation by degrees (0 - 360)", 0, 360, key="rotation", on_change=do_rotation)
 
@@ -328,6 +322,7 @@ with prxlist:
                 if col.selected_prxs:
                     for prx_name in col.selected_prxs:
                         col.proximities.pop(prx_name)
+                        st.session_state.deleted_prxs.append(prx_name)
                     col.selected_prxs = []  # Clear selection after deletion
                     st.success("Selected proximities deleted.")
                     st.rerun()  # Rerun to update the display
@@ -395,6 +390,7 @@ with netlist:
                 if col.selected_nets:
                     for net_name in col.selected_nets:
                         col.pfnets.pop(net_name)
+                        st.session_state.deleted_pfnets.append(net_name)
                     col.selected_nets = []  # Clear selection after deletion
                     #st.success("Selected PFnets deleted.")
                     st.rerun()  # Rerun
@@ -426,12 +422,13 @@ if st.session_state.pf_name and st.session_state.pf_name in col.pfnets:
     if st.session_state.new_layout:
         pf.get_layout(method=st.session_state.layout)
         st.session_state.pic = Netpic(net=pf)
-        make_fig(font_size=st.session_state.font_size)
+        st.session_state.pic.create_view(font_size=st.session_state.font_size)
+        #make_fig(font_size=st.session_state.font_size)
 
     st.write(f"{pf.name}: {pf.nnodes} nodes {pf.nlinks} links, "
               f"using {st.session_state.layout} layout {st.session_state.count}")
 
-    st.pyplot(fig=st.session_state.fig, width='content')
+    st.pyplot(fig=st.session_state.pic.fig, width='content')
 
     st.session_state.new_layout = False
     st.session_state.count += 1

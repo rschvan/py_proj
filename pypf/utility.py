@@ -407,13 +407,15 @@ def merge_networks(nets):
     # extract adjmat and convert to bool
     adj = nets[0].adjmat
     adj = adj.astype(bool)
+    adj = adj.astype(int)
     mrg.name = "Merged_" + mrg.name
     for i in range(1, n):
         if mrg.terms != nets[i].terms:
             return None
         addon = nets[i].adjmat
         addon = addon.astype(bool)
-        adj = adj | addon
+        addon = addon.astype(int)
+        adj = adj + addon
         mrg.name += "_" + nets[i].name
     mrg.nlinks = adj.sum()
     mrg.dismat = None
@@ -647,6 +649,7 @@ def sample_data() -> dict:
          "distances between state capitals in the US"]
     sources = pd.DataFrame(data={"file": files, "source": srcs})
     col = Collection()
+    ex = None
     for file in files:
         fn = os.path.join("pypf","data", file + ".prx.xlsx")
         px = Proximity(fn)

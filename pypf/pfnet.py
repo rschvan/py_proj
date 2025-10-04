@@ -118,6 +118,7 @@ class PFnet:
             self.layers = self.shells(source=self.eccentricity["center"])
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
+            self.get_layout()
         else:
             print("Error: proximity not valid")
 

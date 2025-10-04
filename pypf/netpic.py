@@ -5,9 +5,8 @@ from matplotlib.path import Path
 from matplotlib.text import Text
 from typing import Dict, Tuple
 from matplotlib.transforms import Bbox
-
 from pypf.pfnet import PFnet
-import streamlit as st
+from pypf.utility import split_long_term
 
 class Netpic:
     """
@@ -17,6 +16,9 @@ class Netpic:
     def __init__(self, net: PFnet):
         self.net = net
         self.nodes = net.terms
+        self.nodelabels = []
+        for node in self.nodes:
+            self.nodelabels.append(split_long_term(node))
         self.adjmat = net.adjmat
         self.is_directed = net.isdirected
         self.adjmat_norm = self.adjmat / np.max(self.adjmat)
@@ -111,12 +113,11 @@ class Netpic:
         mid_point = (start_point + end_point) / 2
         return start_point, end_point, mid_point
 
-    def create_view(self, font_size=10) -> plt.Figure:
+    def create_view(self, font_size=10):
         """
         Creates and returns a matplotlib figure with the network plot.
         The plot's properties are determined by the input arguments.
         """
-        from pypf.utility import split_long_term
         self.fig, self.ax = plt.subplots(figsize=(9, 9))
         self.ax.set_aspect('equal', adjustable='box')
         self.ax.set_xlim(-1.1, 1.1)
@@ -132,7 +133,7 @@ class Netpic:
 
         for i, node in enumerate(self.nodes):
             x, y = coords[i]
-            plot_node = split_long_term(node)
+            plot_node = self.nodelabels[i]
             text_obj = self.ax.text(x, y, plot_node, ha='center', va='center', fontsize=font_size,
                                     bbox=dict(facecolor='white', alpha=0, edgecolor='white',
                                     boxstyle='round,pad=0.3',),
@@ -142,15 +143,6 @@ class Netpic:
 
         self._draw_edges_and_weights(font_size)
         self.ax.margins(0.1)
-
-        # from stapp import clickedevent
-        # self.fig.canvas.mpl_connect('button_press_event', clickedevent)
-
-        # self.fig.canvas.mpl_connect('button_press_event', self._on_press)
-        # self.fig.canvas.mpl_connect('motion_notify_event', self._on_motion)
-        # self.fig.canvas.mpl_connect('button_release_event', self._on_release)
-
-        return self.fig
 
     def _draw_edges_and_weights(self, font_size):
         """Redraws edges and weights based on current node positions."""
@@ -226,26 +218,26 @@ class Netpic:
         self.fig.canvas.draw_idle()
 
     # The drag-and-drop methods remain the same as they handle in-plot interactivity
-    def _on_press(self, event):
-        if event.inaxes != self.ax: return
-        for text_obj in self.text_objects.values():
-            if text_obj.contains(event)[0]:
-                self.dragging_node = text_obj.get_text()
-                self.drag_start_pos = (event.xdata, event.ydata)
-                break
-
-    def _on_motion(self, event):
-        if self.dragging_node is None or event.inaxes != self.ax: return
-        dx = event.xdata - self.drag_start_pos[0]
-        dy = event.ydata - self.drag_start_pos[1]
-        node_idx = self.nodes.index(self.dragging_node)
-        self.net.coords[node_idx] += [dx, dy]
-        self.node_positions[self.dragging_node] += [dx, dy]
-        self.text_objects[self.dragging_node].set_position(self.node_positions[self.dragging_node])
-        self.drag_start_pos = (event.xdata, event.ydata)
-        self.create_view(font_size=st.session_state.font_size)
-
-    def _on_release(self):
-        self.dragging_node = None
-        self.drag_start_pos = None
-        self.create_view(font_size=st.session_state.font_size)
+    # def _on_press(self, event):
+    #     if event.inaxes != self.ax: return
+    #     for text_obj in self.text_objects.values():
+    #         if text_obj.contains(event)[0]:
+    #             self.dragging_node = text_obj.get_text()
+    #             self.drag_start_pos = (event.xdata, event.ydata)
+    #             break
+    #
+    # def _on_motion(self, event):
+    #     if self.dragging_node is None or event.inaxes != self.ax: return
+    #     dx = event.xdata - self.drag_start_pos[0]
+    #     dy = event.ydata - self.drag_start_pos[1]
+    #     node_idx = self.nodes.index(self.dragging_node)
+    #     self.net.coords[node_idx] += [dx, dy]
+    #     self.node_positions[self.dragging_node] += [dx, dy]
+    #     self.text_objects[self.dragging_node].set_position(self.node_positions[self.dragging_node])
+    #     self.drag_start_pos = (event.xdata, event.ydata)
+    #     self.create_view(font_size=st.session_state.font_size)
+    #
+    # def _on_release(self):
+    #     self.dragging_node = None
+    #     self.drag_start_pos = None
+    #     self.create_view(font_size=st.session_state.font_size)
