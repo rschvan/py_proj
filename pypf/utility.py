@@ -668,7 +668,7 @@ def sample_data() -> dict:
 
 def split_long_term(term):
     n = len(term)
-    if n < 14:
+    if n < 15:
         return term
     sep = [' ','_','-', '.',',']
     mid = n/2
@@ -688,7 +688,7 @@ def split_long_term(term):
     else:
         if n > 20:
             mid = round(n/2)
-            return term[0:mid] + '-\n' + term[mid+1:n]
+            return term[0:mid] + '-\n' + term[mid:n]
         else:
             return term
 
