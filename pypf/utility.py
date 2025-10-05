@@ -396,6 +396,14 @@ def map_indices_to_terms(list_of_index_lists: list[list[int]], terms: list[str])
         result_list.append(term_list)
     return result_list
 
+def mds_coord(dismat:np.ndarray, ndims=2, metric=True):
+    from sklearn.manifold import MDS
+    mds = MDS(n_components=ndims, metric=metric, n_init=1,
+              max_iter=1000, eps=1e-6, dissimilarity='precomputed')
+    coord = mds.fit_transform(dismat)
+    coord = canonical(coord)
+    return coord
+
 def merge_networks(nets):
     from pypf.pfnet import PFnet
     import copy
@@ -430,7 +438,6 @@ def merge_networks(nets):
     mrg.eccentricity = eccentricity(adj)
     mrg.layers = mrg.shells(mrg.eccentricity["center"])
     mrg.adjmat = adj
-    mrg.coords = mrg.get_layout()
     return mrg
 
 def minkowski(dis1, dis2, r):
@@ -567,12 +574,14 @@ def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
         "adjsimilarity": adjsim,
     }
 
-def newcoords(canonicalxy: np.ndarray, width: float, height: float,
-              squeezex: float, squeezey: float) -> np.ndarray:
+def map_coords_to_frame(canonicalxy: np.ndarray, width=600, height=600,
+                        squeezex=0.0, squeezey=0.0) -> np.ndarray:
     """
     Transforms an ndarray of canonical 2D coordinates to fit within a defined
     width and height, applying squeeze factors to adjust the scaling of the
     transformation.
+    :param squeezey: shrink or expand the y-coordinates
+    :param squeezex: shrink or expand the x-coordinates
     :param canonicalxy: An ndarray of canonical 2D coordinates (x, y).
     :param width: The width of the bounding box representing the target area for
         the transformed x-coordinates.
@@ -664,9 +673,8 @@ def sample_data() -> dict:
         if file in ["statecaps"]:
             pf = PFnet(px, q=2, r=2)
             col.add_pfnet(pf)
-    dic = {"collection": col, "sources": sources}
     ex.get_layout(method="kamada_kawai")
-    dic["net_plot"] = Netpic(ex)
+    dic = {"collection": col, "sources": sources, "net_plot": Netpic(ex)}
     return dic
 
 def split_long_term(term):
@@ -696,38 +704,17 @@ def split_long_term(term):
             return term
 
 if __name__ == '__main__':
-    # from pypf.pfnet import PFnet
-    # from pypf.proximity import Proximity
-    # psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    # bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    # psy = PFnet(psyprx)
-    # bio = PFnet(bioprx)
-
-    pth = mypfnets_dir()
-    print(pth)
-
-    # nc = newcoords(psy.coords,600,600,.1,.1)
-    # print(nc)
-    # ecc = eccentricity(bio.adjmat)
-    # print(ecc)
-    # df = prop_table([psy,bio], ["name","nnodes", "q", "r"])
-    # print(df)
-    # prxset = [psyprx, bioprx]
-
-    # netset = [psy, bio]
+    from pypf.pfnet import PFnet
+    from pypf.proximity import Proximity
+    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
+    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
+    psy = PFnet(psyprx)
+    bio = PFnet(bioprx)
+    prxset = [psyprx, bioprx]
+    netset = [psy, bio]
     # mrg = merge_networks(netset)
     # print(mrg.netprint())
-
-
     # aveprx = average_proximity(prxset, method="mean")
     # aveprx.prxprint()
-    # tl = map_indices_to_terms(psy.layers, psy.terms)
-    # print(tl)
+    bio.get_layout(method="MDS")
 
-
-    # s1 = gen_var_name(s)
-    # s2 = gen_var_name(s, exclude=[s1])
-    # s3 = gen_var_name(s, exclude=[s1, s2])
-    # print(s, s1, s2, s3)
-    # s4 = gen_var_name(s3)
-    # print(s4)

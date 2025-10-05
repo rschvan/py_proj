@@ -3,14 +3,14 @@
 import tkinter as tk
 from pypf.pfnet import PFnet
 from pypf.networkDisplay import NetworkDisplay
-from pypf.utility import newcoords
+from pypf.utility import map_coords_to_frame
 
 def shownet(parent_window, net:PFnet, method="gravity", width=600, height=600):
     # get nodes and edges and layout data
     #nodes, edges = networkData(net, method, width, height)
 
-    loc = net.get_layout(method=method)
-    newxy = newcoords(canonicalxy=loc["canonical_coord"], width=width, height=height, squeezex=.2, squeezey=.2)
+    net.get_layout(method=method)
+    newxy = map_coords_to_frame(canonicalxy=net.coords, width=width, height=height, squeezex=.2, squeezey=.2)
     nodes = {}
     for i in range(net.nnodes):
         nodes[net.terms[i]] = {'x': newxy[i][0], 'y': newxy[i][1], 'label': net.terms[i]}

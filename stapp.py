@@ -150,7 +150,7 @@ with st.sidebar:
     rotate = st.slider("clockwise rotation by degrees (0 - 360)", 0, 360, key="rotation", on_change=do_rotation)
 
     st.selectbox("layout method", ["kamada_kawai", "neato", "force", "gravity", "spring", "spiral", "circle",
-                                   "distance"], index=0, key="layout",)
+                                   "MDS"], index=0, key="layout",)
 
     if st.session_state.lastlo != st.session_state.layout:
         st.session_state.lastlo = st.session_state.layout
@@ -223,7 +223,7 @@ if show_intro_info:
             they can be transformed  using ( d = min + max – s ) where d is dissimilarity and s = similarity, 
             min is the minimum s and max is the maximum s.  The minimum and maximum will remain the same with 
             the order of values inverted. 
-            \nAn infinite distance results when anything other than a finite real number is in a distance cell. 
+            \nAn infinite distance results when anything other than a finite positive real number in a distance cell. 
             The cell can be empty or have the string “nan” or “inf” or “na” etc. Infinite distances will 
             never become links in the networks created.
             """)
