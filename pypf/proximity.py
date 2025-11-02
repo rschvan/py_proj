@@ -1,4 +1,6 @@
 #   pypf/proximity.py
+from types import NoneType
+
 from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid
 import pandas as pd
 import numpy as np
@@ -105,12 +107,12 @@ class Proximity:
             datapoints = get_lower(self.dismat)
         else:
             datapoints = get_off_diagonal(self.dismat)
-
         datapoints.flatten()
+        datapoints = datapoints.astype(float)
         datapoints = datapoints[~np.isinf(datapoints)]
         datapoints = datapoints[~np.isnan(datapoints)]
-        self.mean = np.mean(datapoints).round(2)
-        self.sd = np.std(datapoints).round(2)
+        self.mean = np.mean(datapoints)
+        self.sd = np.std(datapoints) if len(datapoints) > 1 else np.nan
         self.min = np.min(datapoints)
         self.max = np.max(datapoints)
 

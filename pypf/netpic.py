@@ -119,6 +119,7 @@ class Netpic:
         The plot's properties are determined by the input arguments.
         """
         self.fig, self.ax = plt.subplots(figsize=(9, 9))
+        #self.ax.set_title(f"{self.net.name}: {self.net.nnodes} nodes and {self.net.nlinks} links")
         self.ax.set_aspect('equal', adjustable='box')
         self.ax.set_xlim(-1.1, 1.1)
         self.ax.set_ylim(-1.1, 1.1)
@@ -206,9 +207,10 @@ class Netpic:
                     self.weight_texts[(self.nodes[i], self.nodes[j])] = weight_text
         self.fig.canvas.draw_idle()
 
-    def toggle_weights(self):
+    def toggle_link_weights(self):
         for text in self.weight_texts.values():
             text.set_visible(not text.get_visible())
+        #self.fig.canvas.draw_idle()
 
     def change_font_size(self, font_size):
         for text in self.text_objects.values():
@@ -217,27 +219,27 @@ class Netpic:
             text.set_fontsize(font_size * 0.8)
         self.fig.canvas.draw_idle()
 
-    # The drag-and-drop methods remain the same as they handle in-plot interactivity
-    # def _on_press(self, event):
-    #     if event.inaxes != self.ax: return
-    #     for text_obj in self.text_objects.values():
-    #         if text_obj.contains(event)[0]:
-    #             self.dragging_node = text_obj.get_text()
-    #             self.drag_start_pos = (event.xdata, event.ydata)
-    #             break
-    #
-    # def _on_motion(self, event):
-    #     if self.dragging_node is None or event.inaxes != self.ax: return
-    #     dx = event.xdata - self.drag_start_pos[0]
-    #     dy = event.ydata - self.drag_start_pos[1]
-    #     node_idx = self.nodes.index(self.dragging_node)
-    #     self.net.coords[node_idx] += [dx, dy]
-    #     self.node_positions[self.dragging_node] += [dx, dy]
-    #     self.text_objects[self.dragging_node].set_position(self.node_positions[self.dragging_node])
-    #     self.drag_start_pos = (event.xdata, event.ydata)
-    #     self.create_view(font_size=st.session_state.font_size)
-    #
-    # def _on_release(self):
-    #     self.dragging_node = None
-    #     self.drag_start_pos = None
-    #     self.create_view(font_size=st.session_state.font_size)
+    # The drag-and-drop methods handle in-plot interactivity
+    def _on_press(self, event):
+        if event.inaxes != self.ax: return
+        for text_obj in self.text_objects.values():
+            if text_obj.contains(event)[0]:
+                self.dragging_node = text_obj.get_text()
+                self.drag_start_pos = (event.xdata, event.ydata)
+                break
+
+    def _on_motion(self, event):
+        if self.dragging_node is None or event.inaxes != self.ax: return
+        dx = event.xdata - self.drag_start_pos[0]
+        dy = event.ydata - self.drag_start_pos[1]
+        node_idx = self.nodes.index(self.dragging_node)
+        self.net.coords[node_idx] += [dx, dy]
+        self.node_positions[self.dragging_node] += [dx, dy]
+        self.text_objects[self.dragging_node].set_position(self.node_positions[self.dragging_node])
+        self.drag_start_pos = (event.xdata, event.ydata)
+        self.create_view()
+
+    def _on_release(self):
+        self.dragging_node = None
+        self.drag_start_pos = None
+        self.create_view()

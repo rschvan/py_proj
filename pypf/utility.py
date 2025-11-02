@@ -127,9 +127,10 @@ def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[f
     if dis_lower.size > 0 and indirect_lower.size > 0:
         valid_indices = ~np.isnan(dis_lower) & ~np.isnan(indirect_lower)
         if np.any(valid_indices):
-            coh = np.corrcoef(dis_lower[valid_indices], indirect_lower[valid_indices])
-            coh = -coh[0,1] if coh.shape == (2, 2) else np.nan
-            return np.round(coh, 3)
+            with np.errstate(invalid='ignore'):
+                coh = np.corrcoef(dis_lower[valid_indices], indirect_lower[valid_indices])
+                coh = -coh[0,1] if coh.shape == (2, 2) else np.nan
+                return np.round(coh, 3)
         else:
             return np.nan
     else:
@@ -336,9 +337,11 @@ def get_termsid(terms:list):
     n = len(terms)
     if n < 2:
         return None
-    termsid = "n_" + str(n) + terms[0] + terms[1] + terms[-1]
+    termsid = "n_" + str(int(n)) + terms[0] + terms[1] + terms[-1]
     termsid = re.sub(r'[^a-zA-Z0-9_]', '_', termsid)
     return termsid
+
+
 
 def get_test_pf(name="psy"):
     from pypf.pfnet import PFnet
@@ -629,20 +632,21 @@ def pwcorr(dis: np.ndarray = np.array([])) -> np.ndarray:
     """
     num_cols = dis.shape[1]
     corrs = np.zeros((num_cols, num_cols))
-    for i in range(num_cols):
-        for j in range(num_cols):
-            col1 = dis[:, i]
-            col2 = dis[:, j]
-            valid_indices = ~np.isnan(col1) & ~np.isnan(col2) & ~np.isinf(col1) & ~np.isinf(col2)
-            if np.sum(valid_indices) > 1:
-                corr = np.corrcoef(col1[valid_indices], col2[valid_indices])
-                if corr.shape == (2, 2):
-                    corrs[i, j] = corr[0, 1]
+    with np.errstate(invalid='ignore'):
+        for i in range(num_cols):
+            for j in range(num_cols):
+                col1 = dis[:, i]
+                col2 = dis[:, j]
+                valid_indices = ~np.isnan(col1) & ~np.isnan(col2) & ~np.isinf(col1) & ~np.isinf(col2)
+                if np.sum(valid_indices) > 1:
+                    corr = np.corrcoef(col1[valid_indices], col2[valid_indices])
+                    if corr.shape == (2, 2):
+                        corrs[i, j] = corr[0, 1]
+                    else:
+                        corrs[i, j] = np.nan
                 else:
                     corrs[i, j] = np.nan
-            else:
-                corrs[i, j] = np.nan
-    return np.round(corrs, 3)
+        return np.round(corrs, 3)
 
 def sample_data() -> dict:
     from pypf.collection import Collection

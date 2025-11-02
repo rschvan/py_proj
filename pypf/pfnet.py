@@ -119,7 +119,7 @@ class PFnet:
             self.layers = self.shells(source=self.eccentricity["center"])
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
-            self.get_layout()
+            self.get_layout() # default coords
         else:
             print("Error: proximity not valid")
 
@@ -172,7 +172,7 @@ class PFnet:
         info["r"] = f"{self.r:g}" if self.r else None
         return info # a dictionary
 
-    def get_layout(self, method="gravity") -> dict:
+    def get_layout(self, method="kamda-kawai") -> dict:
         """
         Creates layout coordinates for PFnet visualization and returns a layout dictionary.
         """
@@ -220,12 +220,6 @@ class PFnet:
                     layout = nx.kamada_kawai_layout(graph, weight='weight', pos=randpos)
                 case "MDS":
                     coord = pypf.utility.mds_coord(self.dismat, metric=True)
-                    # dis = self.dismat.copy()
-                    # # make dis symmetrical using min
-                    # dis = np.minimum(dis, dis.T)
-                    # # make a complete graph from dis
-                    # cgr = graph_from_adjmat(dis, self.terms)
-                    # layout = nx.kamada_kawai_layout(cgr, weight="weight", pos=randpos,)
 
         except Exception as e:
             print(f"Error in get_layout: {e}")
@@ -239,6 +233,8 @@ class PFnet:
                 coord[i, :] = layout[node]
 
         coord = canonical(coord)
+        # reverse x coords
+        coord[:,0] = -coord[:,0]
         self.coords = coord
         graph.name = self.name  # Restore original name
 

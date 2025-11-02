@@ -63,3 +63,6 @@ isoduration~=20.11.0
 fqdn~=1.5.1
 rfc3339-validator~=0.1.4
 scikit-learn~=1.7.2
+pyvis~=0.3.2
+docutils~=0.22.2
+typing_extensions~=4.14.0
