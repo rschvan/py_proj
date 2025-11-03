@@ -426,9 +426,13 @@ def merge_networks(nets):
         addon = nets[i].adjmat
         addon = addon.astype(bool)
         addon = addon.astype(int)
+        # make link values 2^i which gives a binary coding to links in nets
+        addon = addon * (2**i)
         adj = adj + addon
         mrg.name += "_" + nets[i].name
-    mrg.nlinks = adj.sum()
+    mrg.nlinks = adj.astype(bool).sum()
+    if not mrg.isdirected:
+        mrg.nlinks = mrg.nlinks // 2
     mrg.dismat = None
     mrg.mindis = None
     mrg.q = None
