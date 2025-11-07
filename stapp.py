@@ -220,12 +220,11 @@ else:
                         with open(file, "wb") as f:
                             f.write(leg_file.getbuffer())
                 all_leg_files = os.listdir(leg_dir)
-                for file in all_leg_files:
-                    dat = legacy_prx_files(path=leg_dir, files=[file])
-                    prxdat = dat[list(dat.keys())[0]]
-                    if not "terms" in prxdat.keys():
+                file_dat = legacy_prx_files(path=leg_dir, files=all_leg_files)
+                for dat in file_dat:
+                    if dat["error"]:  # does not contain valid proximity data
                         continue
-                    new_prx = Proximity(terms=prxdat["terms"], dismat=prxdat["dismat"], name=prxdat["name"])
+                    new_prx = Proximity(terms=dat["terms"], dismat=dat["dismat"], name=dat["name"])
                     col.add_proximity(new_prx)
                 for file in all_leg_files:
                     os.remove(os.path.join(leg_dir, file))

@@ -431,8 +431,8 @@ def merge_networks(nets):
         adj = adj + addon
         mrg.name += "_" + nets[i].name
     mrg.nlinks = adj.astype(bool).sum()
-    if not mrg.isdirected:
-        mrg.nlinks = mrg.nlinks // 2
+    # if not mrg.isdirected:  -- apparently adjmat deals with directedness
+    #     mrg.nlinks = mrg.nlinks / 2
     mrg.dismat = None
     mrg.mindis = None
     mrg.q = None

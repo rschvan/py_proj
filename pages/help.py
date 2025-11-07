@@ -108,8 +108,8 @@ allows you to load these files. With legacy text files,
 terms are stored in separate text files, with one term on each line.  These term files must be loaded along
 with the text data files to create complete Proximities in PyPathfinder. The term files can be named in two ways. 
 For data files with the same terms, a single file named "terms.txt" can be used for all the data files. 
-To associate a term with a specific data file, the term file name must include the data file name followed by 
-".trm". So, for example, if the data file is named "data.txt" or "data.prx.txt" the terms file must be named 
+To associate a term file with a specific data file, the term file name must include the data file name followed by 
+".trm". So, for example, if the data file is named "data.txt" or "data.prx.txt" the associated terms file must be named 
 "data.trm.txt".    
 
 The legacy text files are more complex than the spreadsheet format, so we encourage the use of the newer spreadsheet

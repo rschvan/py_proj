@@ -120,12 +120,13 @@ class Proximity:
         info = {}
         info["name"] = self.name
         info["nterms"] = self.nterms
+        info["symmetric?"] = self.issymmetric
         info["coherence"] = self.coh
         info["mean"] = self.mean
         info["sd"] = self.sd
         info["min"] = self.min
         info["max"] = self.max
-        info["termsid"] = self.termsid
+        info["termsid"] = "n_" + str(self.nterms) + "_" + self.terms[0] + "_" + self.terms[-1]
         return info
 
     def prxprint(self, note=None):

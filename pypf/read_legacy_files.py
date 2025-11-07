@@ -106,7 +106,7 @@ def _write_excel_file(terms: List[str], dismat: np.ndarray, file: str) -> None:
 # --- Main Function ---
 
 def legacy_prx_files(path: str = None, files: List[str] = None,
-                     write_excel: bool = False) -> Dict[str, Any]:
+                     write_excel: bool = False) -> List[Dict[str, Any]] :
     """
     Replicates the functionality of legacy_prx_files.m.
     Reads proximity data from legacy text files and generates a proximity matrix.
@@ -117,15 +117,12 @@ def legacy_prx_files(path: str = None, files: List[str] = None,
     :return: A dictionary where keys are dataset names and values are data structures (dictionaries).
     """
 
-    col: Dict[str, Dict[str, Any]] = {}
+    #col is a list of dictionaries containing proximity information
+    col: List[Dict[str, Any]] = []
 
     def _error(data: Dict[str, Any], message: str) -> None:
-        """Internal error handler (replicating MATLAB's nested function)."""
         data['error'] = message
-        col[data['name']] = data
-        # print(message)
-        # In a real application, you'd log or raise,
-        # but here we just replicate the MATLAB structure.
+        col.append(data)
 
     # if files is None, user selects multiple .txt files, filling both path and files
     if files is None:
@@ -399,7 +396,7 @@ def legacy_prx_files(path: str = None, files: List[str] = None,
         np.fill_diagonal(prx, 0)
 
         data['dismat'] = prx
-        col[data['name']] = data
+        col.append(data)
 
         # 13. Write Excel file
         if write_excel:
@@ -410,11 +407,11 @@ def legacy_prx_files(path: str = None, files: List[str] = None,
 
 if __name__ == '__main__':
     from pypf.proximity import Proximity
-    dat = legacy_prx_files("data",["aviation.prx.txt"])
-    print(f"dat {dat}")
-    dat = dat[list(dat.keys())[0]]
-    print(dat["name"], dat["terms"][1], dat["dismat"][1,1])
-    prx = Proximity(name=dat["name"], terms=dat["terms"], dismat=dat["dismat"])
-    prx.prxprint()
+    dats = legacy_prx_files("data",["aviation.prx.txt"])
+    #print(f"dats {dats}")
+    for dat in dats:
+        #print(f"dat {dat}")
+        prx = Proximity(name=dat["name"], terms=dat["terms"], dismat=dat["dismat"])
+        prx.prxprint()
 
 
