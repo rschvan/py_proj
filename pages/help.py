@@ -45,8 +45,7 @@ st.write('''Intro info adds access to information about Pathfinder and the app
         including a video demo. 
         It also loads an example of the required Proximity file formats and sample 
         Proximities and PFnets for demo purposes.  These elements will be deleted 
-        when you uncheck the Intro Info box. The elements will be added back when you check 
-        the Intro Info box again. 
+        when you uncheck the Intro Info box. 
         Anything you add will be preserved when you uncheck the Intro Info box. 
         Your files are not saved over sessions, but you can re-add them easily. 
         ''')
@@ -55,7 +54,12 @@ st.write('''
         Download any table into a csv file by hovering at the top of the table and
         clicking on the download icon. 
         
-        Download a network figure into a png file by right clicking on it and selecting "Save image as".  
+        Download a network figure into a png file by right clicking on it and selecting "Save image as".
+        
+        The q-value is the maximum number of links in paths examined in searching for the minimum-length path. 
+        The default value of infinity means that all possible paths are examined. The paths with the most 
+        possible links have n-1 links where n is the number of nodes. With q = 2, only two-link
+        paths are considered.
         
         Threshold networks show the links with smaller distances.  
         
@@ -113,7 +117,8 @@ To associate a term file with a specific data file, the term file name must incl
 "data.trm.txt".    
 
 The legacy text files are more complex than the spreadsheet format, so we encourage the use of the newer spreadsheet
- format for newly created data files.  Details about the format of legacy proximity files are provided below. 
+ format for newly created data files.  Details about the format of legacy proximity can be seen by clicking 
+ the button below. 
 """)
 if st.button("Click for Details on Legacy Text Proximity Files"):
     st.write("""The data may be in the form of similarities, dissimilarities, probabilities, distances, 
@@ -133,14 +138,13 @@ similarity
 comment  
 10 minimum value  
 90 maximum value  
-lower triangle 
+lower triangle  
  32  
  40 49  
  32 38 53  
  73 63 77 18   
-
-The required format of a data file is described below.  
-Data file format.  / indicates alternatives:  
+ 
+Required Data file format.  / indicates alternatives:  
 Line 1: Identification as data file = Data/DATA/data (must have the word 'data' or 'DATA' or 'Data')  
 Line 2: Type of data: either dissimilarity or distance or dis or similarity or sim  
 Line 3: Number of nodes = integer   
@@ -155,8 +159,7 @@ Line 9: Data
 Line ?: Data   
 
 The lines in the file must be organized as shown above.  For Lines 3, 5, and 6, the program uses only 
-the first number on the line.  Some following text to indicate what the number represents is helpful 
-to keep things straight.
+the first number on the line.  Some following text helps to indicate what the number represents.
  
 Details on the required input are as follows:    
 **Line 1.** "Data," "DATA," or "data" is used to identify the file type   
@@ -212,7 +215,7 @@ symmetric
 5 3 5  
 5 4 4  
 
-These four sets of data represent the same data. Of course, if your data are asymmetric, 
+These four sets of data produce the same distance matrix. Of course, if your data are asymmetric, 
 they must be input as a matrix or a list with "nonsymmetric" or “asymmetric” specified. 
 If the data are symmetric, any of the four shapes is acceptable. 
 With the list format, the number of pairs in the list must be specified on the line following "list." 
@@ -301,4 +304,6 @@ on each dimension or feature for each of the nodes.  The data elements must be s
 more spaces and/or line breaks.  
 
     """)
+
+
 

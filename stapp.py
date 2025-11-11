@@ -72,6 +72,7 @@ else:
         st.session_state.home_dir = os.path.dirname(os.path.abspath(__file__))
         st.session_state.col = copy.deepcopy(sample_col)
         col = st.session_state.col
+        add_demo(col)
         st.session_state.pf_name = col.pfnets["bank6_pf"].name
         st.session_state.layouts = ["kamada_kawai", "neato", "force", "gravity", "spring", "spiral", "circle", "MDS"]
         st.session_state.layout_index = 0
@@ -115,7 +116,6 @@ else:
         with type:
             net_type = st.radio("**Network Type**",["Pathfinder","Threshold", "Nearest Neighbor"],
                             index=0, )
-            #st.subheader("Layout")
         with params:
             if net_type == "Pathfinder":
                 qval = st.text_input("q-value (2 - inf)", value="inf", key="qval")
@@ -141,32 +141,40 @@ else:
 
     # --- Main Content Area ---
 
-    #st.write(st.session_state)
     # Intro Info
-    #
-    # st.write(f"{st.session_state.count} runs")
+
     if show_intro_info:
-        add_demo(col)
+        #add_demo(col)
         if st.button("PyPathfinder Demo Video", key="vid_button"):
             st.video("pypf/data/video_demo.mp4")
-        st.write("""**Welcome!**  
-            The app contains four pages, **Build Nets** (this page), **Select Display**, **Interactive Display**
-            and **Help**. You can navigate 
-            to each page by clicking the page names in the sidebar.  
-            The Build Nets page is where you add Proximity data 
-            and Derive Networks. You can choose to load either spreadsheet Proximity files or text files 
-            using the legacy formatting (Help page gives details). You can also view Proximity Correlations, Network Information and Network Similarity 
-            by checking the boxes in the sidebar. Compatible Proximity Data sets can be averaged, and different
-            types of networks can be derived. Pathfinder networks require q and r values to be specified. The default
-            values of infinity yield the network with the minimum number of links. It will be a minimal spanning
-            tree (MST) if the network is connected and there is a unique MST. Ties in link distances may lead to 
-            cycles in the minimal network.    
-            The Intro Info checkbox makes starting
-            information available including access to a demo video and several sample Proximities and 
-            Networks to illustrate the app and to allow you to explore the app's functionality.  Unchecking 
-            this checkbox removes the introductory information.  Checking it again will restore the information.  
-            Go to the Help page for more information.  
-        """)
+        st.write('''**Welcome!**  
+PyPathfinder is a tool for creating, exploring, and visualizing Pathfinder networks. 
+The app contains four pages, **Build Nets** (this page), **Select Display**, **Interactive Display**
+and **Help**. You can navigate to a page by clicking the page name in the sidebar.
+  
+The **Build Nets** page is where you add Proximity data 
+and Derive Networks. You can choose to load either spreadsheet Proximity files or text files 
+using the legacy formatting (Help page gives details). You can also view Proximity Correlations, 
+Network Information and Network Similarity 
+by checking the boxes in the sidebar. Compatible Proximity Data sets can be averaged, and different
+types of networks can be derived. Pathfinder networks require q and r values to be specified. The default
+values of infinity yield the network with the minimum number of links. It will be a minimal spanning
+tree (MST) if the network is connected and there is a unique MST. Ties in link distances may lead to 
+cycles in the minimal network.
+
+The **Select Display** page allows you to try different layouts and view the network in various ways. When 
+you have a layout that is close to what you want, you can go to the **Interactive Display** page to adjust
+the node positions.
+
+
+The **Intro Info checkbox** makes starting information available including access to a demo video 
+and several sample Proximities and Networks to illustrate the app and to allow you to explore 
+the app's functionality.  Unchecking this checkbox removes the introductory information.  Checking it
+again shows this introductory Welcome, but not the sample Proximities and Networks. Reloading the page
+will restore all the samples, but anything you have created will be lost.
+
+Go to the **Help** page for more information.  
+        ''')
     else:
         del_demo(col)
 
@@ -234,15 +242,21 @@ else:
 
     st.subheader("Proximity Information")
     prx_info_df = col.get_proximity_info()
+    height = min(600, 40 + 35 * len(col.proximities))
     if not prx_info_df.empty:
-        st.dataframe(prx_info_df, width='content', hide_index=True)
+        st.dataframe(prx_info_df, width='content', height=height, hide_index=True)
     else:
-        st.info("No Proximity objects loaded yet.")
+        st.info("No Proximity objects.")
 
     # ---conditional displays---
     if show_intro_info:
-        st.subheader("Sources of sample Proximities")
-        st.dataframe(sample_sources, width='content', hide_index=True)
+        current_sources = sample_sources.copy(deep=True)
+        allowed_keys = col.proximities.keys()
+        rows_to_keep_mask = current_sources["file"].isin(allowed_keys)
+        current_sources = current_sources[rows_to_keep_mask]
+        if  not current_sources.empty:
+            st.subheader("Sources of sample Proximities")
+            st.dataframe(current_sources, width='content', hide_index=True)
 
     if show_corrs and len(col.proximities) > 1:
         st.subheader("Proximity Correlations")
@@ -257,7 +271,7 @@ else:
         if not pfnet_info_df.empty:
             st.dataframe(pfnet_info_df, width='content', hide_index=True)
         else:
-            st.info("No PFnet objects loaded yet.")
+            st.info("No PFnet objects.")
 
     if show_netsim and len(col.pfnets) > 1:
         st.subheader("Network Similarity")
@@ -267,7 +281,7 @@ else:
         if not sim_df.empty:
             st.dataframe(sim_df, width='content', hide_index=False)
         else:
-            st.info("No PFnet objects loaded yet.")
+            st.info("No PFnet objects.")
 
     # ---Proximity and Network Lists
     prxlist, netlist = st.columns(2)
@@ -275,7 +289,7 @@ else:
         st.subheader("Proximity List")
         prx_names = list(col.proximities.keys())
         if not prx_names:
-            st.info("No Proximity objects loaded yet.")
+            st.info("No Proximity objects.")
         else:
             st.write("Click in the box left of Name column to select:")
             height = min(600, 40 + 35*len(col.proximities))
@@ -301,9 +315,7 @@ else:
                     if col.selected_prxs:
                         for prx_name in col.selected_prxs:
                             col.proximities.pop(prx_name)
-                            #st.session_state.deleted_prxs.append(prx_name)
                         col.selected_prxs = []  # Clear selection after deletion
-                        st.success("Selected proximities deleted.")
                         st.rerun()  # Rerun to update the display
                     else:
                         st.warning("Please select at least one proximity to delete.")
@@ -342,7 +354,7 @@ else:
         st.subheader("Network List")
         pfnet_names = list(col.pfnets.keys())
         if not pfnet_names:
-            st.info("No PFnet objects loaded yet.")
+            st.info("No PFnet objects.")
         else:
             st.write("Clicking at the top selects or deselects all:")
             height = min(600, 40 + 35 * len(col.pfnets))

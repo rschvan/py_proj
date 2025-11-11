@@ -83,13 +83,6 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
     # Return the HTML string directly for st.components.v1.html and the pyvis graph
     return html_content, g
 
-def get_new_coords(net:Network):
-    for node in net.nodes:
-        x, y = net.nodes[node]['position']['x'], net.nodes[node]['position']['y']
-        x = float(x) / 400
-        y = -float(y) / 400
-        st.session_state.pic.net.coords[int(node)] = (x, y)
-
 pic = st.session_state.pic # alias for easy reference
 if "text_size" in st.session_state:
     font_size = st.session_state.text_size
@@ -97,20 +90,18 @@ else:
     font_size = 23
 
 with st.sidebar:
-    display_type = st.radio("Select Display Type",options=["Static", "Dynamic"])
+    display_type = st.radio("**Select Display Type**",options=["Static", "Dynamic"])
     if display_type == "Static":
-        interactive_html, pyvis_net = create_visjs_html(pic, physics=False, font_size=font_size)
+        interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=False, font_size=font_size)
     else:
-        interactive_html, pyvis_net = create_visjs_html(pic, physics=True, font_size=font_size)
+        interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=True, font_size=font_size)
 
-    st.number_input("node size", min_value=12, max_value=34, value=23, step=1, key="text_size",
+    st.number_input("**node size**", min_value=12, max_value=34, value=23, step=1, key="text_size",
                     )
     st.write("Set node size before moving nodes")
     st.write("""You can drag the nodes to new locations
-     and can download the image with a screenshot.""")
-    # save_coords = st.button("Save Coordinates")
-    # if save_coords:
-    #     get_new_coords(pyvis_net)
+     and can capture the image with a screenshot.""")
+
 st.subheader(f"{pic.net.name}: {pic.net.nnodes} nodes and {pic.net.nlinks} links")
 
 # Embed the HTML directly into the Streamlit app
@@ -121,6 +112,5 @@ if interactive_html:
         height=650,  # Set height to match the '600px' defined in pyvis + buffer
         scrolling=True
     )
-
 else:
     st.error("Failed to generate interactive network HTML.")
