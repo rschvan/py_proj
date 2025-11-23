@@ -1,65 +1,14 @@
 # pypf/utility.py
-# df = pd.DataFrame(matrix, index=rows, columns=col) - creates table with row and col labels
+# df = pd.DataFrame(matrix, index=rows, columns=cols) - creates table with row and col labels
 import os
 from typing import Optional, Union
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import networkx as nx
 import re
 import keyword
 import shutil
 import inspect # Used to find the path of the current module
-
-def average_proximity(proxes:list, method="mean"):
-    """
-    Computes the average proximity matrix based on a list of proximity matrices and a specified method
-    (mean or median). The function generates a new proximity object as a result, encapsulating the
-    aggregated proximity data.
-
-    :param proxes: A list of Proximity objects for which the average proximity matrix is to be computed.
-                   All Proximity objects in the list must have matching terms and dimensions.
-    :type proxes: list[Proximity]
-
-    :param method: The method to use for computing the average proximity. Accepted values are "mean"
-                   and "median". Defaults to "mean". The "mean" method computes the arithmetic mean
-                   across matrices, while the "median" method computes the median element-wise.
-    :type method: str, optional
-
-    :return: A new Proximity object containing the aggregated proximity matrix as per the specified
-             method. The resulting proximity includes updated statistics and coherence measurements.
-    :rtype: Proximity
-    """
-    from pypf.proximity import Proximity
-    import copy
-    numprx = len(proxes)
-    if numprx < 2:
-        return None
-    ave_prx:Proximity = copy.deepcopy(proxes[0])
-    ave_prx.filename = None
-    ave_prx.filepath = None
-    ave_prx.name = method + "_" + numprx.__str__() + "_" + ave_prx.name + "_" + proxes[numprx-1].name
-    for prx in proxes:
-        if prx.terms != ave_prx.terms:
-            return None
-    nterms = ave_prx.nterms
-    # set ave to square matrix of zeros
-    ave = np.zeros((nterms,nterms))
-    match method:
-        case "mean":
-            for prx in proxes:
-                ave = ave + prx.dismat
-            ave = ave / numprx
-        case "median":
-            for i in range(nterms):
-                for j in range(nterms):
-                    ave[i,j] = np.median([prx.dismat[i,j] for prx in proxes])
-    issymmetric = np.equal(ave,ave.T).all()
-    ave_prx.dismat = ave
-    ave_prx.issymmetric = issymmetric
-    ave_prx.calculate_stats()
-    ave_prx.coh = coherence(ave_prx.dismat, ave_prx.max)
-    return ave_prx
 
 def canonical(coords:np.ndarray) -> np.ndarray | None:
 # returns canonical coordinates (-1 to 1) from input coordinates
@@ -136,7 +85,7 @@ def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[f
     else:
         return np.nan
 
-def dijkstra(dis, q, r):
+def dijkstra(dis:np.ndarray, q:int, r:float)->np.ndarray:
     dis = np.array(dis, dtype=float)
     n = len(dis)
     mindis = np.copy(dis)
@@ -149,8 +98,8 @@ def dijkstra(dis, q, r):
         for row in range(n):
             for col in range(n):
                 for ind in range(n):
-                    indirect1 = minkowski(dis[row, ind], m[ind, col], r)
-                    indirect2 = minkowski(m[row, ind], dis[ind, col], r)
+                    indirect1 = minkowski(dis[row, ind].item(), m[ind, col].item(), r)
+                    indirect2 = minkowski(m[row, ind].item(), dis[ind, col].item(), r)
                     indirect = min(indirect1, indirect2)
                     if indirect < mindis[row, col]:
                         mindis[row, col] = indirect
@@ -160,7 +109,7 @@ def dijkstra(dis, q, r):
             changed = False
     return mindis
 
-def discorr(dis1: np.ndarray, dis2: np.ndarray):
+def discorr(dis1: np.ndarray, dis2: np.ndarray)->float:
     """
     Computes the correlation between two distance matrices. If both matrices are
     symmetric, only the lower triangular values are considered. Otherwise, the
@@ -193,54 +142,7 @@ def discorr(dis1: np.ndarray, dis2: np.ndarray):
     cor = pwcorr(pair)
     return cor[0,1] if cor.shape[0] == 2 else np.nan
 
-def eccentricity(adjmat: np.ndarray) -> dict:
-    """
-    Calculates the eccentricity, radius, diameter, and center of a graph
-    represented by an adjacency matrix.
-
-    Args:
-        adjmat (numpy.ndarray): A square adjacency matrix.
-
-    Returns:
-        dict: A dictionary containing the eccentricity, radius, diameter, and center.
-              - 'ecc': A numpy array of eccentricities for each node.
-              - 'radius': The radius of the graph.
-              - 'diameter': The diameter of the graph.
-              - 'center': A numpy array of the indices (0-based) of the center nodes.
-    """
-    n = adjmat.shape[0]
-    adjmat = np.maximum(adjmat, adjmat.T)
-    links = adjmat.astype(bool)
-    dis = np.full((n, n), np.inf)
-    dis[links] = 1
-    np.fill_diagonal(dis, 0)
-    dist_matrix = floyd(dis, 1)
-    dist_noinf = dist_matrix.copy()
-    dist_noinf[np.isinf(dist_noinf)] = 0
-    ecc = np.max(dist_noinf, axis=1)
-    radius = np.min(ecc[ecc>0])
-    diameter = np.max(ecc)
-    center = np.where(ecc == radius)[0].tolist()
-    ecc = ecc.astype(int).tolist()
-    radius = int(radius.astype(int))
-    diameter = int(diameter.astype(int))
-
-    return {
-        'ecc': ecc,
-        'radius': radius,
-        'diameter': diameter,
-        'center': center
-    }
-
-def file_format():
-    tb6 = ["account","bank","flood","money","river", "save"]
-    bank6 = pd.DataFrame(np.array([[0, 3,32,26,32,32],[3,0,27,21,14,30],
-                                           [32,27,0,31,23,29],[26,21,31,0,31,23],
-                                           [32,14,23,31,0,31],[32,30,29,23,31,0]]),
-                                 index=tb6, columns=tb6)
-    return bank6
-
-def floyd(dismat, r):
+def floyd(dismat:np.ndarray, r:float)->np.ndarray:
     """
     Computes the shortest paths in a weighted graph using the Floyd-Warshall algorithm
     and applies the Minkowski distance-based interpolation to update the path weights.
@@ -272,7 +174,7 @@ def floyd(dismat, r):
     for ind in range(n):
         for row in range(n):
             for col in range(n):
-                indirect = minkowski(mindis[row, ind], mindis[ind, col], r)
+                indirect = minkowski(mindis[row, ind].item(), mindis[ind, col].item(), r)
                 if indirect < mindis[row, col]:
                     mindis[row, col] = indirect
     return mindis
@@ -325,7 +227,7 @@ def get_off_diagonal(m: np.ndarray) -> np.ndarray:
     mask = ~np.eye(n, dtype=bool)
     return m[mask]
 
-def get_parent_dir():
+def get_parent_dir()->str:
     """
     Determine the parent directory of the current file.
     """
@@ -333,7 +235,7 @@ def get_parent_dir():
     proj_dir = os.path.dirname(this_dir)
     return proj_dir
 
-def get_termsid(terms:list):
+def get_termsid(terms:list[str])->str|None:
     n = len(terms)
     if n < 2:
         return None
@@ -341,17 +243,7 @@ def get_termsid(terms:list):
     termsid = re.sub(r'[^a-zA-Z0-9_]', '_', termsid)
     return termsid
 
-
-
-def get_test_pf(name="psy"):
-    from pypf.pfnet import PFnet
-    from pypf.proximity import Proximity
-    filepath = os.path.join("data", name + ".prx.xlsx")
-    prx = Proximity(filepath)
-    pf = PFnet(prx)
-    return pf
-
-def graph_from_adjmat(adjmat:npt.NDArray, terms:list):
+def graph_from_adjmat(adjmat:np.ndarray, terms:list[str])->nx.Graph | nx.DiGraph:
     n = len(terms)
     isdirected = not np.array_equal(adjmat, adjmat.T)
     if isdirected:
@@ -399,7 +291,7 @@ def map_indices_to_terms(list_of_index_lists: list[list[int]], terms: list[str])
         result_list.append(term_list)
     return result_list
 
-def mds_coord(dismat:np.ndarray, ndims=2, metric=True):
+def mds_coord(dismat:np.ndarray, ndims=2, metric=True)->np.ndarray:
     from sklearn.manifold import MDS
     mds = MDS(n_components=ndims, metric=metric, n_init=1,
               max_iter=1000, eps=1e-6, dissimilarity='precomputed')
@@ -407,47 +299,7 @@ def mds_coord(dismat:np.ndarray, ndims=2, metric=True):
     coord = canonical(coord)
     return coord
 
-def merge_networks(nets):
-    from pypf.pfnet import PFnet
-    import copy
-    n = len(nets)
-    if n < 2:
-        return None
-    mrg:PFnet = copy.deepcopy(nets[0])
-    mrg.type = "merged"
-    # extract adjmat and convert to bool
-    adj = nets[0].adjmat
-    adj = adj.astype(bool)
-    adj = adj.astype(int)
-    mrg.name = "Merged_" + mrg.name
-    for i in range(1, n):
-        if mrg.terms != nets[i].terms:
-            return None
-        addon = nets[i].adjmat
-        addon = addon.astype(bool)
-        addon = addon.astype(int)
-        # make link values 2^i which gives a binary coding to links in nets
-        addon = addon * (2**i)
-        adj = adj + addon
-        mrg.name += "_" + nets[i].name
-    mrg.nlinks = adj.astype(bool).sum()
-    # if not mrg.isdirected:  -- apparently adjmat deals with directedness
-    #     mrg.nlinks = mrg.nlinks / 2
-    mrg.dismat = None
-    mrg.mindis = None
-    mrg.q = None
-    mrg.r = None
-    mrg.isdirected = not np.array_equal(adj, adj.T)
-    if not mrg.isdirected:
-        mrg.nlinks = mrg.nlinks // 2
-    mrg.graph = graph_from_adjmat(adj, mrg.terms)
-    mrg.graph.name = mrg.name
-    mrg.eccentricity = eccentricity(adj)
-    mrg.layers = mrg.shells(mrg.eccentricity["center"])
-    mrg.adjmat = adj
-    return mrg
-
-def minkowski(dis1, dis2, r):
+def minkowski(dis1:float, dis2:float, r:float) -> float:
     if r == 1:
         dis = dis1 + dis2
     elif np.isinf(r):
@@ -509,7 +361,7 @@ def mypfnets_dir() -> str:
     # 5. Return the path to the 'mypfnets' directory
     return mypfnets_path
 
-def netsim(adj1: npt.NDArray, adj2: npt.NDArray) -> dict:
+def netsim(adj1:np.ndarray, adj2:np.ndarray) -> dict[str, float | int | None]:
     """
     Calculates network similarity between two adjacency matrices.
 
@@ -623,7 +475,7 @@ def prop_table(objs: list, props: list) -> pd.DataFrame:
     df = pd.DataFrame(data, columns=props)
     return df
 
-def pwcorr(dis: np.ndarray = np.array([])) -> np.ndarray:
+def pwcorr(dis:np.ndarray) -> np.ndarray:
     """
     Calculates the pairwise correlation coefficient between columns in a given
     2D numpy array.
@@ -652,40 +504,7 @@ def pwcorr(dis: np.ndarray = np.array([])) -> np.ndarray:
                     corrs[i, j] = np.nan
         return np.round(corrs, 3)
 
-def sample_data() -> dict:
-    from pypf.collection import Collection
-    from pypf.proximity import Proximity
-    from pypf.pfnet import PFnet
-    from pypf.netpic import Netpic
-    files = ["bank6","bio", "psy", "bank", "cities", "statecaps"]
-    srcs = ["coocurrences in Longman's dictionary",
-        "relatedness ratings by biology grad students",
-         "relatedness ratings by psychology 101 students",
-         "coocurrences in Longman's dictionary",
-         "distances between cities in the US",
-         "distances between state capitals in the US"]
-    sources = pd.DataFrame(data={"file": files, "source": srcs})
-    col = Collection()
-    ex = None
-    for file in files:
-        fn = os.path.join("pypf","data", file + ".prx.xlsx")
-        px = Proximity(fn)
-        col.add_proximity(px)
-        pf = PFnet(px)
-        col.add_pfnet(pf)
-        if file in ["bank6"]:
-            ex = pf
-        if file in ["bio", "psy"]:
-            pf = PFnet(px, q=2)
-            col.add_pfnet(pf)
-        if file in ["statecaps"]:
-            pf = PFnet(px, q=2, r=2)
-            col.add_pfnet(pf)
-    ex.get_layout(method="kamada_kawai")
-    dic = {"collection": col, "sources": sources, "net_plot": Netpic(ex)}
-    return dic
-
-def split_long_term(term):
+def split_long_term(term:str)->str:
     n = len(term)
     if n < 15:
         return term

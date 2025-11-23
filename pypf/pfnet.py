@@ -1,11 +1,11 @@
-#pypf/pfnet.py
+# pypf/pfnet.py
 import numpy as np
-
-import pypf.utility
+import os
 from pypf.proximity import Proximity
-from pypf.utility import floyd, dijkstra, graph_from_adjmat, get_lower, get_off_diagonal, eccentricity, get_termsid
+from pypf.utility import floyd, dijkstra, graph_from_adjmat, get_lower, get_off_diagonal, get_termsid
 from networkx.drawing.nx_pydot import graphviz_layout
 import networkx as nx
+
 class PFnet:
     """
     PFnet class is used for creating and managing Proximity File Networks, which represent
@@ -32,17 +32,18 @@ class PFnet:
         #self.infchar = "\u221E"
         self.terms = []  # node labels
         self.termsid = ""
-        self.nnodes = 0
-        self.nlinks = 0
+        self.nnodes:int = 0
+        self.nlinks:int = 0
         self.dismat = np.array([])  # distance matrix
         self.mindis = np.array([])  # minimum distances
         self.adjmat = np.array([])  # adjacency matrix with link weights
+        self.isconnected = True
         self.isdirected = False  # true for directed graph
-        self.name = "default"  # Initialize the name property
+        self.name:str = "default"  # Initialize the name property
         self.graph = nx.Graph() # or nx.Digraph if directed
         self.layers = None  # nodes in each shell
-        self.eccentricity = None
-        self.type = type
+        self.eccentricity:dict = {}
+        self.type:str = type
         self.coords:np.ndarray | None = None
 
         if proximity is None:
@@ -60,6 +61,7 @@ class PFnet:
             links = np.full((self.nnodes, self.nnodes), True, dtype=bool)
             np.fill_diagonal(links, False)
 
+            # noinspection PyUnreachableCode
             match self.type:
                 case "pf":
                     self.name = self.name + "_pf"
@@ -115,64 +117,59 @@ class PFnet:
 
             np.fill_diagonal(links, False)
             self.adjmat[links & (self.adjmat == 0)] = 1.0e-20
-            self.eccentricity = eccentricity(self.adjmat)
-            self.layers = self.shells(source=self.eccentricity["center"])
+            self.eccentricity = self.get_eccentricity()
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
             self.get_layout() # default coords
         else:
             print("Error: proximity not valid")
 
-    def _getmindis(self, q, r, dis):
+    def get_network_properties(self) -> dict:
+        properties = {"node": self.terms}
+        links = self.adjmat > 0
+        links = links.astype(int)
+        indegree = np.sum(links, axis=0)
+        outdegree = np.sum(links, axis=1)
+        degree = (indegree + outdegree).tolist()
+        if self.isdirected:
+            properties["indegree"] = indegree.tolist()
+            properties["outdegree"] = outdegree.tolist()
+            properties["degree"] = degree
+        else:
+            properties["degree"] = indegree.tolist()
+            degree = indegree.tolist()
+        max_degree = max(degree)
+        properties["max degree"] = [term if degree[i] == max_degree else "" for i, term in enumerate(self.terms)]
+        ecc = self.eccentricity
+        properties["eccentricity"] = ecc["ecc"]
+        center_indices = ecc["center"]
+        properties["center"] = [term if i in center_indices else "" for i, term in enumerate(self.terms)]
+        if self.isconnected:
+            properties["mean link dist"] = ecc["mean link dist"]
+            properties["median"] = [term if ecc["mean link dist"][i] == ecc["min mean links"]
+                                    else "" for i, term in enumerate(self.terms)]
+        return properties
+
+    def _getmindis(self, q, r, dis) -> np.ndarray:
         if q >= (self.nnodes - 1):
             mindis = floyd(dis, r)
         else:
             mindis = dijkstra(dis, q, r)
         return mindis
 
-    def shells(self, source) -> list:
-        """
-        Creates layers of nodes starting from the center nodes of a graph.
-        Returns:
-            list: A list of lists, where each inner list represents a shell of nodes.
-                  Node indices are 0-based.
-        """
-        adjmat = self.adjmat
-        n = adjmat.shape[0]
-        used = list(source)  # Convert to list
-        lists = [used]  # Initialize as a list containing a list
-        while len(used) < n:
-            keep = []
-            last_layer = lists[-1]  # Get the last layer
-            for i in range(len(last_layer)):
-                new_nodes = np.where(adjmat[last_layer[i], :])[0].tolist()  # Find neighbors
-                new_nodes = [node for node in new_nodes if node not in used]  # Remove used nodes
-                keep.extend(new_nodes)
-            used = list(np.unique(used).astype(int)) + keep
-            used = list(np.unique(used).astype(int))
-
-            if len(used) < n and not keep:
-                new_nodes = [i for i in range(n) if i not in used]
-                keep = new_nodes
-                used = list(range(n))
-
-            if keep and len(used) < n:
-                lists.append(keep)
-
-        return lists
-
-    def get_info(self):
+    def get_info(self) -> dict:
         info: dict = {}
         info["name"] = self.name
         info["nnodes"] = self.nnodes
         info["nlinks"] = self.nlinks
+        info["isconnected"] = self.isconnected
         info["isdirected"] = self.isdirected
         info["type"] = self.type
         info["q"] = f"{self.q:.0f}" if self.q else None
         info["r"] = f"{self.r:g}" if self.r else None
         return info # a dictionary
 
-    def get_layout(self, method="kamda-kawai") -> dict:
+    def get_layout(self, method="kamda-kawai") -> None:
         """
         Creates layout coordinates for PFnet visualization and returns a layout dictionary.
         """
@@ -186,8 +183,8 @@ class PFnet:
         root = list(root) if root else None
         root = root[0] if root else None
         # print(f"root: {root}")
-        layout:dict = None
-        coord:np.ndarray = None
+        layout = None
+        coord = None
         try:
             match method:
                 case "gravity":
@@ -202,6 +199,7 @@ class PFnet:
                     nlist = map_indices_to_terms(self.layers, self.terms)
                     layout = nx.shell_layout(graph, nlist=nlist, scale=1, center=center)
                 case "kamda-kawai":
+                    # noinspection PyTypeChecker
                     layout = nx.kamada_kawai_layout(graph, weight=None, pos=randpos, center=center)
                 case "spiral":
                     layout = nx.spiral_layout(graph, resolution=0.5, scale=1, center=center, equidistant=True)
@@ -219,7 +217,8 @@ class PFnet:
                 case "link distances":
                     layout = nx.kamada_kawai_layout(graph, weight='weight', pos=randpos)
                 case "MDS":
-                    coord = pypf.utility.mds_coord(self.dismat, metric=True)
+                    from pypf.utility import mds_coord
+                    coord = mds_coord(self.dismat, metric=True)
 
         except Exception as e:
             print(f"Error in get_layout: {e}")
@@ -254,9 +253,89 @@ class PFnet:
         print(f"graph: {self.graph}")
         print(f"layers: {self.layers}")
 
-if __name__ == '__main__':
+    def get_link_list(self) -> dict:
+        n = self.nnodes
+        properties = {
+            "si": [],
+            "ti": [],
+            "source": [],
+            "target": [],
+            "weight": []
+        }
+        if self.type == "merge":
+            properties["nets"] = []
+            properties["count"] = []
+        for i in range(n):
+            start = 0 if self.isdirected else i + 1
+            for j in range(start, n):
+                weight = self.adjmat[i, j]
+                if weight == 0: continue
+                properties["si"].append(i)
+                properties["ti"].append(j)
+                properties["source"].append(self.terms[i])
+                properties["target"].append(self.terms[j])
+                properties["weight"].append(f"{weight:.7g}")
+                if self.type == "merge":
+                    binw = f"{int(weight):b}"
+                    properties["nets"].append(binw)
+                    properties["count"].append(binw.count("1"))
+        return properties
+
+    def get_eccentricity(self) -> dict:
+        """
+        Calculates the eccentricity, radius, diameter, center, and median of a graph
+
+        Returns:
+            dict: A dictionary containing the eccentricity, radius, diameter, and center.
+                  - 'ecc': A numpy array of eccentricities for each node.
+                  - 'radius': The radius of the graph.
+                  - 'diameter': The diameter of the graph.
+                  - 'center': A numpy array of the indices (0-based) of the center nodes.
+                  - 'mean links': The mean number of links between a node and other nodes.
+                  - 'min mean links': The minimum mean number of links between a node and other nodes.
+                  - 'median': A numpy array of the indices (0-based) of the median nodes.
+        """
+        adjmat = self.adjmat
+        n = self.nnodes
+        adjmat = np.maximum(adjmat, adjmat.T)
+        links = adjmat.astype(bool)
+        dis = np.full((n, n), np.inf)
+        dis[links] = 1
+        np.fill_diagonal(dis, 0)
+        dist_matrix = floyd(dis, 1)
+        self.isconnected = not np.any(np.isinf(dist_matrix))
+        dist_noinf = dist_matrix.copy()
+        dist_noinf[np.isinf(dist_noinf)] = 0
+        ecc = np.max(dist_noinf, axis=1)
+        radius = np.min(ecc[ecc > 0])
+        diameter = np.max(ecc)
+        center = np.where(ecc == radius)[0].astype(int).tolist()
+        mean_links = np.mean(dist_noinf, axis=1).astype(float).tolist()
+        min_mean_links = np.min(mean_links).astype(float)
+        median = np.where(mean_links == min_mean_links)[0].astype(int).tolist()
+        return {
+            'ecc': ecc.astype(int).tolist(),
+            'radius': radius.astype(int),
+            'diameter': diameter.astype(int),
+            'center': center,
+            'mean link dist': mean_links,
+            'min mean links': min_mean_links,
+            'median': median
+        }
+
+def get_test_pf(name:str="psy") -> PFnet:
     from pypf.proximity import Proximity
-    ap = Proximity("data/psy.prx.xlsx")
-    an = PFnet(ap)
-    an.netprint()
+    filepath = os.path.join("data", name + ".prx.xlsx")
+    prx = Proximity(filepath)
+    pf = PFnet(prx)
+    return pf
+
+if __name__ == '__main__':
+    import pandas as pd
+    ap = Proximity("data/statecaps.prx.xlsx")
+    an = PFnet(ap, type="pf", q=2, r=2)
+    # an.netprint()
     print(an.get_info())
+    tab = pd.DataFrame(an.get_network_properties())
+    print(tab)
+

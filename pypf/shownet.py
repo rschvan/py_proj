@@ -57,8 +57,7 @@ def shownet(parent_window, net:PFnet, method="gravity", width=600, height=600):
     # network_display.bind("<Configure>", _on_resize)
 
 if __name__ == "__main__":
-    from pypf.utility import get_test_pf
-    from pypf.pfnet import PFnet
+    from pypf.pfnet import PFnet, get_test_pf
 
     test_root = tk.Tk()
     test_root.withdraw() # Hide the main test root window

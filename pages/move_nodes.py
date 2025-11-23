@@ -4,6 +4,10 @@ import streamlit.components.v1 as components
 from pyvis.network import Network
 from pypf import Netpic
 
+st.set_page_config(
+    page_title="PyPF Adjust",
+    page_icon="🌐")
+
 def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, Network]:
     """
     Generates an HTML string containing the pyvis/vis.js graph for Streamlit embedding.
@@ -14,7 +18,8 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
     g = Network(height="600px", width="100%",
                 directed=pic.is_directed,
                 cdn_resources='in_line',
-                notebook=True)
+                notebook=True
+                )
 
     # 2. Add Nodes and Edges using pic
     for i, node_name in enumerate(pic.nodes):
@@ -30,7 +35,8 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
                    title=f"Node: {node_name}",
                    shape='box',
                    color='white',
-                   size=12)
+                   size=12,
+                   )
 
     # 3. Add Edges
     for i in range(len(pic.nodes)):
@@ -51,8 +57,23 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
                            physics=True)
 
     # 4. Enable manipulation and configure
+
     g.options = {
-        "physics": {"enabled": physics},
+        "physics": {
+            "enabled": physics,
+            "solver": 'forceAtlas2Based', # Specify the solver
+            "forceAtlas2Based": {         # Configuration for the solver
+                "gravitationalConstant": -250, # Adjust for tighter/looser clusters
+                "centralGravity": 0.03,      # Adjust central pull
+                "springLength": 100,
+                "springConstant": 0.10
+            },
+            "minVelocity": 0.75, # Prevents small, annoying jitters
+            "stabilization": {
+                "enabled": True,
+                "iterations": 1000 # Increase for better initial layout stability
+            }
+        },
         "autoResize": False,
         "nodes": {
             "font": {
@@ -76,6 +97,8 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
         # -----------------------------------
     }
 
+    # g.show_buttons(filter_=['physics'])
+
     # Generate the HTML content string from the pyvis object
     # notebook=True is necessary here to inline all JavaScript/CSS
     html_content = g.generate_html(notebook=True)
@@ -94,15 +117,15 @@ with st.sidebar:
     if display_type == "Static":
         interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=False, font_size=font_size)
     else:
-        interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=True, font_size=font_size)
+        interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=True, font_size=font_size+6)
 
-    st.number_input("**node size**", min_value=12, max_value=34, value=23, step=1, key="text_size",
-                    )
+    st.number_input("**node size**", min_value=2, max_value=44, value=23, step=1, key="text_size", )
     st.write("Set node size before moving nodes")
     st.write("""You can drag the nodes to new locations
      and can capture the image with a screenshot.""")
 
-st.subheader(f"{pic.net.name}: {pic.net.nnodes} nodes and {pic.net.nlinks} links")
+st.write(f"**Network: {pic.net.name}**")
+st.write(f"**{pic.net.nnodes} nodes and {pic.net.nlinks} links**")
 
 # Embed the HTML directly into the Streamlit app
 # The height must be set to ensure the visualization is visible

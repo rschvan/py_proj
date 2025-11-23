@@ -1,3 +1,4 @@
+# pypf/netpic.py
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, PathPatch
@@ -166,6 +167,7 @@ class Netpic:
                     color = 'blue'
                     # alpha = self.adjmat_norm[i, j]
                     if self.is_directed:
+                        # noinspection PyTypeChecker
                         edge = FancyArrowPatch(
                             start_point, end_point,
                             mutation_scale=15,
@@ -235,6 +237,7 @@ class Netpic:
         node_idx = self.nodes.index(self.dragging_node)
         self.net.coords[node_idx] += [dx, dy]
         self.node_positions[self.dragging_node] += [dx, dy]
+        # noinspection PyTypeChecker
         self.text_objects[self.dragging_node].set_position(self.node_positions[self.dragging_node])
         self.drag_start_pos = (event.xdata, event.ydata)
         self.create_view()

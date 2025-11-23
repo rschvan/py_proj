@@ -190,7 +190,7 @@ class NetworkDisplay(tk.Canvas):
 
 # Example Usage
 if __name__ == "__main__":
-    from pypf.utility import get_test_pf
+    from pypf.pfnet import get_test_pf
     from pypf.pfnet import PFnet # Import PFnet to check graph type
 
     # Test with an undirected graph (default "pf" type from get_test_pf will be undirected if dismat is symmetric)

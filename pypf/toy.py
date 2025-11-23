@@ -2,8 +2,8 @@ import networkx as nx
 import numpy as np
 import sys
 import os
-from pypf.pfnet import PFnet
-from pypf.utility import get_test_pf, graph_from_adjmat
+from pypf.pfnet import PFnet, get_test_pf
+from pypf.utility import graph_from_adjmat
 
 def paths():
     # Get the absolute path of the directory containing 'toy.py'

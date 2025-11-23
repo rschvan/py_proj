@@ -1,3 +1,5 @@
+# pypf/collection.py
+import copy
 import numpy as np
 import pandas as pd
 import os
@@ -10,8 +12,8 @@ class Collection:
     def __init__(self, to_csv:bool=False):
         self.proximities: dict[str, Proximity] = {}
         self.pfnets: dict[str, PFnet] = {}
-        self.selected_prxs: list[str] = []
-        self.selected_nets: list[str] = []
+        self.selected_prxs: list[str] = []  # proximity names
+        self.selected_nets: list[str] = []  # network names
         self.mypfnets_dir: str = mypfnets_dir() # directory in user's directory for sample data and help
         self.project_dirs: list[str] = [] # list of directories
         self.project_dirs.append(self.mypfnets_dir)
@@ -19,9 +21,8 @@ class Collection:
 
     def add_proximity(self, prx:Proximity):
         if prx.name in self.proximities:
-            return
-        else:
-            self.proximities[prx.name] = prx
+            prx.name = prx.name + "_dup"
+        self.proximities[prx.name] = prx
 
     def delete_proximity(self):
         selected = self.selected_prxs
@@ -29,25 +30,24 @@ class Collection:
             self.proximities.pop(prx_name)
         self.selected_prxs = []
 
-    def add_pfnet(self, pf:PFnet):
+    def add_pfnet(self, pf:PFnet) -> None:
         if pf.name in self.pfnets:
-            return
-        else:
-            self.pfnets[pf.name] = pf
+            pf.name = pf.name + "_dup"
+        self.pfnets[pf.name] = pf
 
-    def delete_pfnet(self):
+    def delete_pfnet(self) -> None:
         selected = self.selected_nets
         for net_name in selected:
             self.pfnets.pop(net_name)
         self.selected_nets = []
 
-    def get_proximity(self, name:str):
+    def get_proximity(self, name:str) -> Proximity | None:
         return self.proximities[name]
 
-    def get_pfnet(self, name:str):
+    def get_pfnet(self, name:str) -> PFnet | None:
         return self.pfnets[name]
 
-    def get_proximity_info(self):
+    def get_proximity_info(self) -> pd.DataFrame | None:
         infolist = []
         for prx_name in self.proximities.keys():
             prx = self.proximities[prx_name]
@@ -59,7 +59,7 @@ class Collection:
             os.startfile(f)
         return df
 
-    def get_pfnet_info(self):
+    def get_pfnet_info(self) -> pd.DataFrame | None:
         infolist = []
         for net_name in self.pfnets.keys():
             net = self.pfnets[net_name]
@@ -71,7 +71,7 @@ class Collection:
             os.startfile(f)
         return df
 
-    def get_proximity_correlations(self):
+    def get_proximity_correlations(self) -> pd.DataFrame | None:
         from pypf.utility import discorr
         prxs = list(self.proximities.keys())
         n = len(prxs)
@@ -94,23 +94,61 @@ class Collection:
             print("Too few proximities for correlations.")
             return None
 
-    def average_proximities(self, choice:str="mean"):
-        from pypf.utility import average_proximity
-        n = len(self.selected_prxs)
-        if n < 2:
-            print("Not Enough Proximities", "Please select at least two proximities to average.")
-            return
-        proxes:list[Proximity] = []
-        for name in self.selected_prxs:
-            proxes.append(self.proximities[name])
-        ave_prx = average_proximity(proxes, method=choice)
-        if ave_prx is None:
-            print("Average Failed", "Proximities not compatible.")
-            return
-        self.proximities[ave_prx.name] = ave_prx
-        self.selected_prxs = []
+    def average_proximities(self, method="mean") -> None:
+        from pypf.utility import coherence
+        """
+        Computes the average proximity matrix based on a list of proximity matrices and a specified method
+        (mean or median). The function generates a new proximity object as a result, encapsulating the
+        aggregated proximity data.
 
-    def network_similarity(self):
+        :param proxes: A list of Proximity objects for which the average proximity matrix is to be computed.
+                       All Proximity objects in the list must have matching terms and dimensions.
+        :type proxes: list[Proximity]
+
+        :param method: The method to use for computing the average proximity. Accepted values are "mean"
+                       and "median". Defaults to "mean". The "mean" method computes the arithmetic mean
+                       across matrices, while the "median" method computes the median element-wise.
+        :type method: str, optional
+
+        :return: A new Proximity object containing the aggregated proximity matrix as per the specified
+                 method. The resulting proximity includes updated statistics and coherence measurements.
+        :rtype: Proximity
+        """
+        selected = self.selected_prxs
+        num = len(selected)
+        if num < 2:
+            return
+        proxes = []
+        for name in selected:
+            proxes.append(self.proximities[name])
+        ave_prx:Proximity = copy.deepcopy(proxes[0])
+        ave_prx.filename = None
+        ave_prx.filepath = None
+        ave_prx.name = method + str(num) + ave_prx.name + "_to_" + proxes[num - 1].name
+        for prx in proxes:
+            if prx.terms != ave_prx.terms:
+                return
+        nterms = ave_prx.nterms
+        # set ave to square matrix of zeros
+        ave = np.zeros((nterms, nterms))
+        match method:
+            case "mean":
+                for prx in proxes:
+                    ave_prx.max = max(ave_prx.max, prx.max)
+                    ave = ave + prx.dismat
+                ave = ave / num
+            case "median":
+                for i in range(nterms):
+                    for j in range(nterms):
+                        ave[i, j] = np.median([prx.dismat[i, j] for prx in proxes])
+        issymmetric = np.equal(ave, ave.T).all()
+        ave_prx.dismat = ave
+        ave_prx.issymmetric = issymmetric
+        ave_prx.calculate_stats()
+        ave_prx.coh = coherence(ave_prx.dismat, ave_prx.max)
+        self.add_proximity(ave_prx)
+
+    def network_similarity(self) -> pd.DataFrame | None:
         from pypf.utility import netsim
         netlist = list(self.pfnets.keys())
         n = len(netlist)
@@ -137,7 +175,7 @@ class Collection:
             print("Not Enough Networks", "Must have at least two networks for similarity.")
             return None
 
-    def network_link_list(self):
+    def network_link_list(self) -> pd.DataFrame | None:
         if self.selected_nets:
             # show link list for the first selected network
             pf_name = self.selected_nets[0]
@@ -153,18 +191,41 @@ class Collection:
             print("No Network Selected", "Please select one or more networks first.")
             return None
 
-    def merge_networks(self):
-        from pypf.utility import merge_networks
-        netnames = self.selected_nets
-        nets:list[PFnet] = []
-        if len(netnames) > 1:
-            for name in netnames:
-                nets.append(self.pfnets[name])
-            mrg = merge_networks(nets)
-            self.pfnets[mrg.name] = mrg
-            self.selected_nets = []
-        else:
-            print("Not Enough Networks.", "Please select at least two nets.")
+    def merge_networks(self) -> PFnet:
+        from pypf.utility import graph_from_adjmat
+        net_names = self.selected_nets
+        n_nets = len(net_names)
+        if n_nets < 2:
+            print("Not Enough Networks", "Please select at least two networks to merge.")
+            return
+        merged_net = copy.deepcopy(self.pfnets[net_names[0]])
+        merged_net.name = "|".join(net_names)
+        merged_net.name = "merge" + str(n_nets) + merged_net.name
+        merged_net.graph.name = merged_net.name
+        merged_net.type = "merge"
+        adj = merged_net.adjmat.astype(bool).astype(int)
+        for i in range(1, n_nets):
+            if merged_net.terms != self.pfnets[net_names[i]].terms:
+                print("Merge Failed", "Networks do not have matching terms.")
+                return
+            add = self.pfnets[net_names[i]].adjmat.astype(bool).astype(int)
+            adj = adj + (add * (2**i))
+        merged_net.adjmat = adj
+        merged_net.nlinks = adj.astype(bool).sum()
+        merged_net.dismat  = None
+        merged_net.mindis = None
+        merged_net.maxdis = None
+        merged_net.q = None
+        merged_net.r = None
+        merged_net.isdirected = not np.array_equal(adj, adj.T)
+        if not merged_net.isdirected:
+            merged_net.nlinks = int(merged_net.nlinks / 2)
+        merged_net.graph = graph_from_adjmat(adj, merged_net.terms)
+        merged_net.graph.name = merged_net.name
+        merged_net.get_eccentricity()
+        self.add_pfnet(merged_net)
+        self.selected_nets = []
+        return merged_net
 
 if __name__ == "__main__":
     from pypf.proximity import Proximity
@@ -183,12 +244,8 @@ if __name__ == "__main__":
     col.selected_prxs = ["psy", "bio"]
 
     col.selected_nets = ["psy_pf", "bio_pf"]
-    #
-    # col.network_link_list()
-    # col.merge_networks()
-    # col.average_proximities()
-    # col.network_similarity()
-    # col.get_proximity_correlations()
-    # col.get_proximity_info()
-    # col.get_pfnet_info()
-    # print(col.pfnets)
+
+    mrg = col.merge_networks()
+    props = mrg.get_network_properties()
+    tab = pd.DataFrame(props)
+    print(tab)

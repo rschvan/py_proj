@@ -1,14 +1,21 @@
 # pages/help.py
 import streamlit as st
-from pypf.utility import file_format
 import os
-import io
+import pandas as pd
+import numpy as np
 
 st.set_page_config(
     page_title="PyPF Help",
     page_icon="❓", # Use an emoji
 )
-#st.write(st.session_state)
+
+def file_format()->pd.DataFrame:
+    tb6 = ["account","bank","flood","money","river", "save"]
+    bank6 = pd.DataFrame(np.array([[0, 3,32,26,32,32],[3,0,27,21,14,30],
+                                           [32,27,0,31,23,29],[26,21,31,0,31,23],
+                                           [32,14,23,31,0,31],[32,30,29,23,31,0]]),
+                                 index=tb6, columns=tb6)
+    return bank6
 
 st.subheader("Welcome to PyPathfinder!")
 st.link_button("Pathfinder Wikipedia Page", "https://en.wikipedia.org/wiki/Pathfinder_network")
@@ -25,7 +32,6 @@ if st.button("PyPathfinder Demo Video", key="vid_button"):
     video_path = os.path.join(parent, "pypf/data/video_demo.mp4")
     st.video(video_path)
 
-#st.subheader("About PyPathfinder")
 st.write("""
         PyPathfinder is a Python app for creating and analyzing Pathfinder Networks.
         It allows you to load Proximity data files and create Pathfinder Networks as well as
@@ -117,9 +123,12 @@ To associate a term file with a specific data file, the term file name must incl
 "data.trm.txt".    
 
 The legacy text files are more complex than the spreadsheet format, so we encourage the use of the newer spreadsheet
- format for newly created data files.  Details about the format of legacy proximity can be seen by clicking 
+ format for newly created data files.  Details about the format of legacy proximity .txt files can be seen by clicking 
  the button below. 
 """)
+
+# Legacy details
+
 if st.button("Click for Details on Legacy Text Proximity Files"):
     st.write("""The data may be in the form of similarities, dissimilarities, probabilities, distances, 
     coordinates, or features.  With dissimilarities or distances, smaller numbers represent pairs of entities 
@@ -233,16 +242,22 @@ destination term, and the proximity value.
 When data are in the form of vectors, the appropriate format starting at Line 7 is as follows:  
 Line 7. “coord” or “feature” or “attrib” indicating that the data to follow are to be interpreted as 
 vectors of numbers, one vector for each item or node.  
-Line 8. Integer = The number of dimensions, attributes, or features in the vector for each item (vector length) 
+Line 8. Integer = The number of dimensions, attributes, or features in the vector for each item (vector length)   
 Line 9. “euclidean” or “city block” or “dominance” or “hamming” or “cosine” plus optional: “standardize”  
 Line 10: Vector for item 1  
 Line 11: Vector for item 2  
 Etc. (one vector for each item)
 
-Here is a small example for 5 nodes in 2 dimensions:  
-coord:  
+Here is a small example proximity data file for 5 nodes in 2 dimensions:  
+data  
+distance  
+5 nodes  
+Euclidean Distances  
+0 minimum data value  
+16 maximum data value  
+coord:    
 2 dimensions  
-Euclidean Distance 
+Euclidean Distance   
 9  1  
 8  4  
 2  6  
@@ -258,8 +273,8 @@ identify the presence or absence of features using 1’s and 0’s.   The line f
 dimensions or features must have "Euclidean," "City Block," "Dominance," “Hamming,” or “Cosine.” 
 This determines how distance data are computed from the coordinates or features.  Distances are 
 computed for all pairs of items.  With Euclidean, we find the straight line distance between 
-the items (nodes) in multidimensional space.  With City Block, the distances are determined by s
-umming the distance between items (nodes) on each dimension or feature.  City Block is usually the 
+the items (nodes) in multidimensional space.  With City Block, the distances are determined by  
+summing the distance between items (nodes) on each dimension or feature.  City Block is usually the 
 most appropriate method for Likert-type rating scale data.  With Dominance, the distance between items 
 is the maximum difference for the items across all the dimensions or features.  Hamming distances are the 
 number of features on which items (nodes) differ.  Cosine bases the distances on the cosine of the angle 

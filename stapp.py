@@ -12,9 +12,34 @@ import copy
 from pypf.collection import Collection
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.utility import sample_data, file_format
 from pypf.read_legacy_files import legacy_prx_files
 import time
+
+def sample_data() -> dict:
+    files = ["bank6","bio", "psy", "bank", "cities", "statecaps"]
+    srcs = ["coocurrences in Longman's dictionary",
+        "relatedness ratings by biology grad students",
+         "relatedness ratings by psychology 101 students",
+         "coocurrences in Longman's dictionary",
+         "distances between cities in the US",
+         "distances between state capitals in the US"]
+    sources = pd.DataFrame(data={"file": files, "source": srcs})
+    col = Collection()
+    for file in files:
+        fn = os.path.join("pypf","data", file + ".prx.xlsx")
+        px = Proximity(fn)
+        col.add_proximity(px)
+        pf = PFnet(px)
+        col.add_pfnet(pf)
+        if file in ["bio", "psy"]:
+            pf = PFnet(px, q=2)
+            col.add_pfnet(pf)
+        if file in ["statecaps"]:
+            pf = PFnet(px, q=2, r=2)
+            col.add_pfnet(pf)
+    dic = {"collection": col, "sources": sources, }
+    return dic
+
 #
 # --- Streamlit Application Layout (MUST BE FIRST Streamlit command) ---
 st.set_page_config(layout="wide", page_title="PyPathfinder", page_icon="🏠")
@@ -23,7 +48,7 @@ home_dir = os.path.dirname(os.path.abspath(__file__))
 home_page = st.Page(page=os.path.join(home_dir,"stapp.py"), title="Build Nets", icon="🏠")
 help_page = st.Page(page=os.path.join(home_dir,"pages","help.py"), title="Help", icon="❓")
 display_page = st.Page(page=os.path.join(home_dir,"pages","display_network.py"), title="Select Display", icon="🌐")
-move_page = st.Page(page=os.path.join(home_dir,"pages","move_nodes.py"), title="Ineractive Display", icon="🌐")
+move_page = st.Page(page=os.path.join(home_dir,"pages","move_nodes.py"), title="Interactive Display", icon="🌐")
 pages = [home_page, display_page, move_page, help_page]
 page_selected = st.navigation(pages=pages, position="sidebar")
 if page_selected != home_page:
@@ -47,8 +72,7 @@ else:
         sample = sample_data()
         sample_col:Collection = sample["collection"] # Collection with sample Proximitys and PFnets
         sample_sources:pd.DataFrame = sample["sources"] # DataFrame with sources of sample Proximities
-        prx_file_format:pd.DataFrame = file_format() # DataFrame with sample .xlsx proximity file contents
-        return sample_col, sample_sources, prx_file_format
+        return sample_col, sample_sources
 
     def add_demo(col):
         for px in sample_col.proximities.values():
@@ -64,23 +88,19 @@ else:
             if demopf in col.pfnets:
                 del col.pfnets[demopf]
 
-    sample_col, sample_sources, prx_file_format = get_collection_instance()
+    sample_col, sample_sources = get_collection_instance()
 
     # initialize session state (runs once per user session)
     if 'pf_name' not in st.session_state:
-        #st.write("Initializing session state...")
         st.session_state.home_dir = os.path.dirname(os.path.abspath(__file__))
         st.session_state.col = copy.deepcopy(sample_col)
         col = st.session_state.col
-        add_demo(col)
         st.session_state.pf_name = col.pfnets["bank6_pf"].name
         st.session_state.layouts = ["kamada_kawai", "neato", "force", "gravity", "spring", "spiral", "circle", "MDS"]
         st.session_state.layout_index = 0
         st.session_state.layout = st.session_state.layouts[st.session_state.layout_index]
         st.session_state.last_layout = st.session_state.layout
         st.session_state.font_size = 10
-        # st.session_state.deleted_prxs = []
-        # st.session_state.deleted_pfnets = []
         st.session_state.rotation = 0
         st.session_state.intro_info = True
         pf = col.pfnets[st.session_state.pf_name]
@@ -144,7 +164,9 @@ else:
     # Intro Info
 
     if show_intro_info:
-        #add_demo(col)
+        if "bank6_pf" not in col.pfnets and "statecaps" not in col.proximities:
+            add_demo(col)
+
         if st.button("PyPathfinder Demo Video", key="vid_button"):
             st.video("pypf/data/video_demo.mp4")
         st.write('''**Welcome!**  
@@ -170,8 +192,7 @@ the node positions.
 The **Intro Info checkbox** makes starting information available including access to a demo video 
 and several sample Proximities and Networks to illustrate the app and to allow you to explore 
 the app's functionality.  Unchecking this checkbox removes the introductory information.  Checking it
-again shows this introductory Welcome, but not the sample Proximities and Networks. Reloading the page
-will restore all the samples, but anything you have created will be lost.
+again will add the introductory information back.
 
 Go to the **Help** page for more information.  
         ''')
@@ -318,7 +339,7 @@ Go to the **Help** page for more information.
                         col.selected_prxs = []  # Clear selection after deletion
                         st.rerun()  # Rerun to update the display
                     else:
-                        st.warning("Please select at least one proximity to delete.")
+                        st.warning("Click one or more proximity check boxes to delete.")
             with dernet:
                 if st.button("Derive Networks", key="derive_pfnet_btn"):
                     if len(col.selected_prxs) > 0:
@@ -337,18 +358,18 @@ Go to the **Help** page for more information.
                                         pf = PFnet(prx, type="nn")
                                 col.add_pfnet(pf)
                     else:
-                        st.warning("Please select at least one proximity to derive networks.")
+                        st.warning("Click one or more proximity check boxes to derive networks.")
             with aveprx:
                 if st.button("Average Proximities", key="average_prx_btn"):
                     if len(col.selected_prxs) >= 2:
                         try:
-                            col.average_proximities(choice=ave_method)
+                            col.average_proximities(method=ave_method)
                             st.success("Proximities averaged.")
                             st.rerun()  # Rerun
                         except Exception as e:
                             st.error(f"Error averaging proximities: {e}")
                     else:
-                        st.warning("Please select at least two proximities to average.") ##
+                        st.warning("Click two or more proximity check boxes to average.") ##
 
     with netlist:
         st.subheader("Network List")
@@ -386,19 +407,18 @@ Go to the **Help** page for more information.
                         #st.success("Selected PFnets deleted.")
                         st.rerun()  # Rerun
                     else:
-                        st.warning("Please select at least one network to delete.")
+                        st.warning("Click one or more network check boxes to delete.")
             with mrgnet:
                 if st.button("Merge Networks", key="merge_nets_btn"):
                     if len(col.selected_nets) >= 2:
                         try:
                             # Assuming col.merge_networks() handles adding the merged net to col.pfnets
                             col.merge_networks()
-                            #st.success("Selected PFnets merged.")
                             st.rerun()  # Rerun
                         except Exception as e:
                             st.error(f"Error merging networks: {e}")
                     else:
-                        st.warning("Please select at least two networks to merge.")
+                        st.warning("Click two or more network check boxes to merge.")
             with dispnet:
                 if st.button("Display Network", key="display_net_btn"):
                     if len(col.selected_nets) == 1:
@@ -411,7 +431,7 @@ Go to the **Help** page for more information.
                         st.switch_page(display_page)
                         col.selected_nets = []
                     else:
-                        st.warning("Please select one network to display.")
+                        st.warning("Click one network check box to display.")
 
         st.write(f"**{st.session_state.pf_name}** is currently displayed.")
 
