@@ -53,10 +53,15 @@ st.write('''Intro info adds access to information about Pathfinder and the app
         Proximities and PFnets for demo purposes.  These elements will be deleted 
         when you uncheck the Intro Info box. 
         Anything you add will be preserved when you uncheck the Intro Info box. 
-        Your files are not saved over sessions, but you can re-add them easily. 
+        Your files are not saved over sessions. 
         ''')
 st.subheader("**Tips about the app**")
 st.write('''
+        In the Proximity and Network Lists, you can select items by checking the box to the left
+        of the name. A single item can be selected by clicking on its name, but selecting mutiple
+        items requires checking the select boxes. All items can be selected or deselected by 
+        checking or unchecking the select box at the top of the list.   
+        
         Download any table into a csv file by hovering at the top of the table and
         clicking on the download icon. 
         
@@ -72,8 +77,14 @@ st.write('''
         Links in Nearest neighbor networks point from a node to the nearest other node or nodes 
         if there are ties.  
         
+        Networks with the same nodes can be merged into a single network which includes all 
+        of the links in the merged networks. The link list will show which networks include each link.  
+        
         The MDS layout uses the complete distance matrix to find a 2-D Multidimensional Scaling Fit for locating
-        the nodes. It is particularly useful when all of the distances are considered meaningful.
+        the nodes. It is particularly useful when all of the distances are considered meaningful.  
+        
+        Eccentricity is the maximum number of links in paths between a node and nodes that can be 
+        reached from that node. The measure may be misleading if the network is not completly connected. 
 ''')
 st.subheader("**Spreadsheet Data File Format (.xlsx or .csv files)**")
 st.write("""The spreadsheet format is the simplest way to arrange your data for analysis by the app.

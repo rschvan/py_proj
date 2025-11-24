@@ -103,7 +103,7 @@ if show_link_list:
     if pic.net.type == "merge":
         st.write("""**weight** is a binary code  
         **nets** shows which nets contain the link (reading right to left) -- e.g., 110 means in nets 2 & 3  
-        **count** shows the number nets that contain the link -- e.g. 110 count would be 2
+        **count** shows the number of nets that contain the link -- e.g. 110 count would be 2
         """)
 
     lprops = pic.net.get_link_list()

@@ -305,6 +305,19 @@ Go to the **Help** page for more information.
             st.info("No PFnet objects.")
 
     # ---Proximity and Network Lists
+
+    def get_selected_rows(df, names) -> list:
+        sel_rows = df.selection.rows
+        sel_cells = df.selection.cells
+        if len(sel_rows) > 0:
+            sel = sel_rows
+        elif len(sel_cells) > 0:
+            sel = [sel_cells[0][0]]
+        else:
+            return []
+        return [key for i, key in enumerate(names) if i in sel]
+
+
     prxlist, netlist = st.columns(2)
     with prxlist:
         st.subheader("Proximity List")
@@ -320,15 +333,11 @@ Go to the **Help** page for more information.
                 width='stretch',
                 height=height,  # Set a height to reflect contents
                 hide_index=True,  # Hide index as 'Name' column is present
-                selection_mode=["multi-row"],  # Enable multi-row selection, using working syntax
+                selection_mode=["multi-row","single-cell"],
                 key="prx_selection_df",
                 on_select="rerun"  # Crucial for getting selection updates
             )
-            if selected_prxs_data.selection.rows:
-                col.selected_prxs = [prx_names[i] for i in selected_prxs_data.selection.rows]
-                # st.write(f"Selected Proximities: {col.selected_prxs}")
-            else:
-                col.selected_prxs = []
+            col.selected_prxs = get_selected_rows(selected_prxs_data, prx_names)
 
             delprx, aveprx, dernet = st.columns(3)
             with delprx:
@@ -386,15 +395,11 @@ Go to the **Help** page for more information.
                 width='stretch',
                 height=height,  # Set a fixed height
                 hide_index=True,  # Hide index
-                selection_mode=["multi-row"],  # Enable multi-row selection, using working syntax
+                selection_mode=["multi-row", "single-cell"],
                 key="pfnet_selection_df",
                 on_select="rerun"  # Crucial for getting selection updates
             )
-
-            if selected_nets_data.selection.rows:
-                col.selected_nets = [pfnet_names[i] for i in selected_nets_data.selection.rows]
-            else:
-                col.selected_nets = []
+            col.selected_nets = get_selected_rows(selected_nets_data, pfnet_names)
 
             delnet, mrgnet, dispnet = st.columns(3)
             with delnet:
@@ -402,9 +407,7 @@ Go to the **Help** page for more information.
                     if col.selected_nets:
                         for net_name in col.selected_nets:
                             col.pfnets.pop(net_name)
-                            #st.session_state.deleted_pfnets.append(net_name)
                         col.selected_nets = []  # Clear selection after deletion
-                        #st.success("Selected PFnets deleted.")
                         st.rerun()  # Rerun
                     else:
                         st.warning("Click one or more network check boxes to delete.")
@@ -436,4 +439,3 @@ Go to the **Help** page for more information.
         st.write(f"**{st.session_state.pf_name}** is currently displayed.")
 
     st.session_state.count += 1
-    #st.subheader(f"Current Network: {st.session_state.pic.ax.title.get_text()}")
