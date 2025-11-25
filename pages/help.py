@@ -46,14 +46,13 @@ st.write("""
         
         Load your own data files whenever you like.      
         """)
-st.markdown("**Sample Proximity files and Networks**")
-st.write('''Intro info adds access to information about Pathfinder and the app 
+st.subheader("**Intro info**")
+st.write('''**Intro info** adds access to information about Pathfinder and the app 
         including a video demo. 
-        It also loads an example of the required Proximity file formats and sample 
-        Proximities and PFnets for demo purposes.  These elements will be deleted 
-        when you uncheck the Intro Info box. 
+        It also loads several example Proximities and PFnets for demo purposes. 
+        These elements will be deleted 
+        when you uncheck the Intro Info box. Checking the box again will add them back.
         Anything you add will be preserved when you uncheck the Intro Info box. 
-        Your files are not saved over sessions. 
         ''')
 
 st.subheader("**Displaying a Network**")

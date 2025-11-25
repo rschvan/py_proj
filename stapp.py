@@ -216,7 +216,7 @@ and several sample Proximities and Networks to illustrate the app and to allow y
 the app's functionality.  Unchecking this checkbox removes the introductory information.  Checking it
 again will add the introductory information back.
 
-Go to the **Help** page for more information.  
+Go to the **Help** page for more information including required formats for Proximity files.  
         ''')
     else:
         del_demo(col)
@@ -411,7 +411,7 @@ Go to the **Help** page for more information.
         if not pfnet_names:
             st.info("No PFnet objects.")
         else:
-            st.write("Clicking at the top selects or deselects all:")
+            st.write("Clicking at the top of the boxes selects or deselects all:")
             height = min(600, 40 + 35 * len(col.pfnets))
             pfnet_df = pd.DataFrame({"Name": pfnet_names})
 

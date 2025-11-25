@@ -64,7 +64,7 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
             "solver": 'hierarchicalRepulsion', # Specify the solver
             "forceAtlas2Based": {         # Configuration for the solver
                 "gravitationalConstant": -250, # Adjust for tighter/looser clusters
-                "centralGravity": 0.03,      # Adjust central pull
+                "centralGravity": 0.01,      # Adjust central pull
                 "springLength": 100,
                 "springConstant": 0.10
             },
