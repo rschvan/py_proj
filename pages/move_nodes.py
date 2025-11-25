@@ -61,7 +61,7 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
     g.options = {
         "physics": {
             "enabled": physics,
-            "solver": 'forceAtlas2Based', # Specify the solver
+            "solver": 'hierarchicalRepulsion', # Specify the solver
             "forceAtlas2Based": {         # Configuration for the solver
                 "gravitationalConstant": -250, # Adjust for tighter/looser clusters
                 "centralGravity": 0.03,      # Adjust central pull
@@ -93,11 +93,13 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
             "addEdge": False,
             "deleteNode": False,
             "deleteEdge": False
+        },
+        "configure": {
+            "enabled": physics,
+            "filter": "physics"
         }
         # -----------------------------------
     }
-
-    # g.show_buttons(filter_=['physics'])
 
     # Generate the HTML content string from the pyvis object
     # notebook=True is necessary here to inline all JavaScript/CSS

@@ -88,6 +88,28 @@ else:
             if demopf in col.pfnets:
                 del col.pfnets[demopf]
 
+    def mergeable(col:Collection) -> str:
+        nets = col.selected_nets
+        state = "ok"
+        if len(nets) < 2:
+            return "Click check boxes of 2 or more networks to merge"
+        tid = col.pfnets[nets[0]].termsid
+        for net in nets[1:]:
+            if col.pfnets[net].termsid != tid:
+                state = "Merged networks must have same terms"
+        return state
+
+    def averageable(col:Collection) -> str:
+        prxs = col.selected_prxs
+        state = "ok"
+        if len(prxs) < 2:
+            return "Click check boxes of 2 or more proximities to average"
+        nterms = col.proximities[prxs[0]].nterms
+        for prx in prxs[1:]:
+            if col.proximities[prx].nterms != nterms:
+                state = "Proximities must have same number of terms (nodes) to average"
+        return state
+
     sample_col, sample_sources = get_collection_instance()
 
     # initialize session state (runs once per user session)
@@ -322,12 +344,14 @@ Go to the **Help** page for more information.
     with prxlist:
         st.subheader("Proximity List")
         prx_names = list(col.proximities.keys())
+        # ids = [prx.termsid for prx in col.proximities.values()]
         if not prx_names:
             st.info("No Proximity objects.")
         else:
             st.write("Click in the box left of Name column to select:")
             height = min(600, 40 + 35*len(col.proximities))
             prx_df = pd.DataFrame({"Name": prx_names})
+            # prx_df = pd.DataFrame({"Name": prx_names, "Terms ID": ids})
             selected_prxs_data = st.dataframe(
                 prx_df,
                 width='stretch',
@@ -370,7 +394,8 @@ Go to the **Help** page for more information.
                         st.warning("Click one or more proximity check boxes to derive networks.")
             with aveprx:
                 if st.button("Average Proximities", key="average_prx_btn"):
-                    if len(col.selected_prxs) >= 2:
+                    state = averageable(col)
+                    if state == "ok":
                         try:
                             col.average_proximities(method=ave_method)
                             st.success("Proximities averaged.")
@@ -378,7 +403,7 @@ Go to the **Help** page for more information.
                         except Exception as e:
                             st.error(f"Error averaging proximities: {e}")
                     else:
-                        st.warning("Click two or more proximity check boxes to average.") ##
+                        st.warning(f"Error: {state}.")
 
     with netlist:
         st.subheader("Network List")
@@ -413,7 +438,8 @@ Go to the **Help** page for more information.
                         st.warning("Click one or more network check boxes to delete.")
             with mrgnet:
                 if st.button("Merge Networks", key="merge_nets_btn"):
-                    if len(col.selected_nets) >= 2:
+                    state = mergeable(col)
+                    if state == "ok":
                         try:
                             # Assuming col.merge_networks() handles adding the merged net to col.pfnets
                             col.merge_networks()
@@ -421,7 +447,7 @@ Go to the **Help** page for more information.
                         except Exception as e:
                             st.error(f"Error merging networks: {e}")
                     else:
-                        st.warning("Click two or more network check boxes to merge.")
+                        st.warning(f"Error: {state}.")
             with dispnet:
                 if st.button("Display Network", key="display_net_btn"):
                     if len(col.selected_nets) == 1:
@@ -434,7 +460,7 @@ Go to the **Help** page for more information.
                         st.switch_page(display_page)
                         col.selected_nets = []
                     else:
-                        st.warning("Click one network check box to display.")
+                        st.warning("Error: Select one network to display.")
 
         st.write(f"**{st.session_state.pf_name}** is currently displayed.")
 

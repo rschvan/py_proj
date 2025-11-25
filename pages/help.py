@@ -55,9 +55,23 @@ st.write('''Intro info adds access to information about Pathfinder and the app
         Anything you add will be preserved when you uncheck the Intro Info box. 
         Your files are not saved over sessions. 
         ''')
+
+st.subheader("**Displaying a Network**")
+st.write("""The **Select Display** page provides tools for exploring various layouts and characteristics of the 
+    display of networks. You are automatically taken to this page when you display a network. 
+    Use the tools to get a satisfactory view of the network. If you would like to adjust
+    the view by moving the nodes around, go to the **Interactive Display** page which uses the node positions
+    established initally. The default **Static** display allows
+    you to move the nodes to clean up the layout. The **Dynamic** display uses a layout algorithm to settle into a 
+    layout. You can drag nodes to influence the settling. A control panel at the bottom 
+    (scroll down to see it) allows you to disenable the layout 
+    algorithm and to adjust layout parameters including the layout algorithm used. When you disable the layout 
+    algorithm, you can move the nodes around without the intervention of the algorithm.
+    """)
+
 st.subheader("**Tips about the app**")
 st.write('''
-        In the Proximity and Network Lists, you can select items by checking the box to the left
+        In the Proximity and Network Lists, you can select items by checking the select box to the left
         of the name. A single item can be selected by clicking on its name, but selecting mutiple
         items requires checking the select boxes. All items can be selected or deselected by 
         checking or unchecking the select box at the top of the list.   
@@ -86,6 +100,7 @@ st.write('''
         Eccentricity is the maximum number of links in paths between a node and nodes that can be 
         reached from that node. The measure may be misleading if the network is not completly connected. 
 ''')
+
 st.subheader("**Spreadsheet Data File Format (.xlsx or .csv files)**")
 st.write("""The spreadsheet format is the simplest way to arrange your data for analysis by the app.
     Here is an example of the required Proximity file format for the sample "bank6" data set.
@@ -116,11 +131,6 @@ st.write(
     The cell can be empty or have the string “nan” or “inf” or “na” etc. Infinite distances will 
     never become links in the networks created.
     """)
-
-st.subheader("**Displaying a Network**")
-st.write("""The **Select Display** page provides tools for exploring various layouts and characteristics of the 
-    display of networks. Use the tools to get a satisfactory view of the network. If you would like to adjust
-    the view by moving the nodes around, go to the **Interactive Display** page.""")
 
 st.subheader("**Legacy Text File Format (.txt files)**")
 st.write("""A text file format is used in several earlier versions of Pathfinder software and in various methods
