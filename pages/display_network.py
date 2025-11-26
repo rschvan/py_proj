@@ -4,9 +4,6 @@ import time
 import numpy as np
 import pandas as pd
 import streamlit as st
-# import streamlit.components.v1 as components
-# from pypf.create_visjs_html import create_visjs_html
-# import webbrowser # Although components.html is often better for new tabs
 
 st.set_page_config(
     page_title="PyPF Display",

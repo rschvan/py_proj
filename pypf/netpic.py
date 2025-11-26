@@ -1,4 +1,5 @@
 # pypf/netpic.py
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, PathPatch
@@ -15,14 +16,13 @@ class Netpic:
     The controls are managed externally.
     """
     def __init__(self, net: PFnet):
-        self.net = net
-        self.nodes = net.terms
+        self.net = copy.deepcopy(net)
+        self.nodes = self.net.terms
         self.nodelabels = []
         for node in self.nodes:
             self.nodelabels.append(split_long_term(node))
-        self.adjmat = net.adjmat
-        self.is_directed = net.isdirected
-        self.adjmat_norm = self.adjmat / np.max(self.adjmat)
+        self.adjmat = self.net.adjmat
+        self.is_directed = self.net.isdirected
         self.fig, self.ax = None, None
 
         # State variables for interactivity
@@ -165,7 +165,6 @@ class Netpic:
                         self.text_objects[self.nodes[i]],
                         self.text_objects[self.nodes[j]]))
                     color = 'blue'
-                    # alpha = self.adjmat_norm[i, j]
                     if self.is_directed:
                         # noinspection PyTypeChecker
                         edge = FancyArrowPatch(
