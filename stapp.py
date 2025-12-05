@@ -148,7 +148,10 @@ else:
         file_type = st.radio("**Proximity Data File Type**",["Spreadsheet","Legacy Text"],
                              index=st.session_state.current_file_type_index, )
         st.session_state.current_file_type_index = ["Spreadsheet","Legacy Text"].index(file_type)
-        st.write("**Optional Information:**")
+
+        # optdict = {"Select Optional Information":["Proximity Correlations","Network Info","Network Similarity"]}
+        # st.dataframe(optdict)
+        st.write("**Optional Information**")
         show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
         show_net_info = st.checkbox("Network Info", value=False, key="show_net_info")
         show_netsim = st.checkbox("Network Similarity", value=False, key="show_netsim")
@@ -204,11 +207,16 @@ by checking the boxes in the sidebar. Compatible Proximity Data sets can be aver
 types of networks can be derived. Pathfinder networks require q and r values to be specified. The default
 values of infinity yield the network with the minimum number of links. It will be a minimal spanning
 tree (MST) if the network is connected and there is a unique MST. Ties in link distances may lead to 
-cycles in the minimal network.
+cycles in the minimal network.  
+
+The **Proximity and Network Lists** allow you to select Proximities or Networks to perform various operations. 
+You select items by clicking the check box left of the Name column, and possile operations are invoked by 
+clicking the buttons below the lists.
 
 The **Select Display** page allows you to try different layouts and view the network in various ways. When 
 you have a layout that is close to what you want, you can go to the **Interactive Display** page to adjust
-the node positions.
+the node positions. When you display a network you are taken to the Select Display page where the network 
+is shown.
 
 
 The **Intro Info checkbox** makes starting information available including access to a demo video 

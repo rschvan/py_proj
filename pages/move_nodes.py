@@ -3,6 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pyvis.network import Network
 from pypf import Netpic
+import numpy as np
 
 st.set_page_config(
     page_title="PyPF Adjust",
@@ -15,7 +16,7 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
     """
     # 1. Initialize Pyvis network
     # Note: Use 'in_line' to ensure all JS/CSS is included, making it portable.
-    g = Network(height="600px", width="100%",
+    g = Network(height="590px", width="100%",
                 directed=pic.is_directed,
                 cdn_resources='in_line',
                 notebook=True
@@ -35,7 +36,7 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
                    title=f"Node: {node_name}",
                    shape='box',
                    color='white',
-                   size=12,
+                   size=font_size,
                    )
 
     # 3. Add Edges
@@ -81,9 +82,8 @@ def create_visjs_html(pic: Netpic, physics=False, font_size = 23) -> tuple[str, 
                 "face": "arial",
                 "align": "center"
             },
-            "margin": 3  # Increase margin slightly to account for larger font
+            "margin": 2  # Increase margin slightly to account for larger font
         },
-        # --- MODIFIED MANIPULATION BLOCK ---
         "manipulation": {
             "enabled": True,  # Keep core manipulation (dragging) enabled
             "initiallyActive": True,  # Ensure dragging works immediately
@@ -119,7 +119,12 @@ with st.sidebar:
     if display_type == "Static":
         interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=False, font_size=font_size)
     else:
-        interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=True, font_size=font_size+6)
+        nnodes = pic.net.nnodes
+        base_size = 9
+        scale = np.sqrt(nnodes)/np.sqrt(base_size)
+        scale = max(scale, 0.7)
+        scale = min(scale, 2.0)
+        interactive_html, pyvis_net = create_visjs_html(pic=pic, physics=True, font_size=font_size*scale)
 
     st.number_input("**node size**", min_value=2, max_value=44, value=23, step=1, key="text_size", )
     st.write("Set node size before moving nodes")

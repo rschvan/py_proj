@@ -63,9 +63,9 @@ st.write("""The **Select Display** page provides tools for exploring various lay
     established initally. The default **Static** display allows
     you to move the nodes to clean up the layout. The **Dynamic** display uses a layout algorithm to settle into a 
     layout. You can drag nodes to influence the settling. A control panel at the bottom 
-    (scroll down to see it) allows you to disenable the layout 
-    algorithm and to adjust layout parameters including the layout algorithm used. When you disable the layout 
-    algorithm, you can move the nodes around without the intervention of the algorithm.
+    (scroll down to see it) allows you to disenable physics (the operation of the layout 
+    algorithm) and to adjust layout parameters including the layout algorithm used. When you disable physics, 
+    you can move the nodes around as you wish.
     """)
 
 st.subheader("**Tips about the app**")
