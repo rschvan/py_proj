@@ -73,7 +73,12 @@ st.write('''
         In the Proximity and Network Lists, you can select items by checking the select box to the left
         of the name. A single item can be selected by clicking on its name, but selecting mutiple
         items requires checking the select boxes. All items can be selected or deselected by 
-        checking or unchecking the select box at the top of the list.   
+        checking or unchecking the select box at the top of the list.
+        
+        Checking **Force Proximity Undirected** will create a Proximity with symmetric distances if the data
+        are not symmetric.  Distances are the minimum of the two distances between the two terms.  This
+        is useful when undirected networks are desired.  For example, the target rating method provides two 
+        estimates of the distance between the items.  The minimum of the two is used to represent the pair.   
         
         Download any table into a csv file by hovering at the top of the table and
         clicking on the download icon. 
@@ -98,6 +103,18 @@ st.write('''
         
         Eccentricity is the maximum number of links in paths between a node and nodes that can be 
         reached from that node. The measure may be misleading if the network is not completly connected. 
+        
+        The statecaps proximity data is the distance in miles between state capitals in the lower 48 states.
+        The pfnet(q=2, r=2) is a planar graph (can be drawn in a plane with no line crossings).  The MDS layout
+        will provide an approximation to the geographic positions of the cities without regard to orientation.
+        You can rearrange the orientation in the Select Display page, then the Dynamic Interactive Display will
+        usually find the planar solution.  If there are still some crossings, try dragging nodes to their expected
+        locations and the display will react dynamically to rearrange the layout. Once you disable the physics,
+        you can adjust the node positions to clean up the layout.
+        
+        When physics is enabled in the Dynamic display, you can drag nodes to influence the settling.  You can also
+        vary the layout algorithm by changing the value in the solver dropdown.  You can also adjust the 
+        parmeters of the layout algorithm.     
 ''')
 
 st.subheader("**Spreadsheet Data File Format (.xlsx or .csv files)**")

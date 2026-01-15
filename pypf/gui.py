@@ -148,7 +148,7 @@ class PyPathfinder(tk.Tk):
         self.layout_combobox = ttk.Combobox(
             right_panel,
             textvariable=self.layout_method,
-            values=["gravity", "neato", "dot", "kamada_kawai" ,"distance"],  # Set dropdown values
+            values=["gravity", "neato", "dot", "kamada_kawai" ,"MDS"],  # Set dropdown values
             state="readonly")
         self.layout_combobox.grid(row=1, column=1, padx=5, pady=2, sticky="ew")
 
@@ -255,17 +255,17 @@ class PyPathfinder(tk.Tk):
 
     def _on_get_proximity_info(self):
         self.col.get_proximity_info()
-        # prxlist = self.proximity_listbox.get(0, tk.END)
-        # infolist = []
-        # for prx_name in prxlist:
-        #     prx = self.proximities[prx_name]
-        #     info = prx.get_info() # info is a dictionary
-        #     infolist.append(info)
-        # # create dataframe with no index
-        # df = pd.DataFrame(infolist)
-        # f = os.path.join(self.project_path_var.get(),"proximity_info.csv")
-        # df.to_csv(f)
-        # os.startfile(f)
+        prxlist = self.proximity_listbox.get(0, tk.END)
+        infolist = []
+        for prx_name in prxlist:
+            prx = self.proximities[prx_name]
+            info = prx.get_info() # info is a dictionary
+            infolist.append(info)
+        # create dataframe with no index
+        df = pd.DataFrame(infolist)
+        f = os.path.join(self.project_path_var.get(),"proximity_info.csv")
+        df.to_csv(f)
+        os.startfile(f)
 
     def _on_data_correlations(self):
         self.col.get_proximity_correlations()

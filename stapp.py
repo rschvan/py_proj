@@ -21,8 +21,8 @@ def sample_data() -> dict:
         "relatedness ratings by biology grad students",
          "relatedness ratings by psychology 101 students",
          "coocurrences in Longman's dictionary",
-         "distances between cities in the US",
-         "distances between state capitals in the US"]
+         "distances (KM) between cities in the US",
+         "distances (miles) between state capitals in the US"]
     sources = pd.DataFrame(data={"file": files, "source": srcs})
     col = Collection()
     for file in files:
@@ -148,6 +148,7 @@ else:
         file_type = st.radio("**Proximity Data File Type**",["Spreadsheet","Legacy Text"],
                              index=st.session_state.current_file_type_index, )
         st.session_state.current_file_type_index = ["Spreadsheet","Legacy Text"].index(file_type)
+        force_undirected = st.checkbox("Force Proximity Undirected", value=False, key="force_undirected")
 
         # optdict = {"Select Optional Information":["Proximity Correlations","Network Info","Network Similarity"]}
         # st.dataframe(optdict)
@@ -187,7 +188,6 @@ else:
     # --- Main Content Area ---
 
     # Intro Info
-
     if show_intro_info:
         if "bank6_pf" not in col.pfnets and "statecaps" not in col.proximities:
             add_demo(col)
@@ -205,9 +205,9 @@ using the legacy formatting (Help page gives details). You can also view Proximi
 Network Information and Network Similarity 
 by checking the boxes in the sidebar. Compatible Proximity Data sets can be averaged, and different
 types of networks can be derived. Pathfinder networks require q and r values to be specified. The default
-values of infinity yield the network with the minimum number of links. It will be a minimal spanning
+values of infinity yield the network with the minimum number of links. It will be a minimum spanning
 tree (MST) if the network is connected and there is a unique MST. Ties in link distances may lead to 
-cycles in the minimal network.  
+cycles in the minimum network.  
 
 The **Proximity and Network Lists** allow you to select Proximities or Networks to perform various operations. 
 You select items by clicking the check box left of the Name column, and possile operations are invoked by 
@@ -230,6 +230,12 @@ Go to the **Help** page for more information including required formats for Prox
         del_demo(col)
 
     # ---Upload Files and Create Proximities---
+
+    def make_symmetric_if_force(prx:Proximity) -> Proximity:
+        if force_undirected and not prx.issymmetric:
+            prx.dismat = np.minimum(prx.dismat, prx.dismat.T)
+            prx.name += "-fu"
+        return prx
 
     match file_type:
         case "Spreadsheet":
@@ -257,6 +263,7 @@ Go to the **Help** page for more information including required formats for Prox
                 for file in files:
                     file_path = os.path.join(ss_dir, file)
                     new_prx = Proximity(file_path)
+                    new_prx = make_symmetric_if_force(new_prx)
                     col.add_proximity(new_prx)
                     os.remove(file_path)
                 os.rmdir(ss_dir)
@@ -284,6 +291,7 @@ Go to the **Help** page for more information including required formats for Prox
                     if dat["error"]:  # does not contain valid proximity data
                         continue
                     new_prx = Proximity(terms=dat["terms"], dismat=dat["dismat"], name=dat["name"])
+                    new_prx = make_symmetric_if_force(new_prx)
                     col.add_proximity(new_prx)
                 for file in all_leg_files:
                     os.remove(os.path.join(leg_dir, file))
