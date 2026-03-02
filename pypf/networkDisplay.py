@@ -194,5 +194,5 @@ if __name__ == "__main__":
     from pypf.pfnet import PFnet # Import PFnet to check graph type
 
     # Test with an undirected graph (default "pf" type from get_test_pf will be undirected if dismat is symmetric)
-    pfn_undirected = get_test_pf("rbank")
+    pfn_undirected = get_test_pf("bank")
 

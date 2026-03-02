@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
     test_root = tk.Tk()
     test_root.withdraw() # Hide the main test root window
-    nt = get_test_pf("psy")
+    nt = get_test_pf("statecaps")
     nt = PFnet(nt.proximity, type="pf")
     nt.netprint()
-    shownet(test_root, net=nt, method="neato") # Pass the test_root as parent
+    shownet(test_root, net=nt, method="MDS") # Pass the test_root as parent
     test_root.mainloop() # This mainloop will now keep the Toplevel window open

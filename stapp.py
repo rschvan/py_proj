@@ -76,9 +76,11 @@ else:
 
     def add_demo(col):
         for px in sample_col.proximities.values():
-            col.add_proximity(px)
-        for pf in sample_col.pfnets.values():
-            col.add_pfnet(pf)
+            if not px.name in col.proximities:
+                col.add_proximity(px)
+        for pfn in sample_col.pfnets.values():
+            if not pfn.name in col.pfnets:
+                col.add_pfnet(pfn)
 
     def del_demo(col):
         for demoprx in sample_col.proximities.keys():
@@ -124,7 +126,6 @@ else:
         st.session_state.last_layout = st.session_state.layout
         st.session_state.font_size = 10
         st.session_state.rotation = 0
-        st.session_state.intro_info = True
         pf = col.pfnets[st.session_state.pf_name]
         pf.get_layout(method=st.session_state.layout)
         st.session_state.pic = Netpic(net=pf)
@@ -133,6 +134,7 @@ else:
         st.session_state.q_param = np.inf
         st.session_state.r_param = np.inf
         st.session_state.current_intro_value = True
+        st.session_state.current_add_sample_data = True
         st.session_state.current_file_type_index = 0
         st.session_state.last_leg_files = []
         st.session_state.last_ss_files = []
@@ -145,17 +147,20 @@ else:
         show_intro_info = st.checkbox("**Intro Info**", value= st.session_state.current_intro_value,
                                       key="show_intro_info",)
         st.session_state.current_intro_value = show_intro_info
+        add_sample_data = st.checkbox("**Add Sample Data**", value=st.session_state.current_add_sample_data,
+                                      key="add_sample_data")
+        st.session_state.current_add_sample_data = add_sample_data
         file_type = st.radio("**Proximity Data File Type**",["Spreadsheet","Legacy Text"],
                              index=st.session_state.current_file_type_index, )
         st.session_state.current_file_type_index = ["Spreadsheet","Legacy Text"].index(file_type)
-        force_undirected = st.checkbox("Force Proximity Undirected", value=False, key="force_undirected")
+        force_symmetric = st.checkbox("Force Proximity Symmetric", value=False, key="force_symmetric")
 
         # optdict = {"Select Optional Information":["Proximity Correlations","Network Info","Network Similarity"]}
         # st.dataframe(optdict)
-        st.write("**Optional Information**")
+        st.write("**Information Tables**")
         show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
-        show_net_info = st.checkbox("Network Info", value=False, key="show_net_info")
-        show_netsim = st.checkbox("Network Similarity", value=False, key="show_netsim")
+        #show_net_info = st.checkbox("Network Info", value=False, key="show_net_info")
+        show_netsim = st.checkbox("Network Similarities", value=False, key="show_netsim")
         ave_method = st.radio("**Proximity Averaging Method**",["mean","median"], index=0, )
 
         type, params = st.columns([6, 4])
@@ -164,8 +169,8 @@ else:
                             index=0, )
         with params:
             if net_type == "Pathfinder":
-                qval = st.text_input("q-value (2 - inf)", value="inf", key="qval")
-                rval = st.text_input("r-value (1.0 - inf)", value="inf", key="rval")
+                qval = st.text_input("q-value (2-inf)", value="inf", key="qval")
+                rval = st.text_input("r-value (1.0-inf)", value="inf", key="rval")
                 qval = qval.lower()
                 if qval == "" or qval == "inf" or qval.__contains__("n"):
                     st.session_state.q_param = np.inf
@@ -187,13 +192,14 @@ else:
 
     # --- Main Content Area ---
 
-    # Intro Info
+    # Sample data aand Intro Info
+    if add_sample_data:
+        add_demo(col)
+    else:
+        del_demo(col)
     if show_intro_info:
-        if "bank6_pf" not in col.pfnets and "statecaps" not in col.proximities:
-            add_demo(col)
+        st.link_button("PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
 
-        if st.button("PyPathfinder Demo Video", key="vid_button"):
-            st.video("pypf/data/video_demo.mp4")
         st.write('''**Welcome!**  
 PyPathfinder is a tool for creating, exploring, and visualizing Pathfinder networks. 
 The app contains four pages, **Build Nets** (this page), **Select Display**, **Interactive Display**
@@ -201,8 +207,8 @@ and **Help**. You can navigate to a page by clicking the page name in the sideba
   
 The **Build Nets** page is where you add Proximity data 
 and Derive Networks. You can choose to load either spreadsheet Proximity files or text files 
-using the legacy formatting (Help page gives details). You can also view Proximity Correlations, 
-Network Information and Network Similarity 
+using the legacy formatting (Help page gives details). You can also view Proximity Correlations
+and Network Similarities
 by checking the boxes in the sidebar. Compatible Proximity Data sets can be averaged, and different
 types of networks can be derived. Pathfinder networks require q and r values to be specified. The default
 values of infinity yield the network with the minimum number of links. It will be a minimum spanning
@@ -210,7 +216,7 @@ tree (MST) if the network is connected and there is a unique MST. Ties in link d
 cycles in the minimum network.  
 
 The **Proximity and Network Lists** allow you to select Proximities or Networks to perform various operations. 
-You select items by clicking the check box left of the Name column, and possile operations are invoked by 
+You select items by clicking the check box left of the Name column, and possible operations are invoked by 
 clicking the buttons below the lists.
 
 The **Select Display** page allows you to try different layouts and view the network in various ways. When 
@@ -219,28 +225,25 @@ the node positions. When you display a network you are taken to the Select Displ
 is shown.
 
 
-The **Intro Info checkbox** makes starting information available including access to a demo video 
-and several sample Proximities and Networks to illustrate the app and to allow you to explore 
-the app's functionality.  Unchecking this checkbox removes the introductory information.  Checking it
-again will add the introductory information back.
+The **Intro Info and Add Sample Data checkboxes** make starting information available including access to a demo video 
+and loads several sample Proximities and Networks to illustrate the app and to allow you to explore 
+the app's functionality.  Use these checkboxes to control the presence of these resources.
 
 Go to the **Help** page for more information including required formats for Proximity files.  
         ''')
-    else:
-        del_demo(col)
 
     # ---Upload Files and Create Proximities---
 
     def make_symmetric_if_force(prx:Proximity) -> Proximity:
-        if force_undirected and not prx.issymmetric:
+        if force_symmetric and not prx.issymmetric:
             prx.dismat = np.minimum(prx.dismat, prx.dismat.T)
-            prx.name += "-fu"
+            prx.name += "-fs"
+            prx.issymmetric = True
         return prx
 
     match file_type:
         case "Spreadsheet":
             st.subheader("Add Proximity Spreadsheet Files")
-            ss_files = []
             ss_files = st.file_uploader("Upload Proximity Spreadsheets (.xlsx or .csv)", type=["xlsx","csv"],
                                 accept_multiple_files=True,
                                 help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
@@ -299,21 +302,21 @@ Go to the **Help** page for more information including required formats for Prox
             else:
                 leg_files.clear()
 
-    st.subheader("Proximity Information")
-    prx_info_df = col.get_proximity_info()
-    height = min(600, 40 + 35 * len(col.proximities))
-    if not prx_info_df.empty:
-        st.dataframe(prx_info_df, width='content', height=height, hide_index=True)
-    else:
-        st.info("No Proximity objects.")
+    # st.subheader("Proximity Information")
+    # prx_info_df = col.get_proximity_info()
+    # height = min(600, 40 + 35 * len(col.proximities))
+    # if not prx_info_df.empty:
+    #     st.dataframe(prx_info_df, width='content', height=height, hide_index=True)
+    # else:
+    #     st.info("No Proximity objects.")
 
     # ---conditional displays---
-    if show_intro_info:
+    if add_sample_data:
         current_sources = sample_sources.copy(deep=True)
         allowed_keys = col.proximities.keys()
         rows_to_keep_mask = current_sources["file"].isin(allowed_keys)
         current_sources = current_sources[rows_to_keep_mask]
-        if  not current_sources.empty:
+        if not current_sources.empty:
             st.subheader("Sources of sample Proximities")
             st.dataframe(current_sources, width='content', hide_index=True)
 
@@ -324,13 +327,13 @@ Go to the **Help** page for more information including required formats for Prox
         if not prx_corrs_df.empty:
             st.dataframe(prx_corrs_df, width='content', hide_index=False)
 
-    if show_net_info and len(col.pfnets) > 0:
-        st.subheader("Network Information")
-        pfnet_info_df = col.get_pfnet_info()
-        if not pfnet_info_df.empty:
-            st.dataframe(pfnet_info_df, width='content', hide_index=True)
-        else:
-            st.info("No PFnet objects.")
+    # if show_net_info and len(col.pfnets) > 0:
+    #     st.subheader("Network Information")
+    #     pfnet_info_df = col.get_pfnet_info()
+    #     if not pfnet_info_df.empty:
+    #         st.dataframe(pfnet_info_df, width='content', hide_index=True)
+    #     else:
+    #         st.info("No PFnet objects.")
 
     if show_netsim and len(col.pfnets) > 1:
         st.subheader("Network Similarity")
@@ -354,130 +357,163 @@ Go to the **Help** page for more information including required formats for Prox
         else:
             return []
         return [key for i, key in enumerate(names) if i in sel]
+# Proximity List
+    st.subheader("Proximity List")
+    prx_names = list(col.proximities.keys())
+    # ids = [prx.termsid for prx in col.proximities.values()]
+    if not prx_names:
+        st.info("No Proximity objects loaded yet.")
+    else:
+        st.write("Click in the box left of Name column to select:")
+        height = min(600, 40 + 35*len(col.proximities))
+        prx_df = col.get_proximity_info()
+        selected_prxs_data = st.dataframe(
+            prx_df,
+            width='content',
+            height=height,  # Set a height to reflect contents
+            hide_index=True,  # Hide index as 'Name' column is present
+            selection_mode=["multi-row","single-cell"],
+            key="prx_selection_df",
+            on_select="rerun"  # Crucial for getting selection updates
+        )
+        col.selected_prxs = get_selected_rows(selected_prxs_data, prx_names)
 
-
-    prxlist, netlist = st.columns(2)
-    with prxlist:
-        st.subheader("Proximity List")
-        prx_names = list(col.proximities.keys())
-        # ids = [prx.termsid for prx in col.proximities.values()]
-        if not prx_names:
-            st.info("No Proximity objects.")
-        else:
-            st.write("Click in the box left of Name column to select:")
-            height = min(600, 40 + 35*len(col.proximities))
-            prx_df = pd.DataFrame({"Name": prx_names})
-            # prx_df = pd.DataFrame({"Name": prx_names, "Terms ID": ids})
-            selected_prxs_data = st.dataframe(
-                prx_df,
-                width='stretch',
-                height=height,  # Set a height to reflect contents
-                hide_index=True,  # Hide index as 'Name' column is present
-                selection_mode=["multi-row","single-cell"],
-                key="prx_selection_df",
-                on_select="rerun"  # Crucial for getting selection updates
-            )
-            col.selected_prxs = get_selected_rows(selected_prxs_data, prx_names)
-
-            delprx, aveprx, dernet = st.columns(3)
-            with delprx:
-                if st.button("Delete Proximities", key="delete_prx_btn"):
-                    if col.selected_prxs:
-                        for prx_name in col.selected_prxs:
-                            col.proximities.pop(prx_name)
-                        col.selected_prxs = []  # Clear selection after deletion
-                        st.rerun()  # Rerun to update the display
-                    else:
-                        st.warning("Click one or more proximity check boxes to delete.")
-            with dernet:
-                if st.button("Derive Networks", key="derive_pfnet_btn"):
-                    if len(col.selected_prxs) > 0:
-                        for prx_name in col.selected_prxs:
-                            # Check if PFnet with this name already exists before deriving
-                            if prx_name in col.pfnets:
-                                st.warning(f"PFnet '{prx_name}' already exists. Not re-deriving.")
-                            else:
-                                prx = col.proximities[prx_name]
-                                match net_type:
-                                    case "Pathfinder":
-                                        pf = PFnet(prx, q=st.session_state.q_param, r=st.session_state.r_param)
-                                    case "Threshold":
-                                        pf = PFnet(prx, type="th")
-                                    case "Nearest Neighbor":
-                                        pf = PFnet(prx, type="nn")
-                                col.add_pfnet(pf)
-                    else:
-                        st.warning("Click one or more proximity check boxes to derive networks.")
-            with aveprx:
-                if st.button("Average Proximities", key="average_prx_btn"):
-                    state = averageable(col)
-                    if state == "ok":
-                        try:
-                            col.average_proximities(method=ave_method)
-                            st.success("Proximities averaged.")
-                            st.rerun()  # Rerun
-                        except Exception as e:
-                            st.error(f"Error averaging proximities: {e}")
-                    else:
-                        st.warning(f"Error: {state}.")
-
-    with netlist:
-        st.subheader("Network List")
-        pfnet_names = list(col.pfnets.keys())
-        if not pfnet_names:
-            st.info("No PFnet objects.")
-        else:
-            st.write("Clicking at the top of the boxes selects or deselects all:")
-            height = min(600, 40 + 35 * len(col.pfnets))
-            pfnet_df = pd.DataFrame({"Name": pfnet_names})
-
-            selected_nets_data = st.dataframe(
-                pfnet_df,
-                width='stretch',
-                height=height,  # Set a fixed height
-                hide_index=True,  # Hide index
-                selection_mode=["multi-row", "single-cell"],
-                key="pfnet_selection_df",
-                on_select="rerun"  # Crucial for getting selection updates
-            )
-            col.selected_nets = get_selected_rows(selected_nets_data, pfnet_names)
-
-            delnet, mrgnet, dispnet = st.columns(3)
-            with delnet:
-                if st.button("Delete Networks", key="delete_pfnet_btn"):
-                    if col.selected_nets:
-                        for net_name in col.selected_nets:
-                            col.pfnets.pop(net_name)
-                        col.selected_nets = []  # Clear selection after deletion
+        dernet, aveprx, delprx, f1, f2, f3 = st.columns(6)
+        with delprx:
+            if st.button("Delete Proximities", key="delete_prx_btn"):
+                if col.selected_prxs:
+                    for prx_name in col.selected_prxs:
+                        col.proximities.pop(prx_name)
+                    col.selected_prxs = []  # Clear selection after deletion
+                    st.rerun()  # Rerun to update the display
+                else:
+                    st.warning("Click one or more proximity check boxes to delete.")
+        with dernet:
+            if st.button("Derive Networks", key="derive_pfnet_btn"):
+                if len(col.selected_prxs) > 0:
+                    for prx_name in col.selected_prxs:
+                        # Check if PFnet with this name already exists before deriving
+                        if prx_name in col.pfnets:
+                            st.warning(f"PFnet '{prx_name}' already exists. Not re-deriving.")
+                        else:
+                            prx = col.proximities[prx_name]
+                            match net_type:
+                                case "Pathfinder":
+                                    pf = PFnet(prx, q=st.session_state.q_param, r=st.session_state.r_param)
+                                case "Threshold":
+                                    pf = PFnet(prx, type="th")
+                                case "Nearest Neighbor":
+                                    pf = PFnet(prx, type="nn")
+                            col.add_pfnet(pf)
+                else:
+                    st.warning("Click one or more proximity check boxes to derive networks.")
+        with aveprx:
+            if st.button("Average Proximities", key="average_prx_btn"):
+                state = averageable(col)
+                if state == "ok":
+                    try:
+                        col.average_proximities(method=ave_method)
+                        st.success("Proximities averaged.")
                         st.rerun()  # Rerun
-                    else:
-                        st.warning("Click one or more network check boxes to delete.")
-            with mrgnet:
-                if st.button("Merge Networks", key="merge_nets_btn"):
-                    state = mergeable(col)
-                    if state == "ok":
-                        try:
-                            # Assuming col.merge_networks() handles adding the merged net to col.pfnets
-                            col.merge_networks()
-                            st.rerun()  # Rerun
-                        except Exception as e:
-                            st.error(f"Error merging networks: {e}")
-                    else:
-                        st.warning(f"Error: {state}.")
-            with dispnet:
-                if st.button("Display Network", key="display_net_btn"):
-                    if len(col.selected_nets) == 1:
-                        st.session_state.pf_name = col.selected_nets[0]
-                        pf = col.pfnets[st.session_state.pf_name]
-                        st.session_state.pic = Netpic(net=pf)
-                        st.session_state.pic.net.get_layout(method=st.session_state.layout)
-                        st.session_state.pic.create_view(font_size=st.session_state.font_size)
-                        # open the Display page
-                        st.switch_page(display_page)
-                        col.selected_nets = []
-                    else:
-                        st.warning("Error: Select one network to display.")
+                    except Exception as e:
+                        st.error(f"Error averaging proximities: {e}")
+                else:
+                    st.warning(f"Error: {state}.")
+
+# Network List
+    st.subheader("Network List")
+    pfnet_names = list(col.pfnets.keys())
+    if not pfnet_names:
+        st.info("No networks created yet.")
+    else:
+        st.write("Clicking at the top of the boxes selects or deselects all:")
+        height = min(600, 40 + 35 * len(col.pfnets))
+        pfnet_df = col.get_pfnet_info()
+
+        selected_nets_data = st.dataframe(
+            pfnet_df,
+            width='content',
+            height=height,  # Set a fixed height
+            hide_index=True,  # Hide index
+            selection_mode=["multi-row", "single-cell"],
+            key="pfnet_selection_df",
+            on_select="rerun"  # Crucial for getting selection updates
+        )
+        col.selected_nets = get_selected_rows(selected_nets_data, pfnet_names)
+
+        dispnet, properties, links, mrgnet, delnet, c3 = st.columns(6)
+        with delnet:
+            if st.button("Delete Networks", key="delete_pfnet_btn"):
+                if col.selected_nets:
+                    for net_name in col.selected_nets:
+                        col.pfnets.pop(net_name)
+                    col.selected_nets = []  # Clear selection after deletion
+                    st.rerun()  # Rerun
+                else:
+                    st.warning("Click one or more network check boxes to delete.")
+        with mrgnet:
+            if st.button("Merge Networks", key="merge_nets_btn"):
+                state = mergeable(col)
+                if state == "ok":
+                    try:
+                        # Assuming col.merge_networks() handles adding the merged net to col.pfnets
+                        col.merge_networks()
+                        st.rerun()  # Rerun
+                    except Exception as e:
+                        st.error(f"Error merging networks: {e}")
+                else:
+                    st.warning(f"Error: {state}.")
+        with dispnet:
+            if st.button("Display Network", key="display_net_btn"):
+                if len(col.selected_nets) == 1:
+                    st.session_state.pf_name = col.selected_nets[0]
+                    pf = col.pfnets[st.session_state.pf_name]
+                    st.session_state.pic = Netpic(net=pf)
+                    st.session_state.pic.net.get_layout(method=st.session_state.layout)
+                    st.session_state.pic.create_view(font_size=st.session_state.font_size)
+                    # open the Display page
+                    col.selected_nets = []
+                    st.switch_page(display_page)
+                else:
+                    st.warning("Error: Select one network to display.")
+        with links:
+            show_links = False
+            if st.button("Network Link List", key="link_list_btn"):
+                if len(col.selected_nets) == 1:
+                    show_links = True
+                else:
+                    st.warning("Error: Select one network to display link list.")
+        with properties:
+            show_props = False
+            if st.button("Network Properties", key="net_props_btn"):
+                if len(col.selected_nets) == 1:
+                    show_props = True
+                else:
+                    st.warning("Error: Select one network to display properties.")
 
         st.write(f"**{st.session_state.pf_name}** is currently displayed.")
+        if show_links:
+            st.write("**Link List**")
+            net = col.pfnets[col.selected_nets[0]]
+            st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links ")
+            if net.type == "merge":
+                st.write("""**weight** is a binary code  
+                    **nets** shows which nets contain the link (reading right to left) -- e.g., 110 means in nets 2 & 3  
+                    **count** shows the number of nets that contain the link -- e.g. 110 count would be 2
+                    """)
+
+            llist = net.get_link_list()
+            st.dataframe(data=llist, width="content", hide_index=False, )
+
+        if show_props:
+            st.write("**Network Properties**")
+            net = col.pfnets[col.selected_nets[0]]
+            ecc = net.eccentricity
+            st.write(f"{net.name}")
+            st.write(
+                f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
+            st.write(f"")
+            tab = pd.DataFrame(net.get_network_properties())
+            st.dataframe(data=tab, width="content", hide_index=True, )
 
     st.session_state.count += 1

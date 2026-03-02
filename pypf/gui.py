@@ -178,7 +178,7 @@ class PyPathfinder(tk.Tk):
         network_link_list_button = tk.Button(network_info_frame, text="Network Link List",
                                              command=self._on_network_link_list)
         network_link_list_button.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-        network_similarity_button = tk.Button(network_info_frame, text="Network Similarity",
+        network_similarity_button = tk.Button(network_info_frame, text="Network Similarities",
                                               command=self._on_network_similarity)
         network_similarity_button.grid(row=2, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
 

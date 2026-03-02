@@ -1,6 +1,7 @@
 # pypf/utility.py
 # df = pd.DataFrame(matrix, index=rows, columns=cols) - creates table with row and col labels
 import os
+import math
 from typing import Optional, Union
 import numpy as np
 import pandas as pd
@@ -504,6 +505,27 @@ def pwcorr(dis:np.ndarray) -> np.ndarray:
                     corrs[i, j] = np.nan
         return np.round(corrs, 3)
 
+def sig_figs_flat(x, n):
+    if x == 0:
+        return 0
+
+    # Calculate the power of 10 for the first significant digit
+    mag = math.floor(math.log10(abs(x)))
+    if mag > n-1:
+        return int(round(x,0))
+
+    # Calculate how many decimal places to keep
+    decimals = n - 1 - mag
+
+    # Rounding to a negative number rounds to the left of the decimal
+    rounded = round(x, decimals)
+
+    # Convert to int if it's a whole number to get rid of the .0
+    if rounded == int(rounded):
+        return int(rounded)
+
+    return rounded
+
 def split_long_term(term:str)->str:
     n = len(term)
     if n < 15:
@@ -531,17 +553,22 @@ def split_long_term(term:str)->str:
             return term
 
 if __name__ == '__main__':
-    from pypf.pfnet import PFnet
-    from pypf.proximity import Proximity
-    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    psy = PFnet(psyprx)
-    bio = PFnet(bioprx)
-    prxset = [psyprx, bioprx]
-    netset = [psy, bio]
-    # mrg = merge_networks(netset)
-    # print(mrg.netprint())
-    # aveprx = average_proximity(prxset, method="mean")
-    # aveprx.prxprint()
-    bio.get_layout(method="MDS")
+    x = 3584.57
+    s = sig_figs_flat(x, 4)
+    print(x, s)
+
+
+    # from pypf.pfnet import PFnet
+    # from pypf.proximity import Proximity
+    # psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
+    # bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
+    # psy = PFnet(psyprx)
+    # bio = PFnet(bioprx)
+    # prxset = [psyprx, bioprx]
+    # netset = [psy, bio]
+    # # mrg = merge_networks(netset)
+    # # print(mrg.netprint())
+    # # aveprx = average_proximity(prxset, method="mean")
+    # # aveprx.prxprint()
+    # bio.get_layout(method="MDS")
 

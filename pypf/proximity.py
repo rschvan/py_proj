@@ -1,7 +1,7 @@
 #   pypf/proximity.py
 from types import NoneType
 
-from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid
+from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid, sig_figs_flat
 import pandas as pd
 import numpy as np
 import os  #   To work with file paths
@@ -122,10 +122,10 @@ class Proximity:
         info["nterms"] = self.nterms
         info["symmetric?"] = self.issymmetric
         info["coherence"] = self.coh
-        info["mean"] = self.mean
-        info["sd"] = self.sd
-        info["min"] = self.min
-        info["max"] = self.max
+        info["mean"] = sig_figs_flat(x=self.mean, n=3)
+        info["sd"] = sig_figs_flat(x=self.sd, n=3)
+        info["min"] = sig_figs_flat(x=self.min, n=3)
+        info["max"] = sig_figs_flat(x=self.max, n=3)
         info["termsid"] = "n_" + str(self.nterms) + "_" + self.terms[0] + "_" + self.terms[-1]
         return info
 

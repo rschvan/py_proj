@@ -26,11 +26,10 @@ with open(os.path.join(st.session_state.home_dir,
                       data=f,
                       file_name="Schvaneveldt_Durso_Dearholt_1989.pdf",
                       mime=None)
-if st.button("PyPathfinder Demo Video", key="vid_button"):
-    path = os.path.dirname(__file__)
-    parent = os.path.dirname(path)
-    video_path = os.path.join(parent, "pypf/data/video_demo.mp4")
-    st.video(video_path)
+
+st.link_button("PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
+
+# streamlit run stapp.py
 
 st.write("""
         PyPathfinder is a Python app for creating and analyzing Pathfinder Networks.
@@ -46,14 +45,23 @@ st.write("""
         
         Load your own data files whenever you like.      
         """)
-st.subheader("**Intro info**")
-st.write('''**Intro info** adds access to information about Pathfinder and the app 
-        including a video demo. 
-        It also loads several example Proximities and PFnets for demo purposes. 
-        These elements will be deleted 
-        when you uncheck the Intro Info box. Checking the box again will add them back.
-        Anything you add will be preserved when you uncheck the Intro Info box. 
-        ''')
+st.subheader("**Introductory Check Boxes**")
+st.write('''**Intro Info** adds access to information about Pathfinder and the app 
+        including informational videos.  Remove the info by unckecking the checkbox''')
+
+st.write('''**Add Sample Data**
+        loads several example Proximities and PFnets for demo purposes. 
+        The presence of these examples is controlled by the checkbox. 
+         Any data or networks you add are not affected by the checkbox. Use the examples
+         to explore the functions in the app.''')
+
+st.subheader("**Proximity and Network Lists**")
+st.write('''The Proximity and Network lists provide details about the proximity data
+    sets loaded and the networks generated from the proximity data. One or more of the
+    proximities or networks can be selected by checking the boxes at the left of each
+    row in the lists. Operations can be performed on selected items using the buttons
+    below the lists.  The "Tips" section below provides some information about
+    the possible operations.''')
 
 st.subheader("**Displaying a Network**")
 st.write("""The **Select Display** page provides tools for exploring various layouts and characteristics of the 
@@ -75,7 +83,7 @@ st.write('''
         items requires checking the select boxes. All items can be selected or deselected by 
         checking or unchecking the select box at the top of the list.
         
-        Checking **Force Proximity Undirected** will create a Proximity with symmetric distances if the data
+        Checking **Force Proximity Symmetric** will create a Proximity with symmetric distances if the data
         are not symmetric.  Distances are the minimum of the two distances between the two terms.  This
         is useful when undirected networks are desired.  For example, the target rating method provides two 
         estimates of the distance between the items.  The minimum of the two is used to represent the pair.   
