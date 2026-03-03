@@ -137,12 +137,13 @@ class Netpic:
             x, y = coords[i]
             plot_node = self.nodelabels[i]
             text_obj = self.ax.text(x, y, plot_node, ha='center', va='center', fontsize=font_size,
-                                    bbox=dict(facecolor='white', alpha=0, edgecolor='white',
+                                    bbox=dict(facecolor='white', alpha=0.5, edgecolor='white',
                                     boxstyle='round,pad=0.3',),
                                     picker=True, alpha=1, zorder=2, visible=True,)
             self.text_objects[node] = text_obj
             self.node_positions[node] = np.array([x, y])
 
+        self.fig.canvas.draw()  # Force a draw to update bounding boxes
         self._draw_edges_and_weights(font_size)
         self.ax.margins(0.1)
 
