@@ -137,7 +137,7 @@ class Netpic:
             x, y = coords[i]
             plot_node = self.nodelabels[i]
             text_obj = self.ax.text(x, y, plot_node, ha='center', va='center', fontsize=font_size,
-                                    bbox=dict(facecolor='white', alpha=0.5, edgecolor='white',
+                                    bbox=dict(facecolor='white', alpha=0.1, edgecolor='white',
                                     boxstyle='round,pad=0.3',),
                                     picker=True, alpha=1, zorder=2, visible=True,)
             self.text_objects[node] = text_obj
