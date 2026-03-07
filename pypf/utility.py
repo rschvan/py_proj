@@ -10,6 +10,7 @@ import re
 import keyword
 import shutil
 import inspect # Used to find the path of the current module
+import json
 
 def canonical(coords:np.ndarray) -> np.ndarray | None:
 # returns canonical coordinates (-1 to 1) from input coordinates
@@ -552,18 +553,103 @@ def split_long_term(term:str)->str:
         else:
             return term
 
+def save_project_state(col, filepath):
+    """
+    Exports Proximity data and PFnet recipes to a JSON file.
+    """
+    state = {
+        "proximities": [],
+        "network_recipes": [],
+        "saved_layouts": {}
+    }
+
+    # Serialize Proximities (Data + Terms)
+    for name, prx in col.proximities.items():
+        state["proximities"].append({
+            "name": prx.name,
+            "terms": prx.terms,
+            "dismat": prx.dismat.tolist(),  # Convert numpy to list
+            "issymmetric": prx.issymmetric
+        })
+
+    # Store Network Recipes (Instructions)
+    for name, net in col.pfnets.items():
+        state["network_recipes"].append({
+            "name": net.name,
+            "type": net.type,
+            "q": "inf" if np.isinf(net.q) else net.q,
+            "r": "inf" if np.isinf(net.r) else net.r,
+            "parent_proximity": net.proximity.name if hasattr(net, 'proximity') else None
+        })
+
+    # Store Coordinates by termsid
+    if hasattr(col, 'saved_layouts'):
+        for tid, coords in col.saved_layouts.items():
+            state["saved_layouts"][tid] = coords.tolist()
+
+    with open(filepath, 'w') as f:
+        json.dump(state, f, indent=4)
+    return filepath
+
+def load_project_state(filepath, col):
+    """
+    Reconstructs Proximities and PFnets from a JSON recipe into an existing Collection.
+    """
+    from pypf.proximity import Proximity
+    from pypf.pfnet import PFnet
+    with open(filepath, 'r') as f:
+        data = json.load(f)
+
+    # 1. Reconstruct Proximities
+    for p_data in data["proximities"]:
+        new_prx = Proximity(
+            name=p_data["name"],
+            terms=p_data["terms"],
+            dismat=np.array(p_data["dismat"])
+        )
+        col.add_proximity(new_prx)
+
+    # 2. Re-derive Networks from Recipes
+    for r_data in data["network_recipes"]:
+        parent_prx = col.get_proximity(r_data["parent_proximity"])
+        if parent_prx:
+            q = np.inf if r_data["q"] == "inf" else r_data["q"]
+            r = np.inf if r_data["r"] == "inf" else r_data["r"]
+
+            new_net = PFnet(parent_prx, q=q, r=r, type=r_data["type"])
+            new_net.name = r_data["name"]  # Keep original name
+            col.add_pfnet(new_net)
+
+    # 3. Restore Layouts
+    if "saved_layouts" in data:
+        col.saved_layouts = {tid: np.array(coords) for tid, coords in data["saved_layouts"].items()}
+
+    return col
+
 if __name__ == '__main__':
-    x = 3584.57
-    s = sig_figs_flat(x, 4)
-    print(x, s)
+    from pypf.pfnet import PFnet
+    from pypf.proximity import Proximity
+    from pypf.collection import Collection
+    tcol = Collection()
+    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
+    tcol.add_proximity(psyprx)
+    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
+    tcol.add_proximity(bioprx)
+    psy = PFnet(psyprx)
+    tcol.add_pfnet(psy)
+    bio = PFnet(bioprx)
+    tcol.add_pfnet(bio)
+    save_project_state(tcol, "testjson.json")
+    scol = Collection()
+    scol = load_project_state("testjson.json", scol)
+    print("Original Networks:", list(tcol.pfnets.keys()))
+    print("Restored Networks:", list(scol.pfnets.keys()))
+    orig_links = tcol.pfnets["psy_pf"].nlinks
+    restored_links = scol.pfnets["psy_pf"].nlinks
+    print(f"Link Count Match: {orig_links == restored_links} ({orig_links} links)")
 
 
-    # from pypf.pfnet import PFnet
-    # from pypf.proximity import Proximity
-    # psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    # bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    # psy = PFnet(psyprx)
-    # bio = PFnet(bioprx)
+
     # prxset = [psyprx, bioprx]
     # netset = [psy, bio]
     # # mrg = merge_networks(netset)
