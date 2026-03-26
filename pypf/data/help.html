@@ -1,0 +1,284 @@
+
+<style>
+    .help-wrap { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: auto; }
+    .help-header { color: #2E86C1; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 40px; }
+    .help-section { margin-bottom: 15px; }
+    .data-table { border-collapse: collapse; width: 80%; margin: 5px 0; font-family: monospace; font-size: 0.9em; }
+    .data-table th, .data-table td { border: 1px solid #ddd; padding: 2px; text-align: center; }
+    .data-table th { background-color: #f2f2f2; }
+    :target::before { content: ""; display: block; height: 80px; margin: -80px 0 0; }
+    body { display: flex; }
+    .content {
+        margin-left: 0px;
+        padding: 20px;
+        max-width: 900px;
+    }
+</style>
+
+<div class="content">
+
+<div id="top"></div>
+
+<div class="help-wrap">
+    <div id="links" class="help-section">
+        <h2 class="help-header">Other Resources</h2>
+		<a href="https://en.wikipedia.org/wiki/Pathfinder_network" title="Wikipedia Pathfinder Network Page" target="_blank">Wikipedia Pathfinder Network Page</a>
+        <p>	An overview of the Pathfinder method including references to some of its uses. </p>
+        <p><a href="app/static/Schvaneveldt_Durso_Dearholt_1989.pdf" target="_blank">Download Pathfinder Paper</a>></p>
+        <p>	Detailed discussion of the Pathfinder method and several papers exploring various applications of the method.</p>
+        <p><a href="https://www.youtube.com/@PFNets" title="videos" target="_blank">YouTube PFNets Channel</a> </p>
+        <p>	Videos covering Pathfinder and using the PyPathfinder App</p>
+    </div>
+
+  	<div id="welcome" class="help-section">
+        <h2 class="help-header">About PyPathfinder </h2>
+        <p>PyPathfinder is a Python app for creating and analyzing Pathfinder Networks. It allows you to load 
+		Proximity data files and create Pathfinder Networks as well as Threshold  and Nearest Neighbor networks. 
+		It provides information about the networks and data files, and tools for averaging compatible data sets. 
+		There are pages  for visualizing and saving images of networks and for getting help in using the app.</p>
+		<p>Some sample proximities and derived networks are loaded when the app starts. Use the examples to explore 
+		the functions in the app. Play with the various tools to learn about their effects. Load your own data files 
+		whenever you like. You can remove the sample data by unchecking the <strong>Add Sample Data</strong> 
+		check box in the sidebar.</p> 
+        <p>Introductory information is also displayed when the app starts. This can also be removed by unchecking 
+		the <strong>Introduction</strong> check box in the sidebar. </p>
+ 	</div>
+
+  	<div id="lists" class="help-section">
+        <h2 class="help-header">Proximity and Network Lists</h2>
+        <p>The Proximity and Network lists provide details about the proximity data sets loaded and the networks 
+		generated. One or more can be selected by checking the boxes at the left of each row. Operations can be 
+		performed on selected items using the buttons below the lists.</p>
+  	</div>
+	
+  	<div id="display" class="help-section">
+        <h2 class="help-header">Displaying Networks and Manipulating Layouts </h2>
+      	<p>The <b>View Display</b> page provides a display of a selected network and various tools
+		 for choosing and manipulating layouts. It's best to adjust <strong>Node Size </strong>before dragging nodes because, changing Node Size will remove the node adjustments. The <strong>Static</strong> option allows you to 
+		 drag nodes to new positions as you wish. The <strong>Dynamic</strong> option uses a layout 
+		 algorithm to set the position of the nodes. If you drag nodes while the algorithm is enabled, 
+		 you can influence the layout, but the algorithm will still determine the settled position. 
+		 You can help remove crossed links. Dragging a node and holding it in a new position will often keep the algorithm trying to 
+		 find a solution with the node in the held position, but the final position will still be 
+		 determined by the algorithm. When you disable the physics with the checkbox at the bottom of the display, 
+		 the display will become static and you can drag nodes to  positions you choose. 
+		 The <strong>Save Layout</strong> button will store the positions of the nodes before 
+		 any nodes are moved so you can save the best approximation for future use. Later, selecting 
+		 <strong>saved</strong> in the <strong>Layout Method</strong> dropdown will load the saved layout. 
+		 The final adjustments to node positions will still be required. The <strong>redraw</strong> button will generate a new layout for most of the Layout Methods (except saved, spiral, and circle) by starting the layout algorithm from a random starting point. The quality of generated layouts vary considerably so it is advisable to redraw until a reasonably good layout is achieved, and you can further refine it by dragging nodes. The best way to <strong>save the image of a network</strong> is to take a screenshot of the desired area of the screen. </p>
+    </div>
+
+  <div id="saving" class="help-section">
+        <h2 class="help-header">Saving &amp; Loading Projects</h2>
+        <p>The Collections of Proximity files and Networks you create as well as the layouts you have saved
+		 can be stored in files on your computer and later reloaded using the <strong>Save Project File</strong> 
+		 and <strong>Load Project File </strong>buttons at the top of the Build Nets page. It is a good idea to 
+		 save your work periodically to ensure that you can easily recover the state of your project. The website 
+		 server may go into hibernation when the site  is idle for a period of time. When this happens, 
+		 you will have to recover your project by loading it when you restart later. Of course, you can only recover 
+		 what you last saved. When you <strong>save</strong> a project, you will use file downloading dialog 
+		 where you can use the default file name or choose one of your own. <strong>Loading</strong> a project 
+		 involves first selecting a saved project file and then either confirming the load or cancelling it. 
+		 The app will display these options for you.</p>
+  </div>
+
+    <div id="tips" class="help-section">
+        <h2 class="help-header">Tips about the App</h2>
+        <ul>
+          <li><strong>Proximity Data Files</strong><br>
+            The spreadsheet files are easier to create and are much simpler than the legacy text files so newly created files can use the spreadsheet format. However, the legacy text file format supports several options so it might be useful if some of its features are desired. One example is with sparse date where a small subset of cells in the distance matrix have finite values and all other cells are treated as infinite. The <strong>list</strong> format in the legacy files supports only providing the data for the finite cells. Legacy files also provde the possibility of creating the distance data from <strong>vectors</strong> of data with a vector for each term. The <strong>coord</strong> option supports several methods for creating distances from vectors. Details are provided in the Legacy Text Data Format section. </li>
+            <li><b>Selection of Proximities or Networks<br>
+            </b>A single item can be selected from the lists by clicking its name, 
+			but multiple items require checking the select boxes to the left of the names. 
+			Clicking at the top of the select boxes will select or deselect all items in a list. </li>
+            <li><b>Force Proximity Symmetric<br>
+            </b>Checking <b>Force Proximity Symmetric</b> will create a Proximity with symmetric distances 
+			(the minimum of the two distances is used) when the proximity matrix is asymmetric. This can be 
+			useful when you prefer working with undirected graphs creating links based on the minimum of the 
+			two proximities for each potential link. </li>
+            <li><b>Downloading Tables and Network Layouts <br>
+            </b>Tables can be downloaded  as .csv files by hovering over the toolbar at the top right 
+			of the table and clicking the download icon. Save network figures as .png files by right-clicking t
+			he display and selecting "Save image as". You can also use a screenshot to capture a network image. </li>
+            <li><b>q-value<br>
+            </b> The q-value is the maximum number of links in paths examined in searching for the minimum-length path. 
+			The default value of infinity means that all possible paths are examined. The paths with the most possible 
+			links have <em>n-1</em> links where <em>n </em>is the number of nodes. With q = 2, only two-link paths are 
+			considered. </li>
+            <li><strong>Proximity Correlations</strong> shows a matrix of the pairwise correlations of the distances in proximity data files. Correlations are only computed for proximities with the same number of terms.</li>
+            <li> <strong>Network Similarity</strong> shows a matrix of pairwse similarities which are the number of links found in both networks divided by the number of unique links in the two networks (intersection over union). </li>
+            <li><b>MDS Layout<br>
+              </b>The MDS layout uses the complete distance matrix for a 2-D Multidimensional Scaling Fit. 
+			  It is particularly useful when all distances are meaningful and you would like the node positions 
+			  to reflect the constraints of all the distances. Geographical distances are examples of this as in 
+			  the cities and statecaps data sets. The statecaps distances are expressed in miles between state capitals. 
+			  The statecaps_pf_q2_r2 pfnet(q=2, r=2) is a planar graph meaning it can be drawn with no link crossings. </li>
+            <li><strong>Merge Networks<br>
+              </strong>Merging networks produces a network which includes all the links found in any of the merged networks. 
+			  Of course, networks must contain the same terms to be merged. The link weight for merged networks is a binary code 
+			  indicating which networks include the link. The networks are merged in order with index <em>i</em> going 
+			  from 0 to <em>n</em>. If a link is in network<em> i</em>, its weight is increased by 2<sup><em>i</em></sup> . So the position of the 1 bits in the weight indicate the link is in network <em>i</em>, reading from right to left. </li>
+        </ul>
+    </div>
+
+    <div id="format" class="help-section">
+        <h2 class="help-header">Spreadsheet Data File Format (.xlsx or .csv)</h2>
+        <p>With <i>n</i> terms, the proximity file spreadsheet must consist of <i>n+1</i> rows and <i>n+1</i> columns. 
+		The part of the filename before the first period is the name of the proximity. The first row must contain the terms (node names)
+		 starting in column 2, and the first column must 
+		also contain the terms starting in row 2. The matrix contains the distances (or dissimilarities) 
+		for the pair on the row and column. Symmetric matrices (where corresponding rows and columns are equal) 
+		result in undirected Pathfinder networks. Directed Pathfinder networks are generated for asymmetric matrices. 
+		The diagonal will be treated as zero distance (the distance of an item to itself). 
+		Anything other than a number in off-diagonal cells will be treated as an infinite distance which means that 
+		the cell can never result in a link. </p>
+        <p>Values must be distances or dissimilarities. If your data measure similarity (like correlation or cosine), 
+		invert them using (d = 1  c). Similarity or relatedness ratings can be inverted by (d = min(s) + max(s)  - s). 
+		Infinite distances are represented by anything other than a finite positive real number (blank,, "nan", "inf", etc.). 
+		Here is a small example of the <strong>bank6.prx.xlsx </strong>spreadsheet with the correct format:
+		</p>
+        <table width="84%" height="177" class="data-table">
+            <thead>
+                <tr><th width="12%"></th><th width="12%">account</th><th width="12%">bank</th><th width="12%">flood</th><th width="12%">money</th><th width="12%">river</th><th width="12%">save</th></tr>
+            </thead>
+            <tbody>
+                <tr><th>account</th><td>0</td><td>3</td><td>32</td><td>26</td><td>32</td><td>32</td></tr>
+                <tr><th>bank</th><td>3</td><td>0</td><td>27</td><td>21</td><td>14</td><td>30</td></tr>
+                <tr><th>flood</th><td>32</td><td>27</td><td>0</td><td>31</td><td>23</td><td>29</td></tr>
+                <tr><th>money</th><td>26</td><td>21</td><td>31</td><td>0</td><td>31</td><td>23</td></tr>
+                <tr><th>river</th><td>32</td><td>14</td><td>23</td><td>31</td><td>0</td><td>31</td></tr>
+                <tr><th>save</th><td>32</td><td>30</td><td>29</td><td>23</td><td>31</td><td>0</td></tr>
+            </tbody>
+      </table>
+
+    </div>
+    <div id="legacy" class="help-section">
+        <h2 class="help-header">Legacy Text File Format (.txt)</h2>
+        <p> Legacy text files are more complex than files using the spreadsheet format, so we encourage the use
+		 of the  spreadsheet format for newly created data files. The legacy text file format is used in several 
+		 earlier versions of Pathfinder software and in various methods for creating proximity data so PyPathfinder 
+		 allows you to load these files. With legacy text files, proximity data and terms are stored in separate 
+		 text files, with one term on each line. Both proximity and term files must be loaded  to create complete 
+		 Proximities in PyPathfinder. Term files can be named in two ways. For a set of data files with the same terms, 
+		 a single file named "terms.txt" can be used for all the data files. To associate a term file with a 
+		 specific data file, the term file name must include the data file name followed by ".trm". So, for example, 
+		 if the data file is named "data.txt" or "data.prx.txt" the associated terms file must be named "data.trm.txt". 
+		 Recall that the proximity file name is the part before the first period. Data specific term files (.trm.txt) 
+		 have priority over generic files (terms.txt) when associating terms files with proximity data files. </p>
+        <p><strong>Legacy Text File Details </strong></p>
+        <p>The data may be in the form of similarities, dissimilarities, probabilities, distances, coordinates, or features. With dissimilarities or distances, smaller numbers represent pairs of entities that are close or similar or related and larger numbers represent pairs of entities that are distant or dissimilar or unrelated. The opposite is true of similarities, probabilities, or relatedness i.e., smaller numbers represent entities that are distant or dissimilar or unrelated and larger numbers represent pairs of entities that are close or similar or related. With distance measures, the distance between an entity and itself (the major diagonal entries in a data matrix) is usually 0 (zero). All entries in the data must be positive or zero. Negative numbers are not allowed. Values outside the minimum  maximum range (see below) will never produce links in the networks generated. A strictly formatted text file is required for proximity data. Here is a small example of such a file: </p>
+        <p><strong>data <br>
+  similarity <br>
+  5 nodes <br>
+  comment <br>
+  10 minimum value <br>
+  90 maximum value <br>
+  lower triangle <br>
+  32 <br>
+  40 49 <br>
+  32 38 53 <br>
+  73 63 77 18 </strong></p>
+        <p>Required Data file format. / indicates alternatives: <br>
+  Line 1: Identification as data file = the word 'data' in some form (e.g., 'data' or 'DATA' or 'Data') <br>
+  Line 2: Type of data: either dissimilarity or distance or <strong>dis</strong> or similarity or <strong>sim</strong> <br>
+  Line 3: Number of nodes = integer (+ optional label) <br>
+  Line 4: comment : short description <br>
+  Line 5: Minimum data value = positive real number (+ optional label) <br>
+  Line 6: Maximum data value = positive real number (+ optional label) <br>
+  Line 7: Order of data values : either <strong>matrix</strong> or <strong>upper</strong> or <strong>lower</strong> or <strong>list</strong> or <strong>coord</strong> or featur or attrib <br>
+  Line 8: Data <br>
+  Line 9: Data <br>
+  . <br>
+  . <br>
+  Line ?: Data </p>
+        <p>The lines in the file must be organized as shown above. For Lines 3, 5, and 6, the program uses only the first number on the line. Some following text helps to indicate what the number represents. </p>
+        <p>Details on the required input are as follows: <br>
+          <strong>Line 1.</strong> "Data," "DATA," or "data" is used to identify the file type <br>
+          <strong>Line 2.</strong> "similarity," "dissimilarity," "probability," or "distance," (or "sim," "dis," or "prob,") This line indicates data direction. With similarity data, larger values represent greater similarity. With distance data, smaller numbers mean closer (or more similar). <br>
+          <strong>Line 3</strong>. The number of nodes (or terms) in the data set. The word nodes is optional <br>
+          <strong>Line 4.</strong> Comment: a short description of the data <br>
+          <strong>Line 5</strong>. the minimum value in the data set. Words are optional. <br>
+          <strong>Line 6</strong>. the maximum data value. Words are optional.<br>
+  The minimum and maximum values are used as cutoffs in handling the data. Any value in the data outside the minimum - maximum range will never become a link in networks. In other words, two nodes with a proximity value outside the range can never be linked in any network generated by the program. Missing data can be handled by using values outside the range, or by using the "list" format for your data. <br>
+  <strong>Line 7.</strong> "matrix" or "upper" or "lower" or "list" or "coord" or "featur." This line specifies the nature of the data following this line. Various ways of supplying proximities are possible based on a full matrix, an upper triangle, a lower triangle, a list, or vectors of features, attributes, or coordinates. The upper and lower (half-matrix) methods do not include the major diagonal (the proximity of an item with itself). The lines of data in the file do not have to have these shapes, but the data must be in the same order as they would if the lines did have those shapes when we characterize order as reading across each line in turn. The following examples may be of help. </p>
+        <p><strong>matrix: <br>
+  0 1 3 2 3 <br>
+  1 0 1 4 6 <br>
+  3 1 0 5 5 <br>
+  2 4 5 0 4 <br>
+  3 6 5 4 0 </strong></p>
+        <p><strong>lower: <br>
+  1 <br>
+  3 1 <br>
+  2 4 5 <br>
+  3 6 5 4 </strong></p>
+        <p><strong>upper: <br>
+  1 3 2 3 <br>
+  1 4 6 <br>
+  5 5 <br>
+  4 </strong></p>
+        <p><strong>list: <br>
+  10 pairs <br>
+  symmetric <br>
+  2 1 1 <br>
+  3 1 3 <br>
+  3 2 1 <br>
+  4 1 2 <br>
+  4 2 4 <br>
+  4 3 5 <br>
+  5 1 3 <br>
+  5 2 6 <br>
+  5 3 5 <br>
+  5 4 4 </strong></p>
+        <p>These four sets of data produce the same distance matrix. Of course, if your data are asymmetric, they must be input as a matrix or a list with "nonsymmetric" or asymmetric specified. If the data are symmetric, any of the four shapes is acceptable. With the list format, the number of pairs in the list must be specified on the line following "list." The next line specifies whether the pairs define symmetric or nonsymmetric data. With the list format, missing pairs will never be linked. Following the header lines, the data must occur as discussed above. </p>
+        <p>With n nodes (or entities), a matrix must contain n x n data elements, upper or lower triangles must contain n(n-1)/2 data elements. </p>
+        <p>The list data must contain 3 numbers for each pair listed, the number of the source term, the number of the destination term, and the proximity value. </p>
+        <p><strong>Coordinates, Features, Vectors, or Attributes </strong></p>
+        <p>When data are in the form of vectors, the appropriate format starting at Line 7 is as follows: <br>
+  Line 7. <strong>coord</strong> or <strong>feature</strong> or <strong>attrib</strong> indicating that the data to follow are to be interpreted as vectors of numbers, one vector for each item or node. <br>
+  Line 8. Integer = The number of dimensions, attributes, or features in the vector for each item (vector length) (+ optional label) <br>
+  Line 9. euclidean or city block or dominance or hamming or cosine plus optional: standardize <br>
+  Line 10: Vector for item 1 <br>
+  Line 11: Vector for item 2 <br>
+  Etc. (one vector for each item) </p>
+        <p>Here is a small example proximity data file for 5 nodes in 2 dimensions: <br>
+          <strong>data <br>
+  distance <br>
+  5 nodes <br>
+  Euclidean Distances</strong> (comment, line necessary but not used)<strong><br>
+  0 minimum data value <br>
+  16 maximum data value <br>
+  coord: <br>
+  2 dimensions <br>
+  Euclidean Distance <br>
+  9 1 <br>
+  8 4 <br>
+  2 6 <br>
+  5 4 <br>
+  1 8 </strong><br>
+  In this case, each of 5 items (nodes) has values on each of two dimensions as in representing points in 2-dimensional space. The number of items or nodes is specified in Line 3 of the data file. The number of dimensions or features must be given following the coord or feature or attribute line. There can be any number of dimensions. With coordinates, we often think of the data as coming from the spatial layout of items. With features or attributes, the data may be the ratings of each item on several different Likert-type scales so the scales can be thought of as features. Features could also identify the presence or absence of features using 1's and 0's. The line following the number of dimensions or features must have "Euclidean," "City Block," "Dominance," Hamming, or Cosine. This determines how distance data are computed from the coordinates or features. Distances are computed for all pairs of items. With Euclidean, we find the straight line distance between the items (nodes) in multidimensional space. With City Block, the distances are determined by 
+  summing the distance between items (nodes) on each dimension or feature. City Block is usually the most appropriate method for Likert-type rating scale data. With Dominance, the distance between items is the maximum difference for the items across all the dimensions or features. Hamming distances are the number of features on which items (nodes) differ. Cosine bases the distances on the cosine of the angle between the vectors which varies from 1 to -1. Because cosine is a measure of similarity rather than distance, a distance value is obtained by: 1  cosine. This varies from 0 to 2 with 0 meaning vectors pointing in the same direction, and 2 meaning vectors pointing in opposite directions. You can also determine whether to standardize the vectors before computing distances. When standard is included on the line, the vectors are normalized to have a standard length 1. This is often appropriate when the vectors vary greatly in magnitude. For example, with vectors from Latent Semantic Analysis (LSA), computing Euclidean distances with standardized vectors provides a measure which is very similar to the cosine measure usually used in LSA work. </p>
+      <p>Here is a complete sample data file with the coordinate/feature format: <br>
+          <strong>data <br>
+  distances <br>
+  5 nodes (5 vectors, one for each node) <br>
+  City Block Distances <br>
+  1 minimum data value <br>
+  6 maximum data value <br>
+  coord: <br>
+  4 dimensions <br>
+  City Block Metric <br>
+  2 1 3 2 <br>
+  1 5 1 4 <br>
+  3 1 3 5 <br>
+  2 4 1 2 <br>
+  3 6 5 4 </strong></p>
+        <p>For an example of how distances are created from the data, the distance between items 1 and 2 (rows 1 and 2) is computed as follows: </p>
+        <p>|2-1| + |1-5| + |3-1| + |2-4| = 9 where |a-b| is the absolute value of the difference between a and b. </p>
+        <p>the distance between items 2 and 4 is: </p>
+        <p>|1-2| + |5-4| + |1-1| + |4-2| = 4 </p>
+        <p>Distance is computed for all pairs of items in this way. </p>
+        <p>Following the header lines, the data must occur as discussed above. The coord data must have a value on each dimension or feature for each of the nodes. The data elements must be separated by one or more spaces and/or line breaks. </p>
+    </div>
+</div>
+</div>
