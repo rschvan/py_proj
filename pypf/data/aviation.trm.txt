@@ -1,0 +1,22 @@
+Aircraft Configuration
+Engine Health
+Fuel Status
+RPM (power)
+Altitude 
+Distance to Waypoint
+Bank
+Pitch
+Yaw
+Course
+Track
+Airspeed
+Ground Speed
+Vertical Velocity
+Time (ETA/ETE)
+ATC Comm
+Traffic Comm
+Obstructions
+Traffic
+Airspace
+General Weather
+Wind

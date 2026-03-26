@@ -1,5 +1,6 @@
 # pypf/collection.py
 import copy
+import json
 import numpy as np
 import pandas as pd
 import os
@@ -14,31 +15,38 @@ class Collection:
         self.pfnets: dict[str, PFnet] = {}
         self.selected_prxs: list[str] = []  # proximity names
         self.selected_nets: list[str] = []  # network names
+        self.focus_net:PFnet = None
         self.mypfnets_dir: str = mypfnets_dir() # directory in user's directory for sample data and help
         self.project_dirs: list[str] = [] # list of directories
         self.project_dirs.append(self.mypfnets_dir)
+        self.saved_layouts: dict[str, np.ndarray] = {} # coordinates for termsid's
         self.to_csv = to_csv # if true output to csv files will be generated and files opened
+        self.changed = False
 
     def add_proximity(self, prx:Proximity):
         if prx.name in self.proximities:
             prx.name = prx.name + "_dup"
         self.proximities[prx.name] = prx
+        self.changed = True
 
     def delete_proximity(self):
         selected = self.selected_prxs
         for prx_name in selected:
             self.proximities.pop(prx_name)
+            self.changed = True
         self.selected_prxs = []
 
     def add_pfnet(self, pf:PFnet) -> None:
         if pf.name in self.pfnets:
             pf.name = pf.name + "_dup"
         self.pfnets[pf.name] = pf
+        self.changed = True
 
     def delete_pfnet(self) -> None:
         selected = self.selected_nets
         for net_name in selected:
             self.pfnets.pop(net_name)
+            self.changed = True
         self.selected_nets = []
 
     def get_proximity(self, name:str) -> Proximity | None:
@@ -226,6 +234,88 @@ class Collection:
         self.add_pfnet(merged_net)
         self.selected_nets = []
         return merged_net
+
+    def get_project_state(self) -> str:
+        """
+        Serializes Proximity data and PFnet recipes into a JSON string.
+
+        """
+        state = {
+            "proximities": [],
+            "network_recipes": [],
+            "saved_layouts": {}
+        }
+
+        # 1. Serialize Proximities (Actual Data)
+        for name, prx in self.proximities.items():
+            state["proximities"].append({
+                "name": prx.name,
+                "terms": prx.terms,
+                "dismat": prx.dismat.tolist(),  # Convert numpy array to list
+                "issymmetric": bool(prx.issymmetric)
+            })
+
+        # 2. Store Network Recipes (Instructions)
+        def safe_inf_check(v):
+            if isinstance(v, str):
+                return v.lower() == "inf"
+            return isinstance(v, (int, float)) and np.isinf(v)
+
+        for name, net in self.pfnets.items():
+            state["network_recipes"].append({
+                "name": net.name,
+                "type": net.type,
+                "q": "inf" if safe_inf_check(net.q) else net.q,
+                "r": "inf" if safe_inf_check(net.r) else net.r,
+                "parent_proximity": net.proximity.name if hasattr(net, 'proximity') else None
+            })
+
+        # 3. Store Coordinate Overrides (by termsid)
+        for tid, coords in self.saved_layouts.items():
+            state["saved_layouts"][tid] = coords.tolist()
+
+        return json.dumps(state, indent=4)
+
+    def load_project_state(self, json_data: str):
+        """
+        Reconstructs the collection from a JSON string.
+
+        """
+        from pypf.proximity import Proximity
+        from pypf.pfnet import PFnet
+
+        data = json.loads(json_data)
+        # 0. Restore Layouts
+        if "saved_layouts" in data:
+            for tid, coords in data["saved_layouts"].items():
+                self.saved_layouts[tid] = np.array(coords)
+
+        # 1. Rebuild Proximities
+        for p_data in data["proximities"]:
+            new_prx = Proximity(
+                name=p_data["name"],
+                terms=p_data["terms"],
+                dismat=np.array(p_data["dismat"])
+            )
+            self.add_proximity(new_prx)
+
+        # 2. Re-derive Networks from Recipes
+        for r_data in data["network_recipes"]:
+            parent_prx = self.get_proximity(r_data["parent_proximity"])
+            if parent_prx:
+                # Handle infinity strings back to float
+                q = np.inf if r_data["q"] == "inf" else r_data["q"]
+                r = np.inf if r_data["r"] == "inf" else r_data["r"]
+
+                # Derived automatically upon creation
+                new_net = PFnet(parent_prx, q=q, r=r, type=r_data["type"])
+                new_net.name = r_data["name"]
+                tid = new_net.termsid
+                if tid in self.saved_layouts:
+                    new_net.coords = copy.deepcopy(saved_layouts[tid])
+                self.add_pfnet(new_net)
+
+
 
 if __name__ == "__main__":
     from pypf.proximity import Proximity

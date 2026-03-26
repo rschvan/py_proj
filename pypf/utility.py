@@ -1,5 +1,4 @@
 # pypf/utility.py
-# df = pd.DataFrame(matrix, index=rows, columns=cols) - creates table with row and col labels
 import os
 import math
 from typing import Optional, Union
@@ -8,9 +7,6 @@ import pandas as pd
 import networkx as nx
 import re
 import keyword
-import shutil
-import inspect # Used to find the path of the current module
-import json
 
 def canonical(coords:np.ndarray) -> np.ndarray | None:
 # returns canonical coordinates (-1 to 1) from input coordinates
@@ -295,8 +291,8 @@ def map_indices_to_terms(list_of_index_lists: list[list[int]], terms: list[str])
 
 def mds_coord(dismat:np.ndarray, ndims=2, metric=True)->np.ndarray:
     from sklearn.manifold import MDS
-    mds = MDS(n_components=ndims, metric=metric, n_init=1,
-              max_iter=1000, eps=1e-6, dissimilarity='precomputed')
+    mds = MDS(n_components=ndims, init='random', metric_mds=metric, n_init=1,
+              max_iter=1000, eps=1e-6, metric='precomputed')
     coord = mds.fit_transform(dismat)
     coord = canonical(coord)
     return coord
@@ -312,56 +308,20 @@ def minkowski(dis1:float, dis2:float, r:float) -> float:
         dis = round(dis, 12)
     return dis
 
-def mypfnets_dir() -> str:
+def mypfnets_dir():
     """
-    Determines the user's home directory and whether the directory, 'mypfnets', is present.
-    If so, returns the path to the 'mypfnets' directory.
-    If the directory does not exist, the directory will be created and the files in the
-    'data' directory within the 'pypf' package will be copied into the 'mypfnets' directory.
-
-    Returns:
-        str: The absolute path to the 'mypfnets' directory.
+    Returns the path to the user's mypfnets directory and
+    creates it if it does not already exist.
     """
-    # 1. Determine the user's home directory
-    user_home_dir = os.path.expanduser("~")
+    # Identify the user's home directory
+    home = os.path.expanduser("~")
+    base_dir = os.path.join(home, "mypfnets")
 
-    # 2. Define the path to the 'mypfnets' directory within the user's home
-    mypfnets_path = os.path.join(user_home_dir, "mypfnets")
+    # Create the directory (and any necessary parent folders)
+    # exist_ok=True means it won't throw an error if the folder exists
+    os.makedirs(base_dir, exist_ok=True)
 
-    # 3. Check if the 'mypfnets' directory exists
-    if not os.path.exists(mypfnets_path):
-        print(f"Creating user data directory: {mypfnets_path}")
-        try:
-            # Create the directory
-            os.makedirs(mypfnets_path)
-
-            # 4. If the directory does not exist, copy files from pypf/data
-            #    Find the path of the current module (utility.py)
-            current_module_file = inspect.getfile(mypfnets_dir)
-            # Go one level up to get the pypf package root directory
-            pypf_package_root = os.path.dirname(current_module_file)
-            # Construct the path to the 'data' directory within pypf
-            source_data_dir = os.path.join(pypf_package_root, "data")
-
-            if os.path.exists(source_data_dir) and os.path.isdir(source_data_dir):
-                print(f"Copying initial data from {source_data_dir} to {mypfnets_path}")
-                for item_name in os.listdir(source_data_dir):
-                    source_item_path = os.path.join(source_data_dir, item_name)
-                    destination_item_path = os.path.join(mypfnets_path, item_name)
-
-                    if os.path.isfile(source_item_path):
-                        shutil.copy2(source_item_path, destination_item_path)
-                    elif os.path.isdir(source_item_path):
-                        # If there are subdirectories in 'data', copy them recursively
-                        shutil.copytree(source_item_path, destination_item_path, dirs_exist_ok=True)
-            else:
-                print(f"Warning: Source data directory '{source_data_dir}' not found within the pypf package.")
-
-        except OSError as e:
-            print(f"Error creating or copying files to {mypfnets_path}: {e}")
-
-    # 5. Return the path to the 'mypfnets' directory
-    return mypfnets_path
+    return base_dir
 
 def netsim(adj1:np.ndarray, adj2:np.ndarray) -> dict[str, float | int | None]:
     """
@@ -553,79 +513,6 @@ def split_long_term(term:str)->str:
         else:
             return term
 
-def save_project_state(col, filepath):
-    """
-    Exports Proximity data and PFnet recipes to a JSON file.
-    """
-    state = {
-        "proximities": [],
-        "network_recipes": [],
-        "saved_layouts": {}
-    }
-
-    # Serialize Proximities (Data + Terms)
-    for name, prx in col.proximities.items():
-        state["proximities"].append({
-            "name": prx.name,
-            "terms": prx.terms,
-            "dismat": prx.dismat.tolist(),  # Convert numpy to list
-            "issymmetric": prx.issymmetric
-        })
-
-    # Store Network Recipes (Instructions)
-    for name, net in col.pfnets.items():
-        state["network_recipes"].append({
-            "name": net.name,
-            "type": net.type,
-            "q": "inf" if np.isinf(net.q) else net.q,
-            "r": "inf" if np.isinf(net.r) else net.r,
-            "parent_proximity": net.proximity.name if hasattr(net, 'proximity') else None
-        })
-
-    # Store Coordinates by termsid
-    if hasattr(col, 'saved_layouts'):
-        for tid, coords in col.saved_layouts.items():
-            state["saved_layouts"][tid] = coords.tolist()
-
-    with open(filepath, 'w') as f:
-        json.dump(state, f, indent=4)
-    return filepath
-
-def load_project_state(filepath, col):
-    """
-    Reconstructs Proximities and PFnets from a JSON recipe into an existing Collection.
-    """
-    from pypf.proximity import Proximity
-    from pypf.pfnet import PFnet
-    with open(filepath, 'r') as f:
-        data = json.load(f)
-
-    # 1. Reconstruct Proximities
-    for p_data in data["proximities"]:
-        new_prx = Proximity(
-            name=p_data["name"],
-            terms=p_data["terms"],
-            dismat=np.array(p_data["dismat"])
-        )
-        col.add_proximity(new_prx)
-
-    # 2. Re-derive Networks from Recipes
-    for r_data in data["network_recipes"]:
-        parent_prx = col.get_proximity(r_data["parent_proximity"])
-        if parent_prx:
-            q = np.inf if r_data["q"] == "inf" else r_data["q"]
-            r = np.inf if r_data["r"] == "inf" else r_data["r"]
-
-            new_net = PFnet(parent_prx, q=q, r=r, type=r_data["type"])
-            new_net.name = r_data["name"]  # Keep original name
-            col.add_pfnet(new_net)
-
-    # 3. Restore Layouts
-    if "saved_layouts" in data:
-        col.saved_layouts = {tid: np.array(coords) for tid, coords in data["saved_layouts"].items()}
-
-    return col
-
 if __name__ == '__main__':
     from pypf.pfnet import PFnet
     from pypf.proximity import Proximity
@@ -639,16 +526,18 @@ if __name__ == '__main__':
     tcol.add_pfnet(psy)
     bio = PFnet(bioprx)
     tcol.add_pfnet(bio)
-    save_project_state(tcol, "testjson.json")
+    js = tcol.get_project_state()
+    with open("pypf.json", "w") as f:
+        f.write(js)
     scol = Collection()
-    scol = load_project_state("testjson.json", scol)
+    scol.load_project_state("pypf.json")
     print("Original Networks:", list(tcol.pfnets.keys()))
     print("Restored Networks:", list(scol.pfnets.keys()))
     orig_links = tcol.pfnets["psy_pf"].nlinks
     restored_links = scol.pfnets["psy_pf"].nlinks
     print(f"Link Count Match: {orig_links == restored_links} ({orig_links} links)")
-
-
+    npsyprx = scol.proximities["psy"]
+    npsyprx.prxprint()
 
     # prxset = [psyprx, bioprx]
     # netset = [psy, bio]
@@ -657,4 +546,3 @@ if __name__ == '__main__':
     # # aveprx = average_proximity(prxset, method="mean")
     # # aveprx.prxprint()
     # bio.get_layout(method="MDS")
-
