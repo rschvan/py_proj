@@ -59,7 +59,7 @@ def init_pf_session_state():
     stss.col.focus_net = stss.col.pfnets["bio_pf"]
     stss.help_html = get_cached_help_html()
     stss.col.changed = False
-    stss.layouts = ["kamada_kawai", "gravity", "force", "spring", "MDS", "spiral", "circle"]
+    stss.layouts = ["kamada_kawai", "saved" "gravity", "force", "spring", "MDS", "spiral", "circle"]
     stss.layout = "kamada_kawai"
     stss.layout_selector = stss.layout
     stss.font_size = 10
