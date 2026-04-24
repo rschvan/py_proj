@@ -74,4 +74,6 @@ def init_pf_session_state():
     stss.perm_net_type = "Pathfinder"
     stss.last_leg_files = []
     stss.last_ss_files = []
+    stss.prx_version = 0
+    stss.net_version = 0
 

@@ -526,18 +526,8 @@ if __name__ == '__main__':
     tcol.add_pfnet(psy)
     bio = PFnet(bioprx)
     tcol.add_pfnet(bio)
-    js = tcol.get_project_state()
-    with open("pypf.json", "w") as f:
-        f.write(js)
-    scol = Collection()
-    scol.load_project_state("pypf.json")
-    print("Original Networks:", list(tcol.pfnets.keys()))
-    print("Restored Networks:", list(scol.pfnets.keys()))
-    orig_links = tcol.pfnets["psy_pf"].nlinks
-    restored_links = scol.pfnets["psy_pf"].nlinks
-    print(f"Link Count Match: {orig_links == restored_links} ({orig_links} links)")
-    npsyprx = scol.proximities["psy"]
-    npsyprx.prxprint()
+
+
 
     # prxset = [psyprx, bioprx]
     # netset = [psy, bio]

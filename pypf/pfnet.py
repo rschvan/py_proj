@@ -4,7 +4,7 @@ import os
 from pypf.proximity import Proximity
 from pypf.utility import (floyd, dijkstra, graph_from_adjmat, get_lower,
                           get_off_diagonal, get_termsid, split_long_term,
-                          canonical)
+                          canonical,)
 #from networkx.drawing.nx_pydot import graphviz_layout
 import networkx as nx
 
@@ -48,6 +48,7 @@ class PFnet:
         self.eccentricity:dict = {}
         self.type:str = type
         self.coords:np.ndarray | None = None
+        self.link_rank:dict| None = None
 
         if proximity is None:
             proximity = Proximity()
@@ -121,11 +122,14 @@ class PFnet:
                     print("Error: PFnet type not valid")
 
             np.fill_diagonal(links, False)
+            self.adjmat = np.round(self.adjmat, 6)
             self.adjmat[links & (self.adjmat == 0)] = 1.0e-20
             self.eccentricity = self.get_eccentricity()
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
             self.get_layout() # default coords
+            self.unique_weights = np.unique(self.adjmat)
+
         else:
             print("Error: proximity not valid")
 
@@ -265,7 +269,7 @@ class PFnet:
             "target": [],
             "weight": []
         }
-        if self.type == "merge":
+        if self.type == "mg":
             properties["nets"] = []
             properties["count"] = []
         for i in range(n):
@@ -278,7 +282,7 @@ class PFnet:
                 properties["source"].append(self.terms[i])
                 properties["target"].append(self.terms[j])
                 properties["weight"].append(f"{weight:.7g}")
-                if self.type == "merge":
+                if self.type == "mg":
                     binw = f"{int(weight):b}"
                     properties["nets"].append(binw)
                     properties["count"].append(binw.count("1"))

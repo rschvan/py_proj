@@ -25,7 +25,7 @@
 		<a href="https://en.wikipedia.org/wiki/Pathfinder_network" title="Wikipedia Pathfinder Network Page" target="_blank">Wikipedia Pathfinder Network Page</a>
         <p>	An overview of the Pathfinder method including references to some of its uses. </p>
         <p><a href="app/static/Schvaneveldt_Durso_Dearholt_1989.pdf" target="_blank">Download Pathfinder Paper</a>></p>
-        <p>	Detailed discussion of the Pathfinder method and several papers exploring various applications of the method.</p>
+        <p>	Detailed discussion of the Pathfinder method and several example applications of the method.</p>
         <p><a href="https://www.youtube.com/@PFNets" title="videos" target="_blank">YouTube PFNets Channel</a> </p>
         <p>	Videos covering Pathfinder and using the PyPathfinder App</p>
     </div>
@@ -86,7 +86,7 @@
         <h2 class="help-header">Tips about the App</h2>
         <ul>
           <li><strong>Proximity Data Files</strong><br>
-            The spreadsheet files are easier to create and are much simpler than the legacy text files so newly created files can use the spreadsheet format. However, the legacy text file format supports several options so it might be useful if some of its features are desired. One example is with sparse date where a small subset of cells in the distance matrix have finite values and all other cells are treated as infinite. The <strong>list</strong> format in the legacy files supports only providing the data for the finite cells. Legacy files also provde the possibility of creating the distance data from <strong>vectors</strong> of data with a vector for each term. The <strong>coord</strong> option supports several methods for creating distances from vectors. Details are provided in the Legacy Text Data Format section. </li>
+            The spreadsheet files are easier to create and are much simpler than the legacy text files so newly created files can use the spreadsheet format. However, the legacy text file format supports several options so it might be useful if some of its features are desired. One example is with sparse data where a small subset of cells in the distance matrix have finite values and all other cells are treated as infinite. The <strong>list</strong> format in the legacy files supports only providing the data for the finite cells. Legacy files also provde the possibility of creating the distance data from <strong>vectors</strong> of data with a vector for each term. The <strong>coord</strong> option supports several methods for creating distances from vectors. Details are provided in the Legacy Text Data Format section of this help page. </li>
             <li><b>Selection of Proximities or Networks<br>
             </b>A single item can be selected from the lists by clicking its name, 
 			but multiple items require checking the select boxes to the left of the names. 
@@ -96,6 +96,8 @@
 			(the minimum of the two distances is used) when the proximity matrix is asymmetric. This can be 
 			useful when you prefer working with undirected graphs creating links based on the minimum of the 
 			two proximities for each potential link. </li>
+            <li><strong>Show links slider</strong><br>
+            You can show or hide links of varying strength (distance) using this slider. Links with weights less than or equal to the slider value are shown. With merged networks, the slider will show links in terms of the number of nets including the link from 1 to the number of merged nets. The value 1 shows all of the links (link is in 1 or more nets), 2 shows all links in 2 or more nets, etc.. </li>
             <li><b>Downloading Tables and Network Layouts <br>
             </b>Tables can be downloaded  as .csv files by hovering over the toolbar at the top right 
 			of the table and clicking the download icon. Save network figures as .png files by right-clicking t
@@ -105,6 +107,8 @@
 			The default value of infinity means that all possible paths are examined. The paths with the most possible 
 			links have <em>n-1</em> links where <em>n </em>is the number of nodes. With q = 2, only two-link paths are 
 			considered. </li>
+            <li><strong>r-value</strong><br>
+              The r-value controls the computation of path distances where r is the vector norm. When r = inf, the length of a path is the maximum distance between links on the path. For r = 1, path length is the sum of the link distances. With r = 2, the path length is the euclidean distance. See the Pathfinder Network Wikipedia page for more details. </li>
             <li><strong>Proximity Correlations</strong> shows a matrix of the pairwise correlations of the distances in proximity data files. Correlations are only computed for proximities with the same number of terms.</li>
             <li> <strong>Network Similarity</strong> shows a matrix of pairwse similarities which are the number of links found in both networks divided by the number of unique links in the two networks (intersection over union). </li>
             <li><b>MDS Layout<br>

@@ -8,7 +8,7 @@ import numpy as np
 import math
 import time
 
-# alias for st.system_state
+# alias for st.session_state
 stss = st.session_state
 
 st.set_page_config(
@@ -19,6 +19,9 @@ if "col" not in stss:
     init_pf_session_state()
 
 focus_net = stss.col.focus_net # alias for easy reference
+
+stss.link_rank = focus_net.link_rank
+
 warning_message = None
 
 def do_rotation():
@@ -37,8 +40,8 @@ def do_rotation():
     time.sleep(.5)
     stss.rotation = 0
 
-def weight_string(weight, is_merge=False):
-    if is_merge:
+def weight_string(weight):
+    if focus_net.type == "mg":
         # Convert integer bitmask to binary string (e.g., 3 -> '11')
         # [2:] removes the '0b' prefix from Python's bin() output
         ws = bin(int(weight))[2:]
@@ -52,6 +55,12 @@ def weight_string(weight, is_merge=False):
             ws = f"{weight:.4g}"
     return ws
 
+def show_link(wt) -> bool:
+    if focus_net.type == "mg":
+        nn = int(wt).bit_count()
+        return nn >= cutoff
+    else:
+        return wt <= cutoff
 
 def create_visjs_html(fnet: PFnet, physics=False, font_size=23, plot_weights=False) -> tuple[str, Network]:
     """
@@ -84,16 +93,17 @@ def create_visjs_html(fnet: PFnet, physics=False, font_size=23, plot_weights=Fal
                    borderWidth=1 * global_scale)
 
     # 2. Add Edges
+
     for i in range(fnet.nnodes):
         for j in range(fnet.nnodes):
             weight = float(fnet.adjmat[i, j])
-            if weight > 0:
+            if 0 < weight and show_link(weight):
                 s_node = fnet.nodes[i]
                 t_node = fnet.nodes[j]
 
                 edge_label = None
                 if plot_weights:
-                    edge_label = weight_string(weight, is_merge=fnet.type == "merge")
+                    edge_label = weight_string(weight)
 
                 g.add_edge(s_node, t_node,
                            label=edge_label,
@@ -151,12 +161,14 @@ with st.sidebar:
 
     display_type = st.radio("**Select Display Type**",
                             options=["Static", "Dynamic"])
-    if display_type == "Static":
-        st.write("""**Drag nodes as last step**""")
-    else:
-        st.write("""**Drag nodes to affect layout**""")
 
-    # 1. PRE-CHECK: Intercept and revert the state BEFORE the widget is created
+    # if display_type == "Static":
+    #     st.write("""**Drag nodes as last step**""")
+    # else:
+    #     st.write("""**Drag nodes to affect layout**""")
+
+    # 1. PRE-CHECK: Intercept and revert the state BEFORE the layout selectboxu is created
+
     if stss.get("layout_selector") == "saved":
         tid = focus_net.termsid
         if tid not in stss.col.saved_layouts:
@@ -189,9 +201,25 @@ with st.sidebar:
     with c2:
         if st.button("x <> y"):
             focus_net.coords[:, :] = focus_net.coords[:, [1, 0]]
+
         redraw_pushed = st.button("redraw")
 
-    rotate = st.slider("**Degrees of Clockwise Rotation**", 0, 360, key="rotation", on_change=do_rotation)
+    #rotate = st.slider("**Degrees of Clockwise Rotation**", 0, 360, key="rotation", on_change=do_rotation)
+
+    show_weights = st.checkbox("Show Link Weights")
+
+    mx = max(focus_net.unique_weights)
+    if focus_net.type == "mg":
+        val = 1
+        lab = "Show links by popularity"
+    else:
+        val = mx
+        lab = "Hide links by distance"
+
+    cutoff = st.sidebar.select_slider(
+            label=lab,
+            options=focus_net.unique_weights,
+            value=val, )
 
     # Save current focus_net coords to the global collection
     if st.button("📌 Save Terms Layout", use_container_width=False):
@@ -205,8 +233,6 @@ with st.sidebar:
             st.success(f"Layout saved.")
         else:
             st.warning("No coordinates available to pin.")
-
-    show_weights = st.checkbox("Show Link Weights")
 
     if redraw_pushed or layout_changed:
         if layout_choice == "saved":
@@ -233,10 +259,12 @@ else:
 
 # Embed the HTML directly into the Streamlit app
 # The height must be set to ensure the visualization is visible
+
 if interactive_html:
     components.html(
         interactive_html,
-        height=650,  # Set height to match the '600px' defined in pyvis + buffer
+        width="stretch",
+        height=600,  # Set height to match the '600px' defined in pyvis + buffer
         scrolling=True
     )
 else:

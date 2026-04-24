@@ -1,5 +1,5 @@
 # --- PyPathfinder Core Requirements ---
-streamlit>=1.31.0      # Required for st.navigation and st.rerun()
+streamlit>=1.56.0      # Required for st.navigation and st.rerun() and st.iframe
 numpy>=1.24.0          # Matrix math for PFnet and Proximity stats
 pandas>=2.0.0          # Dataframe handling and information tables
 networkx>=3.0          # Graph theory engine for PFnets

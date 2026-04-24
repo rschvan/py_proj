@@ -132,7 +132,7 @@ with st.sidebar:
         net_type = st.radio("**Network Type**",["Pathfinder","Threshold", "Nearest Neighbor"],
                         index=get_idx(stss.perm_net_type, ["Pathfinder", "Threshold", "Nearest Neighbor"]), )
         stss.perm_net_type = net_type
-    # Updated sidebar logic in stapp.py
+
     with params:
         if net_type == "Pathfinder":
             # Get raw text input
@@ -264,8 +264,6 @@ with loadp:
             stss.load_ready = False
             st.rerun()
 
-# ---Upload Files and Create Proximities---
-
 # --- Upload Files and Create Proximities (Now in an Expander) ---
 with st.expander("📥 **Add New Proximity Data Files**", expanded=False):
     st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
@@ -395,18 +393,19 @@ else:
         height=height,  # Set a height to reflect contents
         hide_index=True,  # Hide index as 'Name' column is present
         selection_mode=["multi-row","single-cell"],
-        key="prx_selection_df",
+        key=f"prx_selection_df{stss.prx_version}",
         on_select="rerun"  # Crucial for getting selection updates
     )
     col.selected_prxs = get_selected_rows(selected_prxs_data, prx_names)
 
-    dernet, aveprx, delprx, f1, f2, f3 = st.columns(6)
+    dernet, aveprx, dispprx, delprx, f2, f3 = st.columns(6)
     with delprx:
         if st.button("Delete Proximities", key="delete_prx_btn"):
             if col.selected_prxs:
                 for prx_name in col.selected_prxs:
                     col.proximities.pop(prx_name)
                 col.selected_prxs = []  # Clear selection after deletion
+                stss.prx_version += 1
                 st.rerun()  # Rerun to update the display
             else:
                 st.warning("Click one or more proximity check boxes to delete.")
@@ -427,6 +426,9 @@ else:
                             case "Nearest Neighbor":
                                 pf = PFnet(prx, type="nn")
                         col.add_pfnet(pf)
+                col.selected_prxs = []
+                stss.prx_version += 1
+                st.rerun()
             else:
                 st.warning("Click one or more proximity check boxes to derive networks.")
     with aveprx:
@@ -436,11 +438,29 @@ else:
                 try:
                     col.average_proximities(method=stss.averaging)
                     st.success("Proximities averaged.")
+                    col.selected_prxs = []
+                    stss.prx_version += 1
                     st.rerun()  # Rerun
                 except Exception as e:
                     st.error(f"Error averaging proximities: {e}")
             else:
                 st.warning(f"Error: {state}.")
+    with dispprx:
+        display_proximity = st.button("Display Distances", )
+        if display_proximity:
+            if len(col.selected_prxs) != 1:
+                st.warning("Select one proximity to display.")
+
+    if display_proximity:
+        if len(col.selected_prxs) == 1:
+            #create dataframe with terms and dismat
+            prx = col.proximities[col.selected_prxs[0]]
+            dismat = prx.dismat
+            terms = prx.terms
+            df = pd.DataFrame(dismat, index=terms, columns=terms)
+            st.dataframe(df, width='content')
+            col.selected_prxs = []
+            stss.prx_version += 1
 
 # Network List
 st.subheader("Network List")
@@ -458,7 +478,7 @@ else:
         height=height,  # Set a fixed height
         hide_index=True,  # Hide index
         selection_mode=["multi-row", "single-cell"],
-        key="pfnet_selection_df",
+        key=f"pfnet_selection_df{stss.net_version}",
         on_select="rerun"  # Crucial for getting selection updates
     )
     col.selected_nets = get_selected_rows(selected_nets_data, pfnet_names)
@@ -470,6 +490,7 @@ else:
                 for net_name in col.selected_nets:
                     col.pfnets.pop(net_name)
                 col.selected_nets = []  # Clear selection after deletion
+                stss.net_version += 1
                 st.rerun()  # Rerun
             else:
                 st.warning("Click one or more network check boxes to delete.")
@@ -480,6 +501,8 @@ else:
                 try:
                     # Assuming col.merge_networks() handles adding the merged net to col.pfnets
                     col.merge_networks()
+                    col.selected_nets = []
+                    stss.net_version += 1
                     st.rerun()  # Rerun
                 except Exception as e:
                     st.error(f"Error merging networks: {e}")
@@ -495,10 +518,10 @@ else:
             else:
                 st.warning("Error: Select one network to display.")
     with links:
-        show_links = False
+        show_link_list = False
         if st.button("Network Link List", key="link_list_btn"):
             if len(col.selected_nets) == 1:
-                show_links = True
+                show_link_list = True
             else:
                 st.warning("Error: Select one network to display link list.")
     with properties:
@@ -510,11 +533,11 @@ else:
                 st.warning("Error: Select one network to display properties.")
 
     st.write(f"**{stss.col.focus_net.name}** is currently displayed.")
-    if show_links:
+    if show_link_list:
         st.write("**Link List**")
         net = col.pfnets[col.selected_nets[0]]
         st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links ")
-        if net.type == "merge":
+        if net.type == "mg":
             st.write("""**weight** is a binary code  
                 **nets** shows which nets contain the link (reading right to left) -- e.g., 110 means in nets 2 & 3  
                 **count** shows the number of nets that contain the link -- e.g. 110 count would be 2
@@ -522,6 +545,8 @@ else:
 
         llist = net.get_link_list()
         st.dataframe(data=llist, width="content", hide_index=False, )
+        col.selected_nets = []
+        stss.net_version += 1
 
     if show_props:
         st.write("**Network Properties**")
@@ -533,5 +558,7 @@ else:
         st.write(f"")
         tab = pd.DataFrame(net.get_network_properties())
         st.dataframe(data=tab, width="content", hide_index=True, )
+        col.selected_nets = []
+        stss.net_version += 1
 
 stss.count += 1

@@ -208,9 +208,9 @@ class Collection:
             return
         merged_net = copy.deepcopy(self.pfnets[net_names[0]])
         merged_net.name = "|".join(net_names)
-        merged_net.name = "merge" + str(n_nets) + merged_net.name
+        merged_net.name = "mg" + str(n_nets) + merged_net.name
         merged_net.graph.name = merged_net.name
-        merged_net.type = "merge"
+        merged_net.type = "mg"
         adj = merged_net.adjmat.astype(bool).astype(int)
         for i in range(1, n_nets):
             if merged_net.terms != self.pfnets[net_names[i]].terms:
@@ -233,6 +233,7 @@ class Collection:
         merged_net.get_eccentricity()
         self.add_pfnet(merged_net)
         self.selected_nets = []
+        merged_net.unique_weights = np.arange(1, n_nets + 1)
         return merged_net
 
     def get_project_state(self) -> str:
@@ -262,13 +263,14 @@ class Collection:
             return isinstance(v, (int, float)) and np.isinf(v)
 
         for name, net in self.pfnets.items():
-            state["network_recipes"].append({
-                "name": net.name,
-                "type": net.type,
-                "q": "inf" if safe_inf_check(net.q) else net.q,
-                "r": "inf" if safe_inf_check(net.r) else net.r,
-                "parent_proximity": net.proximity.name if hasattr(net, 'proximity') else None
-            })
+            if net.type != "mg":
+                state["network_recipes"].append({
+                    "name": net.name,
+                    "type": net.type,
+                    "q": "inf" if safe_inf_check(net.q) else net.q,
+                    "r": "inf" if safe_inf_check(net.r) else net.r,
+                    "parent_proximity": net.proximity.name if hasattr(net, 'proximity') else None
+                })
 
         # 3. Store Coordinate Overrides (by termsid)
         for tid, coords in self.saved_layouts.items():
@@ -314,7 +316,6 @@ class Collection:
                 if tid in self.saved_layouts:
                     new_net.coords = copy.deepcopy(saved_layouts[tid])
                 self.add_pfnet(new_net)
-
 
 
 if __name__ == "__main__":

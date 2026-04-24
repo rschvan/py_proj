@@ -395,7 +395,7 @@ def legacy_prx_files(path: str = None, files: List[str] = None,
         # Set diagonal to 0
         np.fill_diagonal(prx, 0)
 
-        data['dismat'] = prx
+        data['dismat'] = np.round(prx, 6)
         col.append(data)
 
         # 13. Write Excel file
@@ -407,7 +407,7 @@ def legacy_prx_files(path: str = None, files: List[str] = None,
 
 if __name__ == '__main__':
     from pypf.proximity import Proximity
-    dats = legacy_prx_files("data",["aviation.prx.txt"])
+    dats = legacy_prx_files(path="data",files=["aviation.prx.txt"])
     #print(f"dats {dats}")
     for dat in dats:
         #print(f"dat {dat}")
