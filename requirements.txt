@@ -7,4 +7,4 @@ pyvis>=0.3.1           # Interactive network visualization
 matplotlib>=3.7.0      # Backend support for network plotting
 scikit-learn>=1.2.0    # Required for MDS layout (sklearn.manifold)
 openpyxl>=3.1.0        # Required for reading/writing .xlsx files
-scipy>=1.10.0          # Required for legacy file coordinate metrics
+scipy>=1.10.0          # Required for legacy file coordinate metricspy

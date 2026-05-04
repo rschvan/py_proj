@@ -313,9 +313,11 @@ class Collection:
                 new_net = PFnet(parent_prx, q=q, r=r, type=r_data["type"])
                 new_net.name = r_data["name"]
                 tid = new_net.termsid
-                if tid in self.saved_layouts:
-                    new_net.coords = copy.deepcopy(saved_layouts[tid])
                 self.add_pfnet(new_net)
+
+        # 3. Add saved layouts if any
+        for tid in data["saved_layouts"]:
+            self.saved_layouts[tid] = np.array(data["saved_layouts"][tid])
 
 
 if __name__ == "__main__":
