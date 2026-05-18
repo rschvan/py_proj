@@ -96,8 +96,8 @@ def averageable(col:Collection) -> str:
 stss.count += 1
 
 # --- Sidebar for Global Actions ---
-def hide_intro():
-    stss.intro_visible = False
+def toggle_intro():
+    stss.intro_visible = not stss.intro_visible
 
 def hide_sample():
     stss.sample_visible = False
@@ -106,39 +106,30 @@ def hide_sample():
         col.changed = False
 
 with st.sidebar:
-#     st.link_button("❓ Open Help in New Tab", "https://pfnets.net/help.html", use_container_width=True)
-
-    if stss.intro_visible == True:
-        st.checkbox("**Introduction**", value=True,
-                    on_change=hide_intro,)
-
     if stss.sample_visible == True:
         add_demo(col)
         st.checkbox("**Add Sample Data**", value=True,
                     on_change=hide_sample,)
 
     st.write("**Information Tables**")
-
     show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
     show_netsim = st.checkbox("Network Similarities", value=False, key="show_netsim")
 
-    st.radio("**Proximity Averaging Method**",["mean","median"],
+    stss.perm_ave_type =st.radio("**Proximity Averaging Method**",["mean","median"],
              index=get_idx(stss.perm_ave_type, ["mean", "median"]),
              key="averaging", )
-    stss.perm_ave_type = stss.averaging
 
     type, params = st.columns([6, 3])
     with type:
-        net_type = st.radio("**Network Type**",["Pathfinder","Threshold", "Nearest Neighbor"],
-                        index=get_idx(stss.perm_net_type, ["Pathfinder", "Threshold", "Nearest Neighbor"]), )
-        stss.perm_net_type = net_type
+        stss.perm_net_type = st.radio("**Network Type**",["Pathfinder","Threshold", "Nearest Neighbor"],
+                        index=get_idx(stss.perm_net_type, ["Pathfinder", "Threshold", "Nearest Neighbor"]),
+                        key="network_type", )
 
     with params:
-        if net_type == "Pathfinder":
+        if stss.perm_net_type == "Pathfinder":
             # Get raw text input
             q_raw = st.text_input("**q:** (2-inf)", value="inf", key="q_input").lower().strip()
             r_raw = st.text_input("**r:** (1.0-inf)", value="inf", key="r_input").lower().strip()
-
             # Sanitize q: Force to float(inf) or int
             try:
                 stss.q_param = int(float(q_raw))
@@ -162,8 +153,9 @@ def make_symmetric_if_force(prx:Proximity) -> Proximity:
         prx.issymmetric = True
     return prx
 
-if stss.intro_visible == True:
-    st.link_button("PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
+with st.expander("**Introductory Information**", on_change=toggle_intro, expanded=stss.intro_visible):
+    #st.write("**Click to access YouTube videos about Pathfinder Nets and the app**")
+    st.link_button("Click to open PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
 
     # Intro
     st.write('''**Introduction**  
@@ -191,19 +183,19 @@ positions.  You can interact with the algorithm by dragging nodes, but the algor
 the layout.  Unchecking the **enabled** checkbox at the bottom will stop the algorithm allowing you 
 to adjust node positions without the influence of the algorithm.
 
-The **Introduction checkbox** makes starting information available including access to the
-PFNets YouTube Channel with videos about Pathfinder and the App.  The **Add Sample Data** checkbox
+The **Add Sample Data** checkbox
 loads several sample Proximities and Networks to illustrate the app and to allow you to explore 
-the app's functionality.  Remove these resources by unchecking them.
+the app's functionality.  Remove these resources by unchecking the checkbox.
 
-You can save the state of a project to a file on your computer and later reload it using the buttons at the top
-of the page.
+You can save the state of a project to a json file on your computer and later reload it using the following buttons.
 
-Go to the **Help** page for more information including required formats for Proximity files.  
+Go to the **Help** page for more information including required formats for Proximity files.
+
+This Introductory Information can be hidden by closing the expander.  
     ''')
 
 # --- Project Save and Load ---
-savep, loadp = st.columns([1, 2])
+savep, loadp = st.columns([1, 1])
 
 with savep:
     # Step 1: User clicks to "prepare" the data
@@ -265,25 +257,28 @@ with loadp:
             st.rerun()
 
 # --- Upload Files and Create Proximities (Now in an Expander) ---
-with st.expander("📥 **Add New Proximity Data Files**", expanded=False):
-    st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
+with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, width=480):
+    stss.perm_file_type = st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
              index=get_idx(stss.perm_file_type, ["Spreadsheet", "Legacy Text"]),
              key="prx_file_type", )
-    stss.perm_file_type = stss.prx_file_type
+    # stss.perm_file_type = stss.prx_file_type
 
-    force_symmetric = st.checkbox("Force Proximity Symmetric", value=False, )
+    tog, val, fil = st.columns([5, 2, 2])
+    with tog:
+        force_symmetric = st.toggle("Force Proximity Symmetric  = ", value=False, )
+    with val:
+        " "
+        force_symmetric
 
+    # File loaders
     match stss.perm_file_type:
         case "Spreadsheet":
-            st.subheader("Add Proximity Spreadsheet Files")
-            st.file_uploader("Upload Proximity Spreadsheets (.xlsx or .csv)", type=["xlsx","csv"],
-                                key = "ss_files", accept_multiple_files=True,
+            #st.write("**Add Proximity Spreadsheet Files**")
+            ss_files = st.file_uploader("**Upload Proximity Spreadsheets (.xlsx or .csv)**", type=["xlsx","csv"],
+                                key = f"ss_files{stss.file_version}", accept_multiple_files=True,
                                 help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
                                 )
-            #st.write(f"nssfiles: {len(ss_files)}")
-            ss_files = stss.ss_files
-            if len(ss_files) > 0 and ss_files != stss.last_ss_files:
-                stss.last_ss_files = ss_files
+            if len(ss_files) > 0:
                 ss_dir = "temp_ss"
                 os.makedirs(ss_dir, exist_ok=True)
                 for ss_file in ss_files:
@@ -303,17 +298,16 @@ with st.expander("📥 **Add New Proximity Data Files**", expanded=False):
                     col.add_proximity(new_prx)
                     os.remove(file_path)
                 os.rmdir(ss_dir)
-            else:
-                ss_files.clear()
+                stss.file_version += 1
+                st.rerun()
 
         case "Legacy Text":
-            st.subheader("Add Legacy Proximity and Terms Text Files")
-            leg_files = st.file_uploader("Upload Legacy Proximity and Terms Text Files (.txt)", type=["txt"],
+            #st.subheader("Add Legacy Proximity and Terms Text Files")
+            leg_files = st.file_uploader("**Upload Legacy Proximity and Terms Text Files (.txt)**", type=["txt"],
                                         accept_multiple_files=True,
                                         help="Upload one or more files (.txt) to add to the app.",
-                                        key="leg_files_key",)
-            if len(leg_files) > 0 and leg_files != stss.last_leg_files:
-                stss.last_leg_files = leg_files
+                                        key=f"leg_files_key{stss.file_version}",)
+            if len(leg_files) > 0:
                 leg_dir = "temp_leg"
                 os.makedirs(leg_dir, exist_ok=True)
                 for leg_file in leg_files:
@@ -332,8 +326,8 @@ with st.expander("📥 **Add New Proximity Data Files**", expanded=False):
                 for file in all_leg_files:
                     os.remove(os.path.join(leg_dir, file))
                 os.rmdir(leg_dir)
-            else:
-                leg_files.clear()
+                stss.file_version += 1
+                st.rerun()
 
 # ---conditional displays---
 
@@ -418,7 +412,7 @@ else:
                         st.warning(f"PFnet '{prx_name}' already exists. Not re-deriving.")
                     else:
                         prx = col.proximities[prx_name]
-                        match net_type:
+                        match stss.perm_net_type:
                             case "Pathfinder":
                                 pf = PFnet(prx, q=stss.q_param, r=stss.r_param)
                             case "Threshold":

@@ -39,5 +39,3 @@ st.sidebar.markdown("""
 
 st.subheader("PyPathfinder Help")
 st.html(stss.help_html)
-#     /* <a href="#links" target="_self">🔗 Useful Links</a><br> */
-# <a href="" onclick="window.scrollTo(0,0); return false;" target="_self">🔗 Useful Links</a><br>

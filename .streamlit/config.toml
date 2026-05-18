@@ -1,2 +1,6 @@
 [server]
 enableStaticServing = true
+enableCORS = false
+enableXsrfProtection = false
+# Increase the websocket timeout
+scriptRunOnSave = true

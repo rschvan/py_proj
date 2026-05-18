@@ -44,11 +44,12 @@ class PFnet:
         self.isdirected = False  # true for directed graph
         self.name:str = "default"  # Initialize the name property
         self.graph = nx.Graph() # or nx.Digraph if directed
+        self.is_planar:bool
         self.layers = None  # nodes in each shell
         self.eccentricity:dict = {}
         self.type:str = type
         self.coords:np.ndarray | None = None
-        self.link_rank:dict| None = None
+        self.unique_weights:np.ndarray | None = None
 
         if proximity is None:
             proximity = Proximity()
@@ -127,6 +128,7 @@ class PFnet:
             self.eccentricity = self.get_eccentricity()
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
+            self.is_planar = nx.is_planar(self.graph)
             self.get_layout() # default coords
             self.unique_weights = np.unique(self.adjmat)
 
@@ -171,8 +173,9 @@ class PFnet:
         info["name"] = self.name
         info["nnodes"] = self.nnodes
         info["nlinks"] = self.nlinks
-        info["isconnected"] = self.isconnected
-        info["isdirected"] = self.isdirected
+        info["connected?"] = self.isconnected
+        info["planar?"] = self.is_planar
+        info["directed?"] = self.isdirected
         info["type"] = self.type
         info["q"] = f"{self.q:.0f}" if self.q else None
         info["r"] = f"{self.r:g}" if self.r else None

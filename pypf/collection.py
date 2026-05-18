@@ -201,7 +201,7 @@ class Collection:
 
     def merge_networks(self) -> PFnet:
         from pypf.utility import graph_from_adjmat
-        net_names = self.selected_nets
+        net_names = self.selected_nets.copy()
         n_nets = len(net_names)
         if n_nets < 2:
             print("Not Enough Networks", "Please select at least two networks to merge.")
@@ -211,6 +211,8 @@ class Collection:
         merged_net.name = "mg" + str(n_nets) + merged_net.name
         merged_net.graph.name = merged_net.name
         merged_net.type = "mg"
+        merged_net.proximity = None
+        merged_net.net_names = net_names
         adj = merged_net.adjmat.astype(bool).astype(int)
         for i in range(1, n_nets):
             if merged_net.terms != self.pfnets[net_names[i]].terms:

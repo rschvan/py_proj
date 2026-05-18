@@ -91,6 +91,8 @@
             </b>A single item can be selected from the lists by clicking its name, 
 			but multiple items require checking the select boxes to the left of the names. 
 			Clicking at the top of the select boxes will select or deselect all items in a list. </li>
+            <li><strong>Proximity Coherence</strong><br>
+              Coherence is a correlational measure of the internal consistency of the proximity distances. It is based on the idea that nodes that are near to one another should have similar correlations over other nodes in the set. With data created from human ratings, coherence may reflect levels of knowledge about the nodes which has been found in studies of expertise and learning. Ratings generated randomly will produce  coherence scores close to zero. </li>
             <li><b>Force Proximity Symmetric<br>
             </b>Checking <b>Force Proximity Symmetric</b> will create a Proximity with symmetric distances 
 			(the minimum of the two distances is used) when the proximity matrix is asymmetric. This can be 
@@ -121,7 +123,7 @@
               </strong>Merging networks produces a network which includes all the links found in any of the merged networks. 
 			  Of course, networks must contain the same terms to be merged. The link weight for merged networks is a binary code 
 			  indicating which networks include the link. The networks are merged in order with index <em>i</em> going 
-			  from 0 to <em>n</em>. If a link is in network<em> i</em>, its weight is increased by 2<sup><em>i</em></sup> . So the position of the 1 bits in the weight indicate the link is in network <em>i</em>, reading from right to left. </li>
+			  from 0 to <em>n</em>. If a link is in network<em> i</em>, its weight is increased by 2<sup><em>i</em></sup> . So the position of the 1 bits in the weight indicate the link is in network <em>i</em>, reading from right to left. Merged networks are not saved in the project file. They must be recreated after loading the project. </li>
         </ul>
     </div>
 

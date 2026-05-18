@@ -20,8 +20,6 @@ if "col" not in stss:
 
 focus_net = stss.col.focus_net # alias for easy reference
 
-stss.link_rank = focus_net.link_rank
-
 warning_message = None
 
 def do_rotation():
@@ -241,8 +239,8 @@ with st.sidebar:
             focus_net.get_layout(method=layout_choice)
         stss.layout = layout_choice
 
-st.write(f"**Network: {focus_net.name}**: Layout {layout_choice}")
-st.write(f"**{focus_net.nnodes} nodes and {focus_net.nlinks} links**")
+st.write(f"**{focus_net.name}: {focus_net.nnodes} nodes, {focus_net.nlinks} links**: Layout {layout_choice}")
+
 if warning_message:
     st.warning(warning_message)
 
