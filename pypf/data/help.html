@@ -22,11 +22,11 @@
 <div class="help-wrap">
     <div id="links" class="help-section">
         <h2 class="help-header">Other Resources</h2>
-		<a href="https://en.wikipedia.org/wiki/Pathfinder_network" title="Wikipedia Pathfinder Network Page" target="_blank">Wikipedia Pathfinder Network Page</a>
-        <p>	An overview of the Pathfinder method including references to some of its uses. </p>
-        <p><a href="app/static/Schvaneveldt_Durso_Dearholt_1989.pdf" target="_blank">Download Pathfinder Paper</a>></p>
+		<a href="https://en.wikipedia.org/wiki/Pathfinder_network" target="_blank">Wikipedia Pathfinder Network Page</a>
+       <p></p>An overview of the Pathfinder method including examples of some of its uses.</p>
+        <a href="app/static/Schvaneveldt_Durso_Dearholt_1989.pdf" target="_blank">Download Pathfinder Paper</a>
         <p>	Detailed discussion of the Pathfinder method and several example applications of the method.</p>
-        <p><a href="https://www.youtube.com/@PFNets" title="videos" target="_blank">YouTube PFNets Channel</a> </p>
+        <a href="https://www.youtube.com/@PFNets" target="_blank">YouTube PFNets Channel</a>
         <p>	Videos covering Pathfinder and using the PyPathfinder App</p>
     </div>
 
@@ -48,7 +48,7 @@
         <h2 class="help-header">Proximity and Network Lists</h2>
         <p>The Proximity and Network lists provide details about the proximity data sets loaded and the networks 
 		generated. One or more can be selected by checking the boxes at the left of each row. Operations can be 
-		performed on selected items using the buttons below the lists.</p>
+		performed on selected items using the buttons below the lists. When a proximity file is loaded, the minimum Pathfinder Network (q and r equal infinity) is derived as well. This base network shows the minimum set of links in any Pathfinder network.</p>
   	</div>
 	
   	<div id="display" class="help-section">
@@ -238,7 +238,7 @@
   5 4 4 </strong></p>
         <p>These four sets of data produce the same distance matrix. Of course, if your data are asymmetric, they must be input as a matrix or a list with "nonsymmetric" or asymmetric specified. If the data are symmetric, any of the four shapes is acceptable. With the list format, the number of pairs in the list must be specified on the line following "list." The next line specifies whether the pairs define symmetric or nonsymmetric data. With the list format, missing pairs will never be linked. Following the header lines, the data must occur as discussed above. </p>
         <p>With n nodes (or entities), a matrix must contain n x n data elements, upper or lower triangles must contain n(n-1)/2 data elements. </p>
-        <p>The list data must contain 3 numbers for each pair listed, the number of the source term, the number of the destination term, and the proximity value. </p>
+        <p>The list data must contain 3 numbers for each pair listed, the number of the source term, the number of the destination term, and the proximity value. The term numbers start at 1 rather than the 0 (zero) as used in Python indexing. </p>
         <p><strong>Coordinates, Features, Vectors, or Attributes </strong></p>
         <p>When data are in the form of vectors, the appropriate format starting at Line 7 is as follows: <br>
   Line 7. <strong>coord</strong> or <strong>feature</strong> or <strong>attrib</strong> indicating that the data to follow are to be interpreted as vectors of numbers, one vector for each item or node. <br>

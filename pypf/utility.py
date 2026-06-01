@@ -466,6 +466,20 @@ def pwcorr(dis:np.ndarray) -> np.ndarray:
                     corrs[i, j] = np.nan
         return np.round(corrs, 3)
 
+def sanitize_for_json(obj):
+    """Recursively converts NumPy types into native Python types."""
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(x) for x in obj]
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj
+
 def sig_figs_flat(x, n):
     if x == 0:
         return 0

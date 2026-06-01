@@ -4,6 +4,8 @@ import json
 import numpy as np
 import pandas as pd
 import os
+
+from pypf import pfnet
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 from pypf.utility import mypfnets_dir
@@ -23,10 +25,13 @@ class Collection:
         self.to_csv = to_csv # if true output to csv files will be generated and files opened
         self.changed = False
 
-    def add_proximity(self, prx:Proximity):
+    def add_proximity(self, prx:Proximity, add_pfnet=True):
         if prx.name in self.proximities:
             prx.name = prx.name + "_dup"
         self.proximities[prx.name] = prx
+        if add_pfnet:
+            pfn = PFnet(proximity=prx) # add default pfnet - q and r = infinity
+            self.add_pfnet(pfn)
         self.changed = True
 
     def delete_proximity(self):
@@ -102,7 +107,7 @@ class Collection:
             print("Too few proximities for correlations.")
             return None
 
-    def average_proximities(self, method="mean") -> None:
+    def average_proximities(self, method="mean") -> Proximity:
         from pypf.utility import coherence
         """
         Computes the average proximity matrix based on a list of proximity matrices and a specified method
@@ -154,7 +159,7 @@ class Collection:
         ave_prx.issymmetric = issymmetric
         ave_prx.calculate_stats()
         ave_prx.coh = coherence(ave_prx.dismat, ave_prx.max)
-        self.add_proximity(ave_prx)
+        return ave_prx
 
     def network_similarity(self) -> pd.DataFrame | None:
         from pypf.utility import netsim
@@ -283,11 +288,7 @@ class Collection:
     def load_project_state(self, json_data: str):
         """
         Reconstructs the collection from a JSON string.
-
         """
-        from pypf.proximity import Proximity
-        from pypf.pfnet import PFnet
-
         data = json.loads(json_data)
         # 0. Restore Layouts
         if "saved_layouts" in data:
@@ -301,7 +302,7 @@ class Collection:
                 terms=p_data["terms"],
                 dismat=np.array(p_data["dismat"])
             )
-            self.add_proximity(new_prx)
+            self.add_proximity(new_prx, add_pfnet=False)
 
         # 2. Re-derive Networks from Recipes
         for r_data in data["network_recipes"]:
@@ -328,18 +329,11 @@ if __name__ == "__main__":
 
     col = Collection()
     px = Proximity("data/psy.prx.xlsx")
-
-    col.add_proximity(px)
+    col.add_proximity(px, add_pfnet=True)
     bx = Proximity("data/bio.prx.xlsx")
-    col.add_proximity(bx)
-    ppf = PFnet(px)
-    col.add_pfnet(ppf)
-    bpf = PFnet(bx)
-    col.add_pfnet(bpf)
+    col.add_proximity(bx, add_pfnet=True)
     col.selected_prxs = ["psy", "bio"]
-
     col.selected_nets = ["psy_pf", "bio_pf"]
-
     mrg = col.merge_networks()
     props = mrg.get_network_properties()
     tab = pd.DataFrame(props)

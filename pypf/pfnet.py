@@ -188,43 +188,31 @@ class PFnet:
         graph = self.graph
         graph.name = "temp"  # avoid illegal characters in graphviz names
         seed = np.random.randint(1000000)
-        center = None
         randpos = nx.random_layout(graph, seed=seed)
-        # root = self.eccentricity["center"] if self.eccentricity else None
-        # root = list(root) if root else None
-        # root = root[0] if root else None
-        # print(f"root: {root}")
         layout = None
         coord = None
         try:
             match method:
                 case "gravity":
+                    # noinspection PyUnresolvedReferences
                     layout = nx.forceatlas2_layout(graph, strong_gravity=True, seed=seed, scaling_ratio=2.0,
                                           weight=None, max_iter=100, pos=randpos, linlog=False)
                 case "spring":
                     k = 4/np.sqrt(self.nnodes)
-                    layout = nx.spring_layout(graph, pos=randpos, iterations=100,
-                                              weight=None, k=k)
+                    layout = nx.spring_layout(graph, pos=randpos, iterations=100, k=k)
                 case "circle":
-                    layout = nx.circular_layout(graph, scale=1, center=center)
+                    layout = nx.circular_layout(graph, scale=1, )
                 case "planar":
                     layout = nx.planar_layout(graph,)
                 case "kamda_kawai":
-                    layout = nx.kamada_kawai_layout(graph, pos=randpos, weight=None)
+                    layout = nx.kamada_kawai_layout(graph, pos=randpos, )
                 case "spiral":
-                    layout = nx.spiral_layout(graph, resolution=0.5, scale=1, center=center, equidistant=True)
+                    layout = nx.spiral_layout(graph, resolution=0.5, scale=1, center=[0, 0], equidistant=True)
                 case "force":
+                    # noinspection PyUnresolvedReferences
                     layout = nx.forceatlas2_layout(graph, strong_gravity=False, scaling_ratio=2.0,
                                                    max_iter=100, pos=randpos, weight=None,)
-                # case "radial":
-                #     layout = nx.shell_layout(graph, )
-                # case "neato":
-                #     layout = graphviz_layout(graph, prog='neato', root=root)
-                # case "fdp": #fdp
-                #     layout = graphviz_layout(graph, prog='fdp', root=root)
-                # case "circo":
-                #     layout = graphviz_layout(graph, prog='circo', root=root)
-                case "link distances":
+                case "weights":
                     layout = nx.kamada_kawai_layout(graph, weight='weight', pos=randpos)
                 case "MDS":
                     from pypf.utility import mds_coord
@@ -234,6 +222,7 @@ class PFnet:
             print(f"Error in get_layout: {e}")
 
         if layout is None:
+            # noinspection PyUnresolvedReferences
             layout = nx.forceatlas2_layout(graph, strong_gravity=True, seed=seed, scaling_ratio=2.0,
                                            weight=None, max_iter=100, pos=randpos, linlog=False)
         if coord is None:
@@ -262,6 +251,15 @@ class PFnet:
         print(f"isdirected?: {self.isdirected}")
         print(f"graph: {self.graph}")
         print(f"layers: {self.layers}")
+
+    def get_json_node_link_string(self) -> str:
+        import json
+        from pypf.utility import sanitize_for_json
+        # noinspection PyArgumentList
+        nld = nx.node_link_data(self.graph, edges="edges")
+        snld = sanitize_for_json(nld)
+        jst = json.dumps(snld, indent=2)
+        return jst
 
     def get_link_list(self) -> dict:
         n = self.nnodes
@@ -342,10 +340,11 @@ def get_test_pf(name:str="psy") -> PFnet:
 
 if __name__ == '__main__':
     import pandas as pd
-    ap = Proximity("data/bio.prx.xlsx")
-    an = PFnet(ap, type="pf", q=2)
-    # an.netprint()
+    ap = Proximity("data/cities.prx.xlsx")
+    an = PFnet(ap, type="pf",)
+    nljst = an.get_json_node_link_string()
+    print(nljst)
     print(an.get_info())
-    # tab = pd.DataFrame(an.get_network_properties())
-    # print(tab)
+    tab = pd.DataFrame(an.get_network_properties())
+    print(tab)
 

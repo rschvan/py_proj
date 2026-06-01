@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import copy
+from streamlit import fragment
+
 from pypf.collection import Collection
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
@@ -144,6 +146,10 @@ with st.sidebar:
                 except ValueError:
                     stss.r_param = np.inf
 
+    #st.write("**currently selected net:**")
+    st.write(f"**In View: {stss.col.focus_net.name}**")
+
+
 # --- Main Panel ---
 
 def make_symmetric_if_force(prx:Proximity) -> Proximity:
@@ -163,7 +169,8 @@ PyPathfinder is a tool for creating, exploring, and visualizing Pathfinder netwo
 The app contains three pages, **Build Nets** (this page), **View Network**, 
 and **Help**. You can navigate to a page by clicking the page name in the sidebar.
 
-The **Build Nets** page is where you add Proximity data and Derive Networks. 
+The **Build Nets** page is where you add Proximity data and Derive Networks.  The minimum 
+Pathfinder Network (q and r equal infinity) is generated when you load proximity data.
 You can choose to add either spreadsheet Proximity files or Legacy text Proximity files.
 (Help page gives details). You can also view Proximity Correlations and Network Similarities
 by checking the boxes in the sidebar. Compatible Proximity Data sets can be averaged, and different
@@ -174,7 +181,7 @@ cycles in the minimum network.
 
 The **Proximity and Network Lists** allow you to select Proximities or Networks to perform various operations. 
 You select items by clicking the check box left of the Name column, and possible operations are invoked by 
-clicking the buttons below the lists.
+clicking the buttons below the lists. You control the type of network generated with the controls in the sidebar.
 
 The **View Network** page allows you to try different layouts and view the network in various ways. The **Static** 
 display shows the layout from the selected **Layout Method**, and you can move the nodes around as desired.  The 
@@ -261,11 +268,11 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
     stss.perm_file_type = st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
              index=get_idx(stss.perm_file_type, ["Spreadsheet", "Legacy Text"]),
              key="prx_file_type", )
-    # stss.perm_file_type = stss.prx_file_type
 
     tog, val, fil = st.columns([5, 2, 2])
     with tog:
-        force_symmetric = st.toggle("Force Proximity Symmetric  = ", value=False, )
+        force_symmetric = st.toggle("Force Proximity Symmetric  = ", value=False,
+                                    help="When True, uses minimum of dij and dji if asymmetric",)
     with val:
         " "
         force_symmetric
@@ -430,11 +437,18 @@ else:
             state = averageable(col)
             if state == "ok":
                 try:
-                    col.average_proximities(method=stss.averaging)
-                    st.success("Proximities averaged.")
+                    # with st.form(key="ave_prx_form"):
+                    #     ave_name = st.text_input("Name for average", value="default")
+                    #     submitted = st.form_submit_button(key="ave_prx_submit")
+                    # if submitted:
+                    #     ave_prx = col.average_proximities(method=stss.averaging)
+                    #     if ave_name.strip() != "default" and ave_name.strip() != "":
+                    #         ave_prx.name = ave_name.strip()
+                    ave_prx = col.average_proximities(method=stss.averaging)
+                    col.add_proximity(ave_prx)
                     col.selected_prxs = []
                     stss.prx_version += 1
-                    st.rerun()  # Rerun
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error averaging proximities: {e}")
             else:
@@ -526,17 +540,16 @@ else:
             else:
                 st.warning("Error: Select one network to display properties.")
 
-    st.write(f"**{stss.col.focus_net.name}** is currently displayed.")
+    #st.write(f"**{stss.col.focus_net.name}** is currently displayed.")
     if show_link_list:
-        st.write("**Link List**")
         net = col.pfnets[col.selected_nets[0]]
+        st.write("**Link List**")
         st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links ")
         if net.type == "mg":
             st.write("""**weight** is a binary code  
                 **nets** shows which nets contain the link (reading right to left) -- e.g., 110 means in nets 2 & 3  
                 **count** shows the number of nets that contain the link -- e.g. 110 count would be 2
                 """)
-
         llist = net.get_link_list()
         st.dataframe(data=llist, width="content", hide_index=False, )
         col.selected_nets = []
