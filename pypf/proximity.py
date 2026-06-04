@@ -54,6 +54,8 @@ class Proximity:
             self.name = parts[0] if len(parts) > 1 else self.name
             try:
                 df = self._read_data_file(filepath)
+                df = df.dropna(how='all', axis=0)
+                df = df.dropna(how='all', axis=1)
                 nr, nc = df.shape
                 if nr == nc: # has terms on the first row
                     terms = df.iloc[1:,0].tolist()
