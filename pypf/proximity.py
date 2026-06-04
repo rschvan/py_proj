@@ -58,7 +58,7 @@ class Proximity:
                 if nr == nc: # has terms on the first row
                     terms = df.iloc[1:,0].tolist()
                     dismat = df.iloc[1:,1:].apply(pd.to_numeric, errors='coerce', downcast='float') # dismat from [1:,1:]
-                elif nr == nc-1:
+                elif nr == nc - 1:
                     terms = df.iloc[:,0].tolist()
                     dismat = df.iloc[:,1:].apply(pd.to_numeric, errors='coerce', downcast='float') # dismat from [:,1:]
             except Exception as e:
