@@ -48,7 +48,10 @@ class Proximity:
                     print("No file selected.")
                     return
             self.filepath = filepath
-            self.filename = os.path.basename(filepath)
+            if hasattr(filepath, 'name'):
+                self.filename = filepath.name
+            else:
+                self.filename = os.path.basename(filepath)
             self.name, _ = os.path.splitext(self.filename) # returns filename and ext
             parts = self.name.split(".")
             self.name = parts[0] if len(parts) > 1 else self.name
@@ -94,8 +97,9 @@ class Proximity:
 
     def _read_data_file(self, filepath):
         """Reads the data file (xlsx or csv) into a Pandas DataFrame."""
-        if filepath.endswith(('.xlsx', '.xls')):
-            return pd.read_excel(filepath, header=None)
+        name = filepath.name if hasattr(filepath, 'name') else filepath
+        if name.endswith(('.xlsx', '.xls')):
+            return pd.read_excel(filepath, header=None, engine='openpyxl')
         else:
             return pd.read_csv(filepath, header=None)
 

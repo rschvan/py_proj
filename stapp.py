@@ -286,25 +286,11 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
                                 help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
                                 )
             if len(ss_files) > 0:
-                ss_dir = "temp_ss"
-                os.makedirs(ss_dir, exist_ok=True)
                 for ss_file in ss_files:
                     if ss_file is not None:
-                        try:
-                            # Save uploaded file temporarily for processing
-                            temp_file_path = os.path.join(ss_dir, ss_file.name)
-                            with open(temp_file_path, "wb") as f:
-                                f.write(ss_file.getbuffer())
-                        except Exception as e:
-                            st.error(f"Error processing file: {e}")
-                files = os.listdir(path=ss_dir)
-                for file in files:
-                    file_path = os.path.join(ss_dir, file)
-                    new_prx = Proximity(file_path)
-                    new_prx = make_symmetric_if_force(new_prx)
-                    col.add_proximity(new_prx)
-                    os.remove(file_path)
-                os.rmdir(ss_dir)
+                        new_prx = Proximity(filepath=ss_file)
+                        new_prx = make_symmetric_if_force(new_prx)
+                        col.add_proximity(new_prx)
                 stss.file_version += 1
                 st.rerun()
 
