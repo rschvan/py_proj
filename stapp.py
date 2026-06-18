@@ -264,6 +264,9 @@ with loadp:
             st.rerun()
 
 # --- Upload Files and Create Proximities (Now in an Expander) ---
+if hasattr(stss,"xlerror") and stss.xlerror:
+    st.error(stss.xlerror)
+    stss.xlerror = None
 with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, width=480):
     stss.perm_file_type = st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
              index=get_idx(stss.perm_file_type, ["Spreadsheet", "Legacy Text"]),
@@ -288,9 +291,12 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
             if len(ss_files) > 0:
                 for ss_file in ss_files:
                     if ss_file is not None:
-                        new_prx = Proximity(filepath=ss_file)
-                        new_prx = make_symmetric_if_force(new_prx)
-                        col.add_proximity(new_prx)
+                        try:
+                            new_prx = Proximity(filepath=ss_file)
+                            new_prx = make_symmetric_if_force(new_prx)
+                            col.add_proximity(new_prx)
+                        except Exception as e:
+                            stss.xlerror = "Error: an invalid proximity file was loaded."
                 stss.file_version += 1
                 st.rerun()
 
@@ -322,24 +328,6 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
                 stss.file_version += 1
                 st.rerun()
 
-# ---conditional displays---
-
-if show_corrs and len(col.proximities) > 1:
-    st.subheader("Proximity Correlations")
-    st.info("""Correlations of the distance data in pairs of equal sized data sets""")
-    prx_corrs_df = col.get_proximity_correlations()
-    if not prx_corrs_df.empty:
-        st.dataframe(prx_corrs_df, width='content', hide_index=False)
-
-if show_netsim and len(col.pfnets) > 1:
-    st.subheader("Network Similarity")
-    st.info("""Similarity is the number of shared links 
-        divided by the number of unique links in two networks.""")
-    sim_df = col.network_similarity()
-    if not sim_df.empty:
-        st.dataframe(sim_df, width='content', hide_index=False)
-    else:
-        st.info("No PFnet objects.")
 
 # sample sources
 if stss.sample_visible:
@@ -445,16 +433,24 @@ else:
             if len(col.selected_prxs) != 1:
                 st.warning("Select one proximity to display.")
 
-    if display_proximity:
-        if len(col.selected_prxs) == 1:
-            #create dataframe with terms and dismat
-            prx = col.proximities[col.selected_prxs[0]]
-            dismat = prx.dismat
-            terms = prx.terms
-            df = pd.DataFrame(dismat, index=terms, columns=terms)
-            st.dataframe(df, width='content')
-            col.selected_prxs = []
-            stss.prx_version += 1
+if display_proximity:
+    if len(col.selected_prxs) == 1:
+        st.subheader(f"Distance Matrix for {col.selected_prxs[0]}")
+        #create dataframe with terms and dismat
+        prx = col.proximities[col.selected_prxs[0]]
+        dismat = prx.dismat
+        terms = prx.terms
+        df = pd.DataFrame(dismat, index=terms, columns=terms)
+        st.dataframe(df, width='content')
+        col.selected_prxs = []
+        stss.prx_version += 1
+
+if show_corrs and len(col.proximities) > 1:
+    st.subheader("Proximity Correlations")
+    st.info("""Correlations of the distance data in pairs of equal sized data sets""")
+    prx_corrs_df = col.get_proximity_correlations()
+    if not prx_corrs_df.empty:
+        st.dataframe(prx_corrs_df, width='content', hide_index=False)
 
 # Network List
 st.subheader("Network List")
@@ -526,32 +522,42 @@ else:
             else:
                 st.warning("Error: Select one network to display properties.")
 
-    #st.write(f"**{stss.col.focus_net.name}** is currently displayed.")
-    if show_link_list:
-        net = col.pfnets[col.selected_nets[0]]
-        st.write("**Link List**")
-        st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links ")
-        if net.type == "mg":
-            st.write("""**weight** is a binary code  
-                **nets** shows which nets contain the link (reading right to left) -- e.g., 110 means in nets 2 & 3  
-                **count** shows the number of nets that contain the link -- e.g. 110 count would be 2
-                """)
-        llist = net.get_link_list()
-        st.dataframe(data=llist, width="content", hide_index=False, )
-        col.selected_nets = []
-        stss.net_version += 1
+if show_link_list:
+    net = col.pfnets[col.selected_nets[0]]
+    st.write("**Link List**")
+    st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links ")
+    if net.type == "mg":
+        st.write("""**weight** is a binary code  
+            **nets** shows which nets contain the link (reading right to left) -- e.g., 110 means in nets 2 & 3  
+            **count** shows the number of nets that contain the link -- e.g. 110 count would be 2
+            """)
+    llist = net.get_link_list()
+    st.dataframe(data=llist, width="content", hide_index=False, )
+    col.selected_nets = []
+    stss.net_version += 1
 
-    if show_props:
-        st.write("**Network Properties**")
-        net = col.pfnets[col.selected_nets[0]]
-        ecc = net.eccentricity
-        st.write(f"{net.name}")
-        st.write(
-            f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
-        st.write(f"")
-        tab = pd.DataFrame(net.get_network_properties())
-        st.dataframe(data=tab, width="content", hide_index=True, )
-        col.selected_nets = []
-        stss.net_version += 1
+if show_props:
+    st.write("**Network Properties**")
+    net = col.pfnets[col.selected_nets[0]]
+    ecc = net.eccentricity
+    st.write(f"{net.name}")
+    st.write(
+        f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
+    st.write(f"")
+    tab = pd.DataFrame(net.get_network_properties())
+    st.dataframe(data=tab, width="content", hide_index=True, )
+    col.selected_nets = []
+    stss.net_version += 1
+
+
+if show_netsim and len(col.pfnets) > 1:
+    st.subheader("Network Similarity")
+    st.info("""Similarity is the number of shared links 
+        divided by the number of unique links in two networks.""")
+    sim_df = col.network_similarity()
+    if not sim_df.empty:
+        st.dataframe(sim_df, width='content', hide_index=False)
+    else:
+        st.info("No PFnet objects.")
 
 stss.count += 1

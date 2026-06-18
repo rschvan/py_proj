@@ -85,8 +85,8 @@
     <div id="tips" class="help-section">
         <h2 class="help-header">Tips about the App</h2>
         <ul>
-          <li><strong>Proximity Data Files</strong><br>
-            The spreadsheet files are easier to create and are much simpler than the legacy text files so newly created files can use the spreadsheet format. However, the legacy text file format supports several options so it might be useful if some of its features are desired. One example is with sparse data where a small subset of cells in the distance matrix have finite values and all other cells are treated as infinite. The <strong>list</strong> format in the legacy files supports only providing the data for the finite cells. Legacy files also provde the possibility of creating the distance data from <strong>vectors</strong> of data with a vector for each term. The <strong>coord</strong> option supports several methods for creating distances from vectors. Details are provided in the Legacy Text Data Format section of this help page. </li>
+          <li><strong>Keeping the App awake </strong><br>
+          The app will tend to go into hibernation when left idle for awhile. If you go to the View Network page and activate the Dynamic layout option, the active dynamic engine will help prevent the app from hibernating. </li>
             <li><b>Selection of Proximities or Networks<br>
             </b>A single item can be selected from the lists by clicking its name, 
 			but multiple items require checking the select boxes to the left of the names. 
@@ -124,6 +124,8 @@
 			  Of course, networks must contain the same terms to be merged. The link weight for merged networks is a binary code 
 			  indicating which networks include the link. The networks are merged in order with index <em>i</em> going 
 			  from 0 to <em>n</em>. If a link is in network<em> i</em>, its weight is increased by 2<sup><em>i</em></sup> . So the position of the 1 bits in the weight indicate the link is in network <em>i</em>, reading from right to left. Merged networks are not saved in the project file. They must be recreated after loading the project. </li>
+            <li><strong>Proximity Data Files</strong><br>
+The spreadsheet files are easier to create and are much simpler than the legacy text files so newly created files can use the spreadsheet format. However, the legacy text file format supports several options so it might be useful if some of its features are desired. One example is with sparse data where a small subset of cells in the distance matrix have finite values and all other cells are treated as infinite. The <strong>list</strong> format in the legacy files supports only providing the data for the finite cells. Legacy files also provde the possibility of creating the distance data from <strong>vectors</strong> of data with a vector for each term. The <strong>coord</strong> option supports several methods for creating distances from vectors. Details are provided in the Legacy Text Data Format section of this help page</li>
         </ul>
     </div>
 

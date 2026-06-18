@@ -22,7 +22,6 @@ def _getnum(line: str) -> Union[float, None]:
             continue
     return None
 
-
 def _cosang(v1: np.ndarray, v2: np.ndarray) -> float:
     """
     MATLAB's cosang function equivalent.
@@ -34,7 +33,6 @@ def _cosang(v1: np.ndarray, v2: np.ndarray) -> float:
     if norm_v1 == 0 or norm_v2 == 0:
         return 0.0  # Handle zero vectors gracefully
     return dot_product / (norm_v1 * norm_v2)
-
 
 def _get_term_file(fpath: str, name: str) -> str:
     """
@@ -50,7 +48,6 @@ def _get_term_file(fpath: str, name: str) -> str:
         if os.path.exists(tfile):
             return tfile
     return ""  # Return empty string if no file is found
-
 
 def _readterms(file: str) -> List[str]:
     """
@@ -71,7 +68,6 @@ def _readterms(file: str) -> List[str]:
             return []
     return terms
 
-
 def _get_terms(fpath: str, name: str, n: int) -> List[str]:
     """
     MATLAB's get_terms function equivalent.
@@ -85,7 +81,6 @@ def _get_terms(fpath: str, name: str, n: int) -> List[str]:
     else:
         # Returns string representations of 1 to n (node numbers)
         return [str(i) for i in range(1, n + 1)]
-
 
 def _write_excel_file(terms: List[str], dismat: np.ndarray, file: str) -> None:
     """
@@ -101,7 +96,6 @@ def _write_excel_file(terms: List[str], dismat: np.ndarray, file: str) -> None:
 
     # Write to Excel
     df.to_excel(file, index=True, header=True)
-
 
 # --- Main Function ---
 

@@ -1,6 +1,8 @@
 # pypf/collection.py
 import copy
 import json
+
+import networkx as nx
 import numpy as np
 import pandas as pd
 import os
@@ -238,6 +240,7 @@ class Collection:
         merged_net.graph = graph_from_adjmat(adj, merged_net.terms)
         merged_net.graph.name = merged_net.name
         merged_net.get_eccentricity()
+        merged_net.is_planar = nx.is_planar(merged_net.graph)
         self.add_pfnet(merged_net)
         self.selected_nets = []
         merged_net.unique_weights = np.arange(1, n_nets + 1)

@@ -217,7 +217,9 @@ with st.sidebar:
     cutoff = st.sidebar.select_slider(
             label=lab,
             options=focus_net.unique_weights,
-            value=val, )
+            value=val,
+            format_func=lambda x: "{:.4g}".format(x)
+    )
 
     # Save current focus_net coords to the global collection
     if st.button("📌 Save Terms Layout", use_container_width=False):
