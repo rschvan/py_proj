@@ -432,18 +432,19 @@ else:
         if display_proximity:
             if len(col.selected_prxs) != 1:
                 st.warning("Select one proximity to display.")
-            else:
-                st.subheader(f"Distance Matrix for {col.selected_prxs[0]}")
-                #create dataframe with terms and dismat
-                prx = col.proximities[col.selected_prxs[0]]
-                dismat = prx.dismat
-                terms = prx.terms
-                df = pd.DataFrame(dismat, index=terms, columns=terms)
-                st.dataframe(df, width='content')
-                col.selected_prxs = []
-                stss.prx_version += 1
 
-if show_corrs and len(col.proximities) > 1:
+if len(col.selected_prxs) == 1 and display_proximity:
+    st.subheader(f"Distance Matrix for {col.selected_prxs[0]}")
+    #create dataframe with terms and dismat
+    prx = col.proximities[col.selected_prxs[0]]
+    dismat = prx.dismat
+    terms = prx.terms
+    df = pd.DataFrame(dismat, index=terms, columns=terms)
+    st.dataframe(df, width='content')
+    col.selected_prxs = []
+    #stss.prx_version += 1
+
+if len(col.proximities) > 1 and show_corrs:
     st.subheader("Proximity Correlations")
     st.info("""Correlations of the distance data in pairs of equal sized data sets""")
     prx_corrs_df = col.get_proximity_correlations()
@@ -532,7 +533,7 @@ if len(col.pfnets) > 0 and show_link_list:
     llist = net.get_link_list()
     st.dataframe(data=llist, width="content", hide_index=False, )
     col.selected_nets = []
-    stss.net_version += 1
+    #stss.net_version += 1
 
 if len(col.pfnets) > 0 and show_props:
     st.write("**Network Properties**")
@@ -545,8 +546,7 @@ if len(col.pfnets) > 0 and show_props:
     tab = pd.DataFrame(net.get_network_properties())
     st.dataframe(data=tab, width="content", hide_index=True, )
     col.selected_nets = []
-    stss.net_version += 1
-
+    #stss.net_version += 1
 
 if show_netsim and len(col.pfnets) > 1:
     st.subheader("Network Similarity")
