@@ -528,25 +528,11 @@ def split_long_term(term:str)->str:
             return term
 
 if __name__ == '__main__':
-    from pypf.pfnet import PFnet
     from pypf.proximity import Proximity
     from pypf.collection import Collection
     tcol = Collection()
     psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    tcol.add_proximity(psyprx)
+    tcol.add_proximity(psyprx, add_pfnet=True)
     bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    tcol.add_proximity(bioprx)
-    psy = PFnet(psyprx)
-    tcol.add_pfnet(psy)
-    bio = PFnet(bioprx)
-    tcol.add_pfnet(bio)
-
-
-
-    # prxset = [psyprx, bioprx]
-    # netset = [psy, bio]
-    # # mrg = merge_networks(netset)
-    # # print(mrg.netprint())
-    # # aveprx = average_proximity(prxset, method="mean")
-    # # aveprx.prxprint()
-    # bio.get_layout(method="MDS")
+    tcol.add_proximity(bioprx, add_pfnet=True)
+    print(split_long_term("San Francisco, California"))

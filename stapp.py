@@ -432,18 +432,16 @@ else:
         if display_proximity:
             if len(col.selected_prxs) != 1:
                 st.warning("Select one proximity to display.")
-
-if display_proximity:
-    if len(col.selected_prxs) == 1:
-        st.subheader(f"Distance Matrix for {col.selected_prxs[0]}")
-        #create dataframe with terms and dismat
-        prx = col.proximities[col.selected_prxs[0]]
-        dismat = prx.dismat
-        terms = prx.terms
-        df = pd.DataFrame(dismat, index=terms, columns=terms)
-        st.dataframe(df, width='content')
-        col.selected_prxs = []
-        stss.prx_version += 1
+            else:
+                st.subheader(f"Distance Matrix for {col.selected_prxs[0]}")
+                #create dataframe with terms and dismat
+                prx = col.proximities[col.selected_prxs[0]]
+                dismat = prx.dismat
+                terms = prx.terms
+                df = pd.DataFrame(dismat, index=terms, columns=terms)
+                st.dataframe(df, width='content')
+                col.selected_prxs = []
+                stss.prx_version += 1
 
 if show_corrs and len(col.proximities) > 1:
     st.subheader("Proximity Correlations")
@@ -522,7 +520,7 @@ else:
             else:
                 st.warning("Error: Select one network to display properties.")
 
-if show_link_list:
+if len(col.pfnets) > 0 and show_link_list:
     net = col.pfnets[col.selected_nets[0]]
     st.write("**Link List**")
     st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links ")
@@ -536,7 +534,7 @@ if show_link_list:
     col.selected_nets = []
     stss.net_version += 1
 
-if show_props:
+if len(col.pfnets) > 0 and show_props:
     st.write("**Network Properties**")
     net = col.pfnets[col.selected_nets[0]]
     ecc = net.eccentricity
