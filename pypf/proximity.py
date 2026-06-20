@@ -155,6 +155,7 @@ class Proximity:
         print(f"coh: {self.coh}")
 
 if __name__ == "__main__":
-    p = Proximity("data\psy.prx.xlsx")
+    p = Proximity("data\psyinf.prx.xlsx")
     p.prxprint()
     print(p.get_info())
+    print(p.dismat)

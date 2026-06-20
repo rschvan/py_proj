@@ -289,7 +289,9 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
                                 help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
                                 )
             if len(ss_files) > 0:
-                for ss_file in ss_files:
+                # Sort the uploaded files alphabetically by their filename before processing
+                sorted_ss_files = sorted(ss_files, key=lambda f: f.name)
+                for ss_file in sorted_ss_files:
                     if ss_file is not None:
                         try:
                             new_prx = Proximity(filepath=ss_file)
@@ -314,7 +316,7 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
                         file = os.path.join(leg_dir, leg_file.name)
                         with open(file, "wb") as f:
                             f.write(leg_file.getbuffer())
-                all_leg_files = os.listdir(leg_dir)
+                all_leg_files = sorted(os.listdir(leg_dir))
                 file_dat = legacy_prx_files(path=leg_dir, files=all_leg_files)
                 for dat in file_dat:
                     if dat["error"]:  # does not contain valid proximity data
