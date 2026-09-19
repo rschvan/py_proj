@@ -1,0 +1,25 @@
+2026-09-15 08:27:53: == Sync Started by User Command
+2026-09-15 08:27:53: ConnectCloned connected to file:///~schva/Prog/py_proj
+2026-09-15 08:27:53: ConnectCloned connected to file:///~schva/Prog/py_proj
+2026-09-15 08:27:53: ConnectCloned connected to file:///~schva/Prog/py_proj
+2026-09-15 08:27:53: ConnectCloned connected to file:///E:/pypf_backup
+2026-09-15 08:27:53: ConnectCloned connected to file:///E:/pypf_backup
+2026-09-15 08:27:53: ConnectCloned connected to file:///E:/pypf_backup
+2026-09-15 08:27:53: Create Folder E:/pypf_backup/pages
+2026-09-15 08:27:53: Create Folder E:/pypf_backup/pypf
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/notes.txt' -> 'E:/pypf_backup/notes.txt' (913)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/__init__.py' -> 'E:/pypf_backup/pypf/__init__.py' (410)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/stapp.py' -> 'E:/pypf_backup/stapp.py' (24,587)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pages/help.py' -> 'E:/pypf_backup/pages/help.py' (1,344)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/collection.py' -> 'E:/pypf_backup/pypf/collection.py' (12,624)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/pfnet.py' -> 'E:/pypf_backup/pypf/pfnet.py' (15,637)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/proximity.py' -> 'E:/pypf_backup/pypf/proximity.py' (7,162)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pages/view_net.py' -> 'E:/pypf_backup/pages/view_net.py' (12,362)
+2026-09-15 08:27:53: Close Modified Folder (mod-time, acl): /pages
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/read_legacy_files.py' -> 'E:/pypf_backup/pypf/read_legacy_files.py' (15,119)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/stutils.py' -> 'E:/pypf_backup/pypf/stutils.py' (4,438)
+2026-09-15 08:27:53: Copy New 'C:/Users/schva/Prog/py_proj/pypf/utility.py' -> 'E:/pypf_backup/pypf/utility.py' (21,041)
+2026-09-15 08:27:54: Close Modified Folder (mod-time, acl): /pypf
+2026-09-15 08:27:54: Save State File C:/Users/schva/Prog/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-15 08:27:54: Save State File E:/pypf_backup/_gsdata_/_file_state_v4._gs
+2026-09-15 08:27:54: == Sync Complete. Time: 00:00:01, Speed: 0.00/s, OK: 48, Errors: 0

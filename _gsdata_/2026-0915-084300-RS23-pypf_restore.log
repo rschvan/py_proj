@@ -1,0 +1,6 @@
+2026-09-15 08:43:00: -- Analysis Started by User Command
+2026-09-15 08:43:00: L: Reading State File E:/pypf_backup/_gsdata_/_file_state_v4._gs
+2026-09-15 08:43:00: R: Reading State File C:/Users/schva/Prog/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-15 08:43:01: Changes: 38,337, Conflicts: 0, CopyTime: 0, FixState: 482, Errors: 0, All: 38868
+2026-09-15 08:43:01: Left to Right: Delete File: 38337 
+2026-09-15 08:43:01: -- Analysis Complete. Time 00:00:01, Speed: 38K files/s

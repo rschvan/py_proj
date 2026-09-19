@@ -1,0 +1,46 @@
+# pages/help.py
+import streamlit as st
+
+st.set_page_config(
+    page_title="PyPF Help",
+    page_icon="❓", # Use an emoji
+)
+
+stss = st.session_state
+
+# 1. Sidebar Navigation Menu
+st.sidebar.subheader("📖 Select Contents")
+
+st.sidebar.markdown(
+    """
+<style>
+    :target::before {
+        content: "";
+        display: block;
+        height: 70px;
+        margin: -70px 0 0;
+    }
+    .toc { font-size: 16px; line-height: 1.8; }
+    .toc a { text-decoration: none; color: #3498db; }
+    @media (prefers-color-scheme: dark) {
+        .toc a { color: #64b5f6; }
+    }
+</style>
+<div class="toc">
+    <a href="#top" target="_self">🔗 Other Resources</a><br>
+    <a href="#welcome" target="_self">🏠 About PyPathfinder</a><br>
+    <a href="#lists" target="_self">📋 Proximity & Network Lists</a><br>
+    <a href="#tips" target="_self">💡 Tips about the App</a><br>
+    <a href="#display" target="_self">🖥️ Displaying Networks</a><br>
+    <a href="#saving" target="_self">💾 Saving & Loading Projects</a><br>
+    <a href="#format" target="_self">📄 Spreadsheet Data Format</a><br>
+    <a href="#legacy" target="_self">📜 Legacy Text Data Format</a>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# Main content
+
+st.subheader("PyPathfinder Help")
+st.html(stss.help_html)

@@ -1,0 +1,1 @@
+PyPathfinder is a Python-based application built with Streamlit designed for creating, analyzing, and visualizing Pathfinder Networks from proximity data. The app's architecture is modular, separating the user interface from the core data processing and network analysis logic.

@@ -1,0 +1,128 @@
+2026-09-19 15:20:29: == Sync Started by User Command
+2026-09-19 15:20:29: Copy Over 'C:/Users/schva/Prog/py_proj/.git/COMMIT_EDITMSG' -> 'E:/py_proj/.git/COMMIT_EDITMSG' (7)
+2026-09-19 15:20:29: Copy Over 'C:/Users/schva/Prog/py_proj/.git/FETCH_HEAD' -> 'E:/py_proj/.git/FETCH_HEAD' (94)
+2026-09-19 15:20:29: > Copy Over 'C:/Users/schva/Prog/py_proj/.git/index' -> 'E:/py_proj/.git/index' (1,758,888)
+2026-09-19 15:20:29: < Copy Over 'C:/Users/schva/Prog/py_proj/.git/index' -> 'E:/py_proj/.git/index' (1,758,888)
+2026-09-19 15:20:29: Copy Over 'C:/Users/schva/Prog/py_proj/.git/logs/HEAD' -> 'E:/py_proj/.git/logs/HEAD' (12,060)
+2026-09-19 15:20:29: Copy Over 'C:/Users/schva/Prog/py_proj/.git/logs/refs/heads/main' -> 'E:/py_proj/.git/logs/refs/heads/main' (11,240)
+2026-09-19 15:20:29: Copy Over 'C:/Users/schva/Prog/py_proj/.git/logs/refs/remotes/origin/main' -> 'E:/py_proj/.git/logs/refs/remotes/origin/main' (9,155)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/08
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/08/9b41dedfe4df1ab316e9064e39b9b0f303bb6b' -> 'E:/py_proj/.git/objects/08/9b41dedfe4df1ab316e9064e39b9b0f303bb6b' (356)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/19/5c09a692bd5d80144266197930656c0a1df535' -> 'E:/py_proj/.git/objects/19/5c09a692bd5d80144266197930656c0a1df535' (174)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/19/9c9d8a9fc0dfc3fe1db52845ef73f310e19508' -> 'E:/py_proj/.git/objects/19/9c9d8a9fc0dfc3fe1db52845ef73f310e19508' (10,076)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/1c
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/1c/3be5bbc2316191ff1a80e396e6c71d45c34b20' -> 'E:/py_proj/.git/objects/1c/3be5bbc2316191ff1a80e396e6c71d45c34b20' (681)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/25/9c56e87443294243f33e4a9fa4ff846ce6fe50' -> 'E:/py_proj/.git/objects/25/9c56e87443294243f33e4a9fa4ff846ce6fe50' (211)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/2c
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/2c/065c4b591ab361ad02d696a9ab6944fbd13c63' -> 'E:/py_proj/.git/objects/2c/065c4b591ab361ad02d696a9ab6944fbd13c63' (357)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/36/a37cd19609b8f8b92e6181ff31bd479ab4e3f0' -> 'E:/py_proj/.git/objects/36/a37cd19609b8f8b92e6181ff31bd479ab4e3f0' (2,371)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/39
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/39/6c8dcc954e86b03578cfbb9bc65cafa62f795e' -> 'E:/py_proj/.git/objects/39/6c8dcc954e86b03578cfbb9bc65cafa62f795e' (226)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/3a
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/3a/107a9daa63751308774fe2aa017da6b8877bd1' -> 'E:/py_proj/.git/objects/3a/107a9daa63751308774fe2aa017da6b8877bd1' (199)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/40
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/40/9b8634ff3d1f07d9489afa61d8cb34d9e92ebc' -> 'E:/py_proj/.git/objects/40/9b8634ff3d1f07d9489afa61d8cb34d9e92ebc' (466)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/45
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/45/b00cf1fbb0e2c6b046c1a0883ff821b7e44d34' -> 'E:/py_proj/.git/objects/45/b00cf1fbb0e2c6b046c1a0883ff821b7e44d34' (5,012)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/4d
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/4d/0a66e174925ef6907e6092d6c983828e17dc38' -> 'E:/py_proj/.git/objects/4d/0a66e174925ef6907e6092d6c983828e17dc38' (149)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/52
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/52/2116f39ef6ecf6138e99c3816cb8bcb0098639' -> 'E:/py_proj/.git/objects/52/2116f39ef6ecf6138e99c3816cb8bcb0098639' (1,802)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/56
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/56/f15d9dfa91b3f817c0e9256ccf6824b9a48c2d' -> 'E:/py_proj/.git/objects/56/f15d9dfa91b3f817c0e9256ccf6824b9a48c2d' (7,812)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/6a/19e50e7478ef0c48f7f1230f3f8bd635c48a44' -> 'E:/py_proj/.git/objects/6a/19e50e7478ef0c48f7f1230f3f8bd635c48a44' (149)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/6c
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/6c/ba76ecfd227e60aab9d2f6900d637e1d4bad83' -> 'E:/py_proj/.git/objects/6c/ba76ecfd227e60aab9d2f6900d637e1d4bad83' (4,133)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/6e/dcfe5816c4e7e41d2decc3d897af21f218164d' -> 'E:/py_proj/.git/objects/6e/dcfe5816c4e7e41d2decc3d897af21f218164d' (461)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/82
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/82/0268b7e7deb2a44ec22511349791ebd3896b7d' -> 'E:/py_proj/.git/objects/82/0268b7e7deb2a44ec22511349791ebd3896b7d' (609)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/85
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/85/36ad0e755939c81305ade382079271818852ab' -> 'E:/py_proj/.git/objects/85/36ad0e755939c81305ade382079271818852ab' (466)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/90
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/90/d3ed6e65821331cde78915b59b795bf457e010' -> 'E:/py_proj/.git/objects/90/d3ed6e65821331cde78915b59b795bf457e010' (8,014)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/91/4b4dd0718cc349883605704aaf141153925683' -> 'E:/py_proj/.git/objects/91/4b4dd0718cc349883605704aaf141153925683' (466)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/96/294fd17c17cfa5fdbbf42569ccb8dd7fd5e4db' -> 'E:/py_proj/.git/objects/96/294fd17c17cfa5fdbbf42569ccb8dd7fd5e4db' (10,134)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/9c
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/9c/2effdf9384c9d8c16b6f0ac8927580f841012a' -> 'E:/py_proj/.git/objects/9c/2effdf9384c9d8c16b6f0ac8927580f841012a' (8,012)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/9f
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/9f/35f38ead6fdce0223ef576330361f8e235931d' -> 'E:/py_proj/.git/objects/9f/35f38ead6fdce0223ef576330361f8e235931d' (8,046)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/bc
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/bc/004d080514c9c09a87b47cc97f0c3d86248da5' -> 'E:/py_proj/.git/objects/bc/004d080514c9c09a87b47cc97f0c3d86248da5' (182)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/cd/06eb0d5ceb552c769d348f2c3b1395d1637bb2' -> 'E:/py_proj/.git/objects/cd/06eb0d5ceb552c769d348f2c3b1395d1637bb2' (85)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/d2
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/d2/d87b72b6621fa710326c0f1328a469cd9e78d9' -> 'E:/py_proj/.git/objects/d2/d87b72b6621fa710326c0f1328a469cd9e78d9' (466)
+2026-09-19 15:20:29: Create Folder E:/py_proj/.git/objects/d4
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/d4/b6a96b7ff6841a6584dac9e7aa251433adaf5e' -> 'E:/py_proj/.git/objects/d4/b6a96b7ff6841a6584dac9e7aa251433adaf5e' (4,956)
+2026-09-19 15:20:29: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/d9/e1da79de42b1d20f53e4289b8a4f6cf1cfae81' -> 'E:/py_proj/.git/objects/d9/e1da79de42b1d20f53e4289b8a4f6cf1cfae81' (169)
+2026-09-19 15:20:30: Create Folder E:/py_proj/.git/objects/da
+2026-09-19 15:20:30: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/da/a38c0ae35553f91c9a7b2f5afc9409c88056c3' -> 'E:/py_proj/.git/objects/da/a38c0ae35553f91c9a7b2f5afc9409c88056c3' (15,438)
+2026-09-19 15:20:30: Create Folder E:/py_proj/.git/objects/e9
+2026-09-19 15:20:30: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/e9/174f7beedacbb8013df2d15204168a2a91c066' -> 'E:/py_proj/.git/objects/e9/174f7beedacbb8013df2d15204168a2a91c066' (466)
+2026-09-19 15:20:30: Create Folder E:/py_proj/.git/objects/f0
+2026-09-19 15:20:30: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/f0/7df46238a4c4a9747235612aba3aebb71d9aba' -> 'E:/py_proj/.git/objects/f0/7df46238a4c4a9747235612aba3aebb71d9aba' (8,000)
+2026-09-19 15:20:30: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/fd/6dfbd0f46685c99671d4f4ca317c42cdc527c1' -> 'E:/py_proj/.git/objects/fd/6dfbd0f46685c99671d4f4ca317c42cdc527c1' (10,403)
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/.git/ORIG_HEAD' -> 'E:/py_proj/.git/ORIG_HEAD' (41)
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/.git/refs/heads/main' -> 'E:/py_proj/.git/refs/heads/main' (41)
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/.git/refs/remotes/origin/main' -> 'E:/py_proj/.git/refs/remotes/origin/main' (41)
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/.idea/workspace.xml' -> 'E:/py_proj/.idea/workspace.xml' (50,303)
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/pages/help.py' -> 'E:/py_proj/pages/help.py' (1,330)
+2026-09-19 15:20:30: Delete File E:/py_proj/pypf/data/aviation.prx.txt
+2026-09-19 15:20:30: Delete File E:/py_proj/pypf/data/aviation.trm.txt
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/data/help.html' -> 'E:/py_proj/pypf/data/help.html' (27,743)
+2026-09-19 15:20:30: Copy Over 'C:/Users/schva/Prog/py_proj/stapp.py' -> 'E:/py_proj/stapp.py' (24,222)
+2026-09-19 15:20:30: > Copy New 'C:/Users/schva/Prog/py_proj/Videos/More on PyPF.mp4' -> 'E:/py_proj/Videos/More on PyPF.mp4' (76,477,832)
+2026-09-19 15:20:32: < Copy New 'C:/Users/schva/Prog/py_proj/Videos/More on PyPF.mp4' -> 'E:/py_proj/Videos/More on PyPF.mp4' (76,477,832)
+2026-09-19 15:20:32: > Copy New 'C:/Users/schva/Prog/py_proj/Videos/old PyPathfinder Primer.mp4' -> 'E:/py_proj/Videos/old PyPathfinder Primer.mp4' (87,764,263)
+2026-09-19 15:20:34: < Copy New 'C:/Users/schva/Prog/py_proj/Videos/old PyPathfinder Primer.mp4' -> 'E:/py_proj/Videos/old PyPathfinder Primer.mp4' (87,764,263)
+2026-09-19 15:20:34: > Copy New 'C:/Users/schva/Prog/py_proj/Videos/old Quick Start.mp4' -> 'E:/py_proj/Videos/old Quick Start.mp4' (45,708,219)
+2026-09-19 15:20:35: < Copy New 'C:/Users/schva/Prog/py_proj/Videos/old Quick Start.mp4' -> 'E:/py_proj/Videos/old Quick Start.mp4' (45,708,219)
+2026-09-19 15:20:35: Delete File E:/py_proj/Videos/PyPathfinder Primer.mp4
+2026-09-19 15:20:35: Delete File E:/py_proj/Videos/Quick Start.mp4
+2026-09-19 15:20:35: > Copy New 'C:/Users/schva/Prog/py_proj/Videos/Using Your Files.mp4' -> 'E:/py_proj/Videos/Using Your Files.mp4' (67,209,325)
+2026-09-19 15:20:37: < Copy New 'C:/Users/schva/Prog/py_proj/Videos/Using Your Files.mp4' -> 'E:/py_proj/Videos/Using Your Files.mp4' (67,209,325)
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/logs/refs/heads
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/logs/refs/remotes/origin
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/08
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/19
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/1c
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/25
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/2c
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/36
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/39
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/3a
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/40
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/45
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/4d
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/52
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/56
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/6a
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/6c
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/6e
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/82
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/85
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/90
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/91
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/96
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/9c
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/9f
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/bc
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/cd
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/d2
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/d4
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/d9
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/da
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/e9
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/f0
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects/fd
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/refs/heads
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/refs/remotes/origin
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.idea
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /pages
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /pypf/data
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /Videos
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/objects
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git/logs
+2026-09-19 15:20:37: Close Modified Folder (mod-time, acl): /.git
+2026-09-19 15:20:37: Save State File C:/Users/schva/Prog/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-19 15:20:37: Save State File E:/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-19 15:20:37: == Sync Complete. Time: 00:00:08, Speed: 32.46 MB/s, OK: 76, Errors: 0

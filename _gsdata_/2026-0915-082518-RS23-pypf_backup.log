@@ -1,0 +1,7 @@
+2026-09-15 08:25:19: -- Analysis Started by User Command
+2026-09-15 08:25:19: L: Reading State File C:/Users/schva/Prog/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-15 08:25:19: R: Reading State File E:/pypf_backup/_gsdata_/_file_state_v4._gs
+2026-09-15 08:25:19: R: State file does not exist: E:/pypf_backup/_gsdata_/_file_state_v4._gs
+2026-09-15 08:25:19: Changes: 13, Conflicts: 0, CopyTime: 0, FixState: 35, Errors: 0, All: 38858
+2026-09-15 08:25:19: Left to Right: Copy File: 13 
+2026-09-15 08:25:19: -- Analysis Complete. Time 00:00:00, Speed: Many files/s

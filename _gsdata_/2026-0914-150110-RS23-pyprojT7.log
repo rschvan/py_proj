@@ -1,0 +1,74 @@
+2026-09-14 15:01:19: == Sync Started by User Command
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.git/COMMIT_EDITMSG' -> 'E:/py_proj/.git/COMMIT_EDITMSG' (24)
+2026-09-14 15:01:19: > Copy Over 'C:/Users/schva/Prog/py_proj/.git/index' -> 'E:/py_proj/.git/index' (1,758,982)
+2026-09-14 15:01:19: < Copy Over 'C:/Users/schva/Prog/py_proj/.git/index' -> 'E:/py_proj/.git/index' (1,758,982)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.git/logs/HEAD' -> 'E:/py_proj/.git/logs/HEAD' (11,257)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.git/logs/refs/heads/main' -> 'E:/py_proj/.git/logs/refs/heads/main' (10,437)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.git/logs/refs/remotes/origin/main' -> 'E:/py_proj/.git/logs/refs/remotes/origin/main' (8,735)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/02
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/02/ef84438ac8a88be0a3d01c74474e338e20dd00' -> 'E:/py_proj/.git/objects/02/ef84438ac8a88be0a3d01c74474e338e20dd00' (466)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/3c
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/3c/ccad536618db3495bb3e22789bd57d6e1c059a' -> 'E:/py_proj/.git/objects/3c/ccad536618db3495bb3e22789bd57d6e1c059a' (160)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/5b
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/5b/9741440e0dacef01f0b06bec7ac8e5074a29cf' -> 'E:/py_proj/.git/objects/5b/9741440e0dacef01f0b06bec7ac8e5074a29cf' (1,413)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/64
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/64/38985df3d79f8e639aeea37c40d61494b3a1e5' -> 'E:/py_proj/.git/objects/64/38985df3d79f8e639aeea37c40d61494b3a1e5' (669)
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/6a/232ec126fdd6104e014924a0fba9f18f1c0eca' -> 'E:/py_proj/.git/objects/6a/232ec126fdd6104e014924a0fba9f18f1c0eca' (356)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/6e
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/6e/0b358e26f74672eb4a0e7832666a8efdd60de0' -> 'E:/py_proj/.git/objects/6e/0b358e26f74672eb4a0e7832666a8efdd60de0' (8,039)
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/7d/a8e1e0a6ba18cb23294bba23e4aa04b55634fb' -> 'E:/py_proj/.git/objects/7d/a8e1e0a6ba18cb23294bba23e4aa04b55634fb' (10,354)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/84
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/84/b0dce8cfff515f374bf33253e245dc6bd6d4d6' -> 'E:/py_proj/.git/objects/84/b0dce8cfff515f374bf33253e245dc6bd6d4d6' (4,345)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/be
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/be/c3315f502d8552b1f3f4175a605dff8786df85' -> 'E:/py_proj/.git/objects/be/c3315f502d8552b1f3f4175a605dff8786df85' (702)
+2026-09-14 15:01:19: Create Folder E:/py_proj/.git/objects/cd
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/cd/9174f88643ebb4df6e71e86487a22e37bdba65' -> 'E:/py_proj/.git/objects/cd/9174f88643ebb4df6e71e86487a22e37bdba65' (3,704)
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/cd/ea8bbccd7dd7a6cae9ba8c5122e11e8f6ba4b0' -> 'E:/py_proj/.git/objects/cd/ea8bbccd7dd7a6cae9ba8c5122e11e8f6ba4b0' (85)
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/f9/919da93350babaf7cfed66bc88725cce32639d' -> 'E:/py_proj/.git/objects/f9/919da93350babaf7cfed66bc88725cce32639d' (2,394)
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/fd/280de113301ea9e740e7623182d196f6eb1969' -> 'E:/py_proj/.git/objects/fd/280de113301ea9e740e7623182d196f6eb1969' (4,638)
+2026-09-14 15:01:19: Copy New 'C:/Users/schva/Prog/py_proj/.git/objects/ff/33060e116919e130f59826138141931b5cbef6' -> 'E:/py_proj/.git/objects/ff/33060e116919e130f59826138141931b5cbef6' (7,368)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.git/refs/heads/main' -> 'E:/py_proj/.git/refs/heads/main' (41)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.git/refs/remotes/origin/main' -> 'E:/py_proj/.git/refs/remotes/origin/main' (41)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/.idea/workspace.xml' -> 'E:/py_proj/.idea/workspace.xml' (50,495)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pages/view_net.py' -> 'E:/py_proj/pages/view_net.py' (12,362)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/__pycache__/collection.cpython-311.pyc' -> 'E:/py_proj/pypf/__pycache__/collection.cpython-311.pyc' (16,534)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/__pycache__/stutils.cpython-311.pyc' -> 'E:/py_proj/pypf/__pycache__/stutils.cpython-311.pyc' (8,424)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/__pycache__/utility.cpython-311.pyc' -> 'E:/py_proj/pypf/__pycache__/utility.cpython-311.pyc' (31,652)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/collection.py' -> 'E:/py_proj/pypf/collection.py' (12,624)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/data/help.html' -> 'E:/py_proj/pypf/data/help.html' (26,893)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/stutils.py' -> 'E:/py_proj/pypf/stutils.py' (4,438)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/pypf/utility.py' -> 'E:/py_proj/pypf/utility.py' (21,041)
+2026-09-14 15:01:19: Copy Over 'C:/Users/schva/Prog/py_proj/stapp.py' -> 'E:/py_proj/stapp.py' (24,587)
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/logs/refs/heads
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/logs/refs/remotes/origin
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/02
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/3c
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/5b
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/64
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/6a
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/6e
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/7d
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/84
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/be
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/cd
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/f9
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/fd
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects/ff
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/refs/heads
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/refs/remotes/origin
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.idea
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /pages
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /pypf/__pycache__
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /pypf/data
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/objects
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /pypf
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git/logs
+2026-09-14 15:01:19: Close Modified Folder (mod-time, acl): /.git
+2026-09-14 15:01:19: Save State File C:/Users/schva/Prog/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-14 15:01:19: Save State File E:/py_proj/_gsdata_/_file_state_v4._gs
+2026-09-14 15:01:19: Deleted Recycled: E:/py_proj/_gsdata_/_saved_/pages/help.py
+2026-09-14 15:01:19: Deleted Recycled: E:/py_proj/_gsdata_/_saved_/pypf/__pycache__/pfnet.cpython-311.pyc
+2026-09-14 15:01:19: Deleted Recycled: E:/py_proj/_gsdata_/_saved_/pypf/__pycache__/proximity.cpython-311.pyc
+2026-09-14 15:01:19: Deleted Recycled: E:/py_proj/_gsdata_/_saved_/pypf/pfnet.py
+2026-09-14 15:01:19: Deleted Recycled: E:/py_proj/_gsdata_/_saved_/pypf/proximity.py
+2026-09-14 15:01:20: == Sync Complete. Time: 00:00:01, Speed: 0.00/s, OK: 39, Errors: 0

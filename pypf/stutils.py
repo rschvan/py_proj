@@ -1,0 +1,121 @@
+# stutils.py
+import streamlit as st
+from typing import Literal
+from pypf.collection import Collection
+import pandas as pd
+import numpy as np
+import os
+import copy
+
+# alias for st.system_state
+stss = st.session_state
+
+@st.cache_data
+def get_cached_help_html():
+    """Loads and caches the help content from disk."""
+    help_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pypf", "data", "help.html")
+    if os.path.exists(help_path):
+        with open(help_path, "r", encoding="utf-8", errors='replace') as f:
+            return f.read()
+    return "<h3>Help content not found.</h3>"
+
+@st.cache_data
+def get_cached_sample_json():
+    """Loads and caches the raw sample project JSON string."""
+    jf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pypf", "data", "sample_proj.json")
+    if os.path.exists(jf_path):
+        with open(jf_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return None
+
+@st.cache_data
+def get_sample_sources():
+    files = ["bank6","bio", "psy", "bank", "cities", "statecaps"]
+    srcs = ["coocurrences in Longman's dictionary",
+        "relatedness ratings by biology grad students",
+         "relatedness ratings by psychology 101 students",
+         "coocurrences in Longman's dictionary",
+         "distances (km) between cities in the US",
+         "distances (miles) between state capitals in the US"]
+    return pd.DataFrame(data={"file": files, "source": srcs})
+
+@st.cache_data
+def get_example_file_format():
+    tb6 = ["account","bank","flood","money","river", "save"]
+    bank6 = pd.DataFrame(np.array([[0, 3,32,26,32,32],[3,0,27,21,14,30],
+                                           [32,27,0,31,23,29],[26,21,31,0,31,23],
+                                           [32,14,23,31,0,31],[32,30,29,23,31,0]]),
+                                 index=tb6, columns=tb6)
+    return bank6
+
+def tight_divider(space_px=2, color="green", thickness=2):
+    """
+    Renders a thin horizontal line with minimal vertical padding.
+    """
+    st.markdown(
+        f"<hr style='margin-top: {space_px}px; margin-bottom: {space_px}px; "
+        f"border: 0; border-top: {thickness}px solid {color};'>",
+        unsafe_allow_html=True
+    )
+
+def get_selected_values(df, event, column: str = "name") -> list:
+    # gets the values in column for selected rows and/or rows of selected cells
+    sel = event.selection
+    row_indices = set(sel.rows)
+    for cell in sel.cells:
+        row_indices.add(cell[0])
+    col = df[column]
+    return [col.iat[i] for i in row_indices if 0 <= i < len(df)]
+
+def autosize_columns(df) -> dict:
+
+    def pick_width(series) -> Literal["small", "medium", "large"]:
+        max_len = series.astype(str).str.len().max()
+        if max_len < 13:
+            return "small"
+        elif max_len < 30:
+            return "medium"
+        else:
+            return "large"
+
+    return {
+        col: st.column_config.TextColumn(
+            col,
+            width=pick_width(df[col]),
+            max_chars=None
+        )
+        for col in df.columns
+        if df[col].dtype == "object"
+    }
+
+def init_pf_session_state():
+    stss.home_dir = os.path.dirname(os.path.abspath(__file__))
+    col = Collection()
+    js = get_cached_sample_json()
+    col.load_project_state(js)
+    stss.sample_col = col # Collection with sample Proximitys and PFnets
+    stss.sample_sources = get_sample_sources() # DataFrame with sources of sample Proximities
+    stss.example_file_format = get_example_file_format() # DataFrame showing file format
+    stss.col = copy.deepcopy(stss.sample_col) # collection for manipulation
+    stss.col.focus_net = stss.col.pfnets["bio_pf"]
+    stss.help_html = get_cached_help_html()
+    stss.col.changed = False
+    stss.layouts = ["kamada_kawai", "gravity", "force", "spring", "MDS", "spiral", "circle"]
+    stss.layout = "kamada_kawai"
+    stss.layout_selector = stss.layout
+    stss.font_size = 10
+    stss.rotation = 0
+    stss.count = 0
+    stss.q_param = np.inf
+    stss.r_param = np.inf
+    stss.intro_visible = True
+    stss.sample_visible = True
+    stss.perm_ave_type = "mean"
+    stss.perm_file_type = "Spreadsheet"
+    stss.perm_net_type = "Pathfinder"
+    stss.prx_version = 0
+    stss.net_version = 0
+    stss.file_version = 0
+    stss.ave_version = 0
+    stss.mrg_version = 0
+
