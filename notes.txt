@@ -1,0 +1,27 @@
+# Example requirements.txt content for tewuitements.txt
+
+# Exact version required for stable code
+pandas==2.2.2
+# At least this version (useful for older projects)
+scikit-learn>=1.4.1
+# Any version less than 3.0 (i.e., any 2.x version)
+requests<3.0
+# Dependencies often include non-standard packages
+mypackage @ git+https://github.com/myuser/mypackage.git@v1.2.3
+# Must be run in the terminal, with the virtual environment activated to update requirements
+pip freeze > requirements.txt
+
+Terminal Commands
+jupyter lab # to run
+python.exe -m pip install --upgrade pip
+
+f"{num:.5g}"  # format a number with 5 significant digits
+
+st.sidebar.download_button(
+    label="📥 Download Project Recipe",
+    data=lambda: get_project_state(st.session_state.col),
+    file_name="pypf_project.json",
+    mime="application/json"
+)
+
+on_change=lambda: st.session_state.update({"intro_visible": False})
