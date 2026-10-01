@@ -59,13 +59,9 @@ class Collection:
     def add_proximity(self, prx: Proximity, add_pfnet=True) -> None:
         if prx.name in self.proximities:
             prx.name = prx.name + "_dup"
-
-        tid = self.register_terms(prx.terms)
-        if hasattr(prx, "termsid"):
-            prx.termsid = tid
-        if tid:
-            prx.terms = self.terms[tid]
-
+        if prx.termsid not in self.terms.keys():
+            self.terms[prx.termsid] = tuple(prx.terms)
+        prx.terms = self.terms[prx.termsid]
         self.proximities[prx.name] = prx
         if add_pfnet:
             pfn = PFnet(proximity=prx)
@@ -80,14 +76,6 @@ class Collection:
     def add_pfnet(self, pf: PFnet) -> None:
         if pf.name in self.pfnets:
             pf.name = pf.name + "_dup"
-
-        if hasattr(pf, "terms") and pf.terms:
-            tid = self.register_terms(pf.terms)
-            if hasattr(pf, "termsid") and not pf.termsid:
-                pf.termsid = tid
-            if tid:
-                pf.terms = self.terms[tid]
-
         self.pfnets[pf.name] = pf
 
     def delete_pfnet(self) -> None:
@@ -137,6 +125,12 @@ class Collection:
     def average_proximities(self, ave_name=None, method="mean") -> Proximity | None:
         from pypf.utility import coherence
 
+        def replace_infinite_distances(prx: Proximity) -> Proximity:
+            if np.isinf(prx.dismat).any():
+                inf_mask = np.isinf(prx.dismat)
+                prx.dismat[inf_mask] = prx.max*1.1
+            return prx
+
         selected = self.selected_prxs
         num = len(selected)
         if num < 2:
@@ -155,6 +149,7 @@ class Collection:
         ave_prx.filename = None
         ave_prx.filepath = None
         ave_prx.sources = selected
+        replace_infinite_distances(ave_prx)
 
         prefix = "~\u0078\u0305" if method == "mean" else "~mdn"
         if not ave_name:
@@ -166,6 +161,7 @@ class Collection:
         match method:
             case "mean":
                 for prx in proxes:
+                    replace_infinite_distances(prx)
                     ave_prx.max = max(ave_prx.max, prx.max)
                     ave = ave + prx.dismat
                 ave = ave / num
@@ -274,10 +270,9 @@ class Collection:
         # 1. Proximities ordered by termsid and name
         for name in sorted_keys(self.proximities):
             prx = self.proximities[name]
-            tid = getattr(prx, "termsid", None) or self.register_terms(prx.terms)
             state["proximities"].append({
                 "name": prx.name,
-                "termsid": tid,
+                "termsid": prx.termsid,
                 "dismat": prx.dismat.tolist(),
                 "issymmetric": bool(prx.issymmetric)
             })

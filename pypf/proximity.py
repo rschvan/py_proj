@@ -94,7 +94,7 @@ class Proximity:
         self.issymmetric = np.array_equal(self.dismat, self.dismat.T)
         if self.dismat.size > 0:
             self.calculate_stats()
-            self.coh = coherence(self.dismat, self.max if hasattr(self, 'max') else np.nan)
+            self.coh = coherence(self.dismat, self.max)
 
     def _read_data_file(self, filepath):
         """Reads the data file (xlsx or csv) into a Pandas DataFrame."""

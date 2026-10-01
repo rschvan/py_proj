@@ -13,10 +13,10 @@ from streamlit import fragment
 from pypf.collection import Collection
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.read_legacy_files import legacy_prx_files
+from pypf.legacy_files import legacy_txt_files
 import time
 from pypf.stutils import init_pf_session_state, tight_divider, get_selected_values
-from pypf.utility import sorted_keys
+from pypf.utility import sorted_keys, get_terms
 
 # alias for st.system_state
 stss = st.session_state
@@ -320,11 +320,15 @@ with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, widt
                         with open(file, "wb") as f:
                             f.write(leg_file.getbuffer())
                 all_leg_files = sorted(os.listdir(leg_dir))
-                file_dat = legacy_prx_files(path=leg_dir, files=all_leg_files)
-                for dat in file_dat:
-                    if dat["error"]:  # does not contain valid proximity data
+                for leg_file in all_leg_files:
+                    fname = os.path.join(leg_dir, leg_file)
+                    with open(fname) as f:
+                        raw_lines = f.readlines()
+                    pdict = legacy_txt_files(prx_file=fname, raw_lines=raw_lines)
+                    if pdict["error"]:  # error occurred on this file
                         continue
-                    new_prx = Proximity(terms=dat["terms"], dismat=dat["dismat"], name=dat["name"])
+                    pdict["terms"] = get_terms(name=pdict["name"], n=pdict["nnodes"], fdir=leg_dir)
+                    new_prx = Proximity(terms=pdict["terms"], dismat=pdict["dismat"], name=pdict["name"])
                     new_prx = make_symmetric_if_force(new_prx)
                     col.add_proximity(new_prx)
                 for file in all_leg_files:

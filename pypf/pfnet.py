@@ -33,7 +33,6 @@ class PFnet:
         self.r = r
         #self.infchar = "\u221E"
         self.terms:list[str] = []  # term list
-        self.nodes:list[str] = []  # node labels (parsed terms)
         self.termsid:str = ""
         self.nnodes:int = 0
         self.nlinks:int = 0
@@ -58,8 +57,6 @@ class PFnet:
             self.name = proximity.name
             self.proximity = proximity
             self.terms = proximity.terms
-            for term in self.terms:
-                self.nodes.append(split_long_term(term))
             self.nnodes = len(self.terms)
             self.dismat = np.array(proximity.dismat)
             self.termsid = proximity.termsid
@@ -223,9 +220,8 @@ class PFnet:
             print(f"Error in get_layout: {e}")
 
         if layout is None:
-            # noinspection PyUnresolvedReferences
-            layout = nx.forceatlas2_layout(graph, strong_gravity=True, seed=seed, scaling_ratio=2.0,
-                                           weight=None, max_iter=100, pos=randpos, linlog=False)
+            layout = nx.kamada_kawai_layout(graph, pos=randpos, )
+
         if coord is None:
             coord = np.ndarray(shape=(self.nnodes, 2))
             for i, node in enumerate(graph.nodes):

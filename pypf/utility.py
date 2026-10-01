@@ -8,6 +8,7 @@ import networkx as nx
 import re
 import keyword
 import hashlib
+import json
 
 def canonical(coords:np.ndarray) -> np.ndarray | None:
 # returns canonical coordinates (-1 to 1) from input coordinates
@@ -53,17 +54,7 @@ def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[f
 
     if np.isinf(dis).any():
         infinite_mask = np.isinf(dis)
-        finite_distances = dis[~infinite_mask]
-        if finite_distances.size > 0:
-            sorted_finite = np.sort(finite_distances)
-            max_finite = sorted_finite[-1]
-            finite_before_max = sorted_finite[-2] if sorted_finite.size > 1 else max_finite
-            increment = max_finite - finite_before_max
-            if increment == 0:
-                increment = 1
-            dis[infinite_mask] = max_finite + increment
-        else:
-            dis[infinite_mask] = maxprx + 1
+        dis[infinite_mask] = maxprx*1.1
 
     np.fill_diagonal(dis, np.nan)
     indirect = pwcorr(dis)
@@ -78,6 +69,7 @@ def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[f
             with np.errstate(invalid='ignore'):
                 coh = np.corrcoef(dis_lower[valid_indices], indirect_lower[valid_indices])
                 coh = -coh[0,1] if coh.shape == (2, 2) else np.nan
+                coh = float(coh)
                 return np.round(coh, 3)
         else:
             return np.nan
@@ -260,19 +252,24 @@ def get_parent_dir()->str:
     Determine the parent directory of the current file.
     """
     this_dir = os.path.abspath(os.path.dirname(__file__))
-    proj_dir = os.path.dirname(this_dir)
-    return proj_dir
+    parent_dir = os.path.dirname(this_dir)
+    return parent_dir
 
-# def get_termsid(terms:list[str])->str|None:
-#     n = len(terms)
-#     nc = len("".join(terms))
-#     mc = round(nc/n)
-#     termsid = str(int(n)) + " " + str(mc) + terms[0] + terms[-1]
-#     return termsid
-
-import hashlib
-import json
-
+def get_terms(name: str, n: int, fdir: str) -> list[str]:
+    possible = [f"{name}.trm.txt", "terms.txt"]
+    for file in possible:
+        fpath = os.path.join(fdir, file)
+        if not os.path.isfile(fpath):
+            continue
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                terms = [cleaned for line in f if (cleaned := line.strip())]
+            if len(terms) == n:
+                return terms
+        except (OSError, UnicodeDecodeError):
+            continue
+    # Fallback to index strings
+    return [str(i) for i in range(n)]
 
 def get_termsid(terms: list[str]) -> str | None:
     n = len(terms)
@@ -587,11 +584,13 @@ def split_long_term(term:str)->str:
             return term
 
 if __name__ == '__main__':
-    from pypf.proximity import Proximity
-    from pypf.collection import Collection
-    tcol = Collection()
-    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    tcol.add_proximity(psyprx, add_pfnet=True)
-    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    tcol.add_proximity(bioprx, add_pfnet=True)
-    print(split_long_term("San Francisco, California"))
+    # from pypf.proximity import Proximity
+    # from pypf.collection import Collection
+    # tcol = Collection()
+    # psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
+    # tcol.add_proximity(psyprx, add_pfnet=True)
+    # bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
+    # tcol.add_proximity(bioprx, add_pfnet=True)
+    # print(split_long_term("San Francisco, California"))
+    terms = get_terms(name="t_liv2007", n=25, fdir=os.path.join("C:\\","easy"))
+    print(terms)

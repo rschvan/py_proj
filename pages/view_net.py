@@ -1,9 +1,10 @@
 # pages/view_net.py
 import streamlit as st
-import streamlit.components.v1 as components
+#mport streamlit.components.v1 as components
 from pyvis.network import Network
 from pypf import PFnet
 from pypf.stutils import init_pf_session_state, tight_divider
+from pypf.utility import split_long_term
 import numpy as np
 import math
 import time
@@ -16,7 +17,7 @@ st.set_page_config(
     page_icon="🌐")
 
 # set best scrolling position
-components.html("""
+st.html("""
     <script>
         function scrollStreamlit() {
             const doc = window.parent.document;
@@ -35,8 +36,9 @@ components.html("""
         setTimeout(scrollStreamlit, 100);
         setTimeout(scrollStreamlit, 300);
     </script>
-    """,
-    height=0)
+    """)
+    #  ,)
+    # height=0)
 
 if "col" not in stss:
     init_pf_session_state()
@@ -101,18 +103,18 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
     initial_edge_font_size = max(8, font_size - 8)
 
     # 1. Add Nodes
-    for i, node_name in enumerate(fnet.nodes):
-        label = fnet.nodes[i]
+    for i, term in enumerate(fnet.terms):
+        label = split_long_term(term)
         x, y = fnet.coords[i]
         x = 650 * float(x)
         y = -450 * float(y)
 
         g.add_node(
-            node_name,
+            term,
             label=label,
             x=x,
             y=y,
-            title=f"Node: {node_name}",
+            title=f"Node: {term}",
             shape="box",
             color="white",
             font={"size": font_size},
@@ -125,8 +127,8 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
         for j in range(fnet.nnodes):
             weight = float(fnet.adjmat[i, j])
             if 0 < weight and show_link(weight):
-                s_node = fnet.nodes[i]
-                t_node = fnet.nodes[j]
+                s_node = fnet.terms[i]
+                t_node = fnet.terms[j]
                 wt_str = weight_string(weight)
 
                 g.add_edge(
@@ -402,11 +404,10 @@ interactive_html, pyvis_net = create_visjs_html(fnet=focus_net,
 # The height must be set to ensure the visualization is visible
 
 if interactive_html:
-    components.html(
+    st.iframe(
         interactive_html,
         width="stretch",
         height=1200,  # Set height to match the '600px' defined in pyvis + physics
-        scrolling=True
     )
 else:
     st.error("Failed to generate interactive network HTML.")

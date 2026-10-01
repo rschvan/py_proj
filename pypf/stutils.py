@@ -88,7 +88,6 @@ def autosize_columns(df) -> dict:
         if df[col].dtype == "object"
     }
 
-
 def init_pf_session_state():
     stss.home_dir = os.path.dirname(os.path.abspath(__file__))
     col = Collection()
