@@ -38,6 +38,7 @@ def legacy_txt_files(prx_file:str, raw_lines:list[str]) :
 
     :return: A dictionary with keys for error, path, file, name, isdistance, nnodes, comment,
                         minprx, maxprx, shape, isdirected, dismat.
+          a user may be mainly interested in the name and dismat, the distance matrix, a numpy ndarray
     """
     pdict: dict = {}
     pdict["error"] = None

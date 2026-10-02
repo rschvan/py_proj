@@ -1,6 +1,9 @@
 # pages/view_net.py
 import streamlit as st
-#mport streamlit.components.v1 as components
+# if not hasattr(st, 'iframe'):
+#     from streamlit.components.v1 import iframe as _iframe
+#     st.iframe = _iframe
+import streamlit.components.v1 as components
 from pyvis.network import Network
 from pypf import PFnet
 from pypf.stutils import init_pf_session_state, tight_divider
@@ -404,10 +407,11 @@ interactive_html, pyvis_net = create_visjs_html(fnet=focus_net,
 # The height must be set to ensure the visualization is visible
 
 if interactive_html:
-    st.iframe(
+    components.html(
         interactive_html,
         width="stretch",
         height=1200,  # Set height to match the '600px' defined in pyvis + physics
+        scrolling=True,
     )
 else:
     st.error("Failed to generate interactive network HTML.")
