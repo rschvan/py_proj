@@ -9,7 +9,7 @@ import pandas as pd
 from pypf import pfnet
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.utility import get_termsid, mypfnets_dir, sorted_keys
+from pypf.utility import get_termsid, mypfnets_dir, sorted_keys, get_unique_name
 
 
 class Collection:
@@ -57,6 +57,8 @@ class Collection:
             del self.terms[tid]
 
     def add_proximity(self, prx: Proximity, add_pfnet=True) -> None:
+        unique_name = get_unique_name(prx.name, self.proximities.keys())
+        prx.name = unique_name
         if prx.name in self.proximities:
             prx.name = prx.name + "_dup"
         if prx.termsid not in self.terms.keys():
@@ -74,6 +76,8 @@ class Collection:
         self.prune_orphaned_terms()
 
     def add_pfnet(self, pf: PFnet) -> None:
+        unique_name = get_unique_name(pf.name, self.pfnets.keys())
+        pf.name = unique_name
         if pf.name in self.pfnets:
             pf.name = pf.name + "_dup"
         self.pfnets[pf.name] = pf
@@ -151,7 +155,7 @@ class Collection:
         ave_prx.sources = selected
         replace_infinite_distances(ave_prx)
 
-        prefix = "~\u0078\u0305" if method == "mean" else "~mdn"
+        prefix = "!\u0078\u0305" if method == "mean" else "!mdn"
         if not ave_name:
             ave_name = ave_prx.name + "..." + proxes[num - 1].name
         ave_prx.name = f"{prefix}{num}_{ave_name}"
@@ -227,7 +231,7 @@ class Collection:
         if not mrg_name:
             mrg_name = "|".join(net_names)
 
-        merged_net.name = f"~~mg{n_nets}_{mrg_name}"
+        merged_net.name = f"!!mg{n_nets}_{mrg_name}"
         merged_net.graph.name = merged_net.name
         merged_net.type = "mg"
         merged_net.proximity = None
@@ -364,3 +368,13 @@ class Collection:
                     new_net = PFnet(parent_prx, q=q, r=r, type=net_type)
                     new_net.name = r_data["name"]
                     self.add_pfnet(new_net)
+
+if __name__ == '__main__':
+    col = Collection()
+    pfile = os.path.join("data", "psy.prx.xlsx")
+    prx = Proximity(pfile)
+    col.add_proximity(prx)
+    net2 = PFnet(proximity=prx, q = 2)
+    col.add_proximity(net2)
+    nets = sorted_keys(dic=col.pfnets)
+    print(col)

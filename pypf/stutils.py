@@ -30,22 +30,22 @@ def get_cached_sample_json():
 
 @st.cache_data
 def get_sample_sources():
-    files = ["bank6","bio", "psy", "bank", "cities", "statecaps"]
+    files = ["bank6", "bio", "psy", "bank", "cities", "statecaps"]
     srcs = ["coocurrences in Longman's dictionary",
-        "relatedness ratings by biology grad students",
-         "relatedness ratings by psychology 101 students",
-         "coocurrences in Longman's dictionary",
-         "distances (km) between cities in the US",
-         "distances (miles) between state capitals in the US"]
+            "relatedness ratings by biology grad students",
+            "relatedness ratings by psychology 101 students",
+            "coocurrences in Longman's dictionary",
+            "distances (km) between cities in the US",
+            "distances (miles) between state capitals in the US"]
     return pd.DataFrame(data={"file": files, "source": srcs})
 
 @st.cache_data
 def get_example_file_format():
-    tb6 = ["account","bank","flood","money","river", "save"]
-    bank6 = pd.DataFrame(np.array([[0, 3,32,26,32,32],[3,0,27,21,14,30],
-                                           [32,27,0,31,23,29],[26,21,31,0,31,23],
-                                           [32,14,23,31,0,31],[32,30,29,23,31,0]]),
-                                 index=tb6, columns=tb6)
+    tb6 = ["account", "bank", "flood", "money", "river", "save"]
+    bank6 = pd.DataFrame(np.array([[0, 3, 32, 26, 32, 32], [3, 0, 27, 21, 14, 30],
+                                   [32, 27, 0, 31, 23, 29], [26, 21, 31, 0, 31, 23],
+                                   [32, 14, 23, 31, 0, 31], [32, 30, 29, 23, 31, 0]]),
+                         index=tb6, columns=tb6)
     return bank6
 
 def tight_divider(space_px=2, color="green", thickness=2):
@@ -68,7 +68,6 @@ def get_selected_values(df, event, column: str = "name") -> list:
     return [col.iat[i] for i in row_indices if 0 <= i < len(df)]
 
 def autosize_columns(df) -> dict:
-
     def pick_width(series) -> Literal["small", "medium", "large"]:
         max_len = series.astype(str).str.len().max()
         if max_len < 13:
@@ -93,15 +92,28 @@ def init_pf_session_state():
     col = Collection()
     js = get_cached_sample_json()
     col.load_project_state(js)
-    stss.sample_col = col # Collection with sample Proximitys and PFnets
-    stss.sample_sources = get_sample_sources() # DataFrame with sources of sample Proximities
-    stss.example_file_format = get_example_file_format() # DataFrame showing file format
-    stss.col = copy.deepcopy(stss.sample_col) # collection for manipulation
+    stss.sample_col = col  # Collection with sample Proximitys and PFnets
+    stss.sample_sources = get_sample_sources()  # DataFrame with sources of sample Proximities
+    stss.example_file_format = get_example_file_format()  # DataFrame showing file format
+    stss.col = copy.deepcopy(stss.sample_col)  # collection for manipulation
     stss.col.focus_net = stss.col.pfnets["bio_pf"]
     stss.help_html = get_cached_help_html()
-    stss.col.changed = False
-    stss.layouts = ["kamada_kawai", "gravity", "force", "spring", "MDS", "spiral", "circle"]
-    stss.layout = "kamada_kawai"
+    stss.layouts = ["auto",
+                    "gravity",
+                    "kamada_kawai",
+                    "tree",
+                    "radial_tree",
+                    "mds_distance",
+                    "mds_graph",
+                    #"fruchterman_reingold",
+                    #"davidson_harel",
+                    "spring",
+                    "spiral",
+                    "planar",
+                    "sugiyama",
+                    #"circle",
+                    ]
+    stss.layout = "auto"
     stss.layout_selector = stss.layout
     stss.font_size = 10
     stss.rotation = 0
@@ -118,4 +130,4 @@ def init_pf_session_state():
     stss.file_version = 0
     stss.ave_version = 0
     stss.mrg_version = 0
-
+    stss.layout_version = 0

@@ -1,13 +1,18 @@
 # pages/view_net.py
+import warnings
+
+# Suppress the specific Streamlit components deprecation warning
+warnings.filterwarnings(
+    "ignore",
+    message=r".*st\.components\.v1\.html.*will be removed.*",
+    category=Warning,
+)
 import streamlit as st
-# if not hasattr(st, 'iframe'):
-#     from streamlit.components.v1 import iframe as _iframe
-#     st.iframe = _iframe
 import streamlit.components.v1 as components
 from pyvis.network import Network
 from pypf import PFnet
 from pypf.stutils import init_pf_session_state, tight_divider
-from pypf.utility import split_long_term
+from pypf.utility import split_long_term, sorted_keys
 import numpy as np
 import math
 import time
@@ -22,33 +27,30 @@ st.set_page_config(
 # set best scrolling position
 st.html("""
     <script>
-        function scrollStreamlit() {
+        function scrollToTop() {
             const doc = window.parent.document;
-            // Target Streamlit's specific scrollable section containers
-            const mainContainer = doc.querySelector('section.main') 
-                               || doc.querySelector('[data-testid="stMain"]')
-                               || doc.querySelector('[data-testid="stAppViewContainer"]');
-
-            if (mainContainer) {
-                mainContainer.scrollTo({ top: 50, behavior: 'instant' });
+            const container = doc.querySelector('section.main') 
+                           || doc.querySelector('[data-testid="stMain"]')
+                           || doc.querySelector('[data-testid="stAppViewContainer"]')
+                           || window.parent;
+            if (container) {
+                container.scrollTo({ top: 0, behavior: 'instant' });
             }
         }
 
-        // Execute immediately and after a short delay to override iframe/layout autofocus
-        scrollStreamlit();
-        setTimeout(scrollStreamlit, 100);
-        setTimeout(scrollStreamlit, 300);
+        // Run immediately and across the render lifecycle
+        scrollToTop();
+        [100, 300, 600, 1000, 1500].forEach(delay => setTimeout(scrollToTop, delay));
     </script>
     """)
-    #  ,)
-    # height=0)
 
 if "col" not in stss:
     init_pf_session_state()
 
-focus_net = stss.col.focus_net # alias for easy reference
+# focus_net = stss.col.focus_net # alias for easy reference
 
 warning_message = None
+
 
 def do_rotation():
     rotation = stss.rotation
@@ -66,6 +68,7 @@ def do_rotation():
     time.sleep(.5)
     stss.rotation = 0
 
+
 def weight_string(weight):
     if focus_net.type == "mg":
         # Convert integer bitmask to binary string (e.g., 3 -> '11')
@@ -81,12 +84,14 @@ def weight_string(weight):
             ws = f"{weight:.4g}"
     return ws
 
+
 def show_link(wt) -> bool:
     if focus_net.type == "mg":
         nn = int(wt).bit_count()
         return nn >= cutoff
     else:
         return wt <= cutoff
+
 
 def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
     """Generates an HTML string for pyvis with proportional scaling,
@@ -171,7 +176,7 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
             "forceAtlas2Based": {
                 "gravitationalConstant": -120,
                 "centralGravity": 0.015,
-                "springLength": 100,
+                "springLength": 75,
                 "springConstant": 0.1,
                 "damping": 0.6,
                 "avoidOverlap": 0.8,
@@ -253,6 +258,20 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
                     network.fit(fitOptions);
                     network.on("stabilizationIterationsDone", function () { network.fit(fitOptions); });
                     network.on("stabilized", function () { network.fit(fitOptions); });
+                    
+                    // Force the parent Streamlit container back to the top once Vis.js stabilizes
+                        try {
+                            const parentDoc = window.parent.document;
+                            const scrollContainer = parentDoc.querySelector('section.main') 
+                                                 || parentDoc.querySelector('[data-testid="stMain"]')
+                                                 || parentDoc.querySelector('[data-testid="stAppViewContainer"]')
+                                                 || window.parent;
+                            if (scrollContainer) {
+                                scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
+                            }
+                        } catch (e) {
+                            // Suppress cross-origin warnings if embedded externally
+                        }
 
                     // Synchronized Font Scaling for Nodes & Edges
                     function adjustFontSize(delta) {
@@ -340,16 +359,37 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
 
 base_font = stss.get("text_size", 18)
 
+def new_net():
+    new = stss.selected_net_name
+    stss.col.focus_net = stss.col.pfnets[new]
+    stss.layout_version += 1
+
+#---------------------------------------------------------------------------------------------------------sidebar
 with st.sidebar:
+    # nets
+    pfnet_names = sorted_keys(dic=stss.col.pfnets, )
+    nnets = len(pfnet_names)
+    if nnets == 1:
+        stss.col.focus_net = stss.col.pfnets[pfnet_names[0]]
+    elif nnets > 1:
+        index = pfnet_names.index(stss.col.focus_net.name)
+        net_selected = st.selectbox(label="**Select Network**",
+                                    options=pfnet_names,
+                                    index=index,
+                                    key="selected_net_name",
+                                    on_change=new_net,
+                                    )
+        tight_divider()
+    focus_net = stss.col.focus_net
+
     # LAYOUT:
-    clicked = st.button("**Layout Tools**",help="Use tools to get a 1st approximation before adjusting nodes.")
-    if clicked:
-        st.write("**Use tools to get a 1st approximation before adjusting nodes.**",)
+    st.write("**Layout Tools**")
 
     layout_choice = st.selectbox(
         label="**Select Algorithm**",
         options=stss.layouts,
-        key="layout_selector"  # Streamlit uses this key to set the value
+        index=0,
+        key=f"layout_selector_{stss.layout_version}"
     )
 
     layout_changed = layout_choice != stss.layout
@@ -365,8 +405,12 @@ with st.sidebar:
         if st.button("x <> y"):
             focus_net.coords[:, :] = focus_net.coords[:, [1, 0]]
 
-        redraw_pushed = st.button("redraw")
-    rotate = st.slider("**Rotate Clockwise (degrees)**", 0, 360, key="rotation", on_change=do_rotation)
+        if layout_choice in ['gravity', 'kamada_kawai', "davidson_harel", "spring"]:
+            redraw_pushed = st.button("redraw")
+        else:
+            redraw_pushed = False
+    rotate = st.slider("**Rotate Clockwise (degrees)**", 0, 360,
+                       key="rotation", on_change=do_rotation)
     tight_divider()
     # show_weights = st.checkbox("**Show Link Weights**")
     # tight_divider()
@@ -379,10 +423,10 @@ with st.sidebar:
         lab = "**Hide links by distance**"
 
     cutoff = st.select_slider(
-            label=lab,
-            options=focus_net.unique_weights,
-            value=val,
-            format_func=lambda x: "{:.4g}".format(x)
+        label=lab,
+        options=focus_net.unique_weights,
+        value=val,
+        format_func=lambda x: "{:.4g}".format(x)
     )
 
     if focus_net.type == "mg":
@@ -396,16 +440,20 @@ with st.sidebar:
         focus_net.get_layout(method=layout_choice)
         stss.layout = layout_choice
 
-st.write(f"**{focus_net.name}: {focus_net.nnodes} nodes, {focus_net.nlinks} links**: Layout {layout_choice}")
 
-scale = 30.0/focus_net.nnodes
+#-------------------------------------------------------------------------------------------  MAIN PANEL
+
+planarity = "planar" if focus_net.is_planar == True else "nonplanar"
+st.write(f"**{focus_net.name}: {focus_net.nnodes} nodes, "
+         f"{focus_net.nlinks} links** -- {planarity} -- Layout: {focus_net.layout_method} ")
+
+scale = 30.0 / focus_net.nnodes
 scale = np.clip(scale, a_min=1.2, a_max=2.0)
 interactive_html, pyvis_net = create_visjs_html(fnet=focus_net,
-                    font_size=round(scale*base_font), )
+                                                font_size=round(scale * base_font), )
 
 # Embed the HTML directly into the Streamlit app
 # The height must be set to ensure the visualization is visible
-
 if interactive_html:
     components.html(
         interactive_html,

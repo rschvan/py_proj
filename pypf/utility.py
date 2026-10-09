@@ -282,6 +282,18 @@ def get_termsid(terms: list[str]) -> str | None:
     # Structure: [count]_[first]...[last]_[short-hash]
     return f"{n}_{first}.{last}{digest}"
 
+def get_unique_name(base_name: str, existing_names: list[str]) -> str:
+  base_name = base_name.strip() or 'default'
+  if base_name not in existing_names:
+    return base_name
+
+  counter = 2
+  candidate = f"{base_name}_{counter}"
+  while candidate in existing_names:
+    counter += 1
+    candidate = f"{base_name}_{counter}"
+  return candidate
+
 def graph_from_adjmat(adjmat:np.ndarray, terms:list[str])->nx.Graph | nx.DiGraph:
     n = len(terms)
     isdirected = not np.array_equal(adjmat, adjmat.T)

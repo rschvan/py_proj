@@ -3,9 +3,8 @@ import numpy as np
 import os
 from pypf.proximity import Proximity
 from pypf.utility import (floyd, dijkstra, graph_from_adjmat, get_lower,
-                          get_off_diagonal, get_termsid, split_long_term,
+                          get_off_diagonal, get_termsid,
                           canonical,)
-#from networkx.drawing.nx_pydot import graphviz_layout
 import networkx as nx
 
 class PFnet:
@@ -33,6 +32,8 @@ class PFnet:
         self.r = r
         #self.infchar = "\u221E"
         self.terms:list[str] = []  # term list
+
+
         self.termsid:str = ""
         self.nnodes:int = 0
         self.nlinks:int = 0
@@ -47,12 +48,13 @@ class PFnet:
         self.layers = None  # nodes in each shell
         self.eccentricity:dict = {}
         self.type:str = type
+        self.layout_method:str = "auto"
         self.coords:np.ndarray | None = None
         self.unique_weights:np.ndarray | None = None
         self.sources:list[str] = []
 
         if proximity is None:
-            proximity = Proximity()
+            proximity = Proximity() # prompt user for a proximity file
         if hasattr(proximity, 'terms') and hasattr(proximity, 'dismat'):
             self.name = proximity.name
             self.proximity = proximity
@@ -179,59 +181,12 @@ class PFnet:
         info["r"] = f"{self.r:g}" if self.r else None
         return info # a dictionary
 
-    def get_layout(self, method="kamada_kawai") -> None:
+    def get_layout(self, method="auto") -> None:
         """
         Creates layout coordinates for PFnet visualization in self.coords.
         """
-        graph = self.graph
-        graph.name = "temp"  # avoid illegal characters in graphviz names
-        seed = np.random.randint(1000000)
-        randpos = nx.random_layout(graph, seed=seed)
-        layout = None
-        coord = None
-        try:
-            match method:
-                case "gravity":
-                    # noinspection PyUnresolvedReferences
-                    layout = nx.forceatlas2_layout(graph, strong_gravity=True, seed=seed, scaling_ratio=2.0,
-                                          weight=None, max_iter=100, pos=randpos, linlog=False)
-                case "spring":
-                    k = 4/np.sqrt(self.nnodes)
-                    layout = nx.spring_layout(graph, pos=randpos, iterations=100, k=k)
-                case "circle":
-                    layout = nx.circular_layout(graph, scale=1, )
-                case "planar":
-                    layout = nx.planar_layout(graph,)
-                case "kamda_kawai":
-                    layout = nx.kamada_kawai_layout(graph, pos=randpos, )
-                case "spiral":
-                    layout = nx.spiral_layout(graph, resolution=0.5, scale=1, center=[0, 0], equidistant=True)
-                case "force":
-                    # noinspection PyUnresolvedReferences
-                    layout = nx.forceatlas2_layout(graph, strong_gravity=False, scaling_ratio=2.0,
-                                                   max_iter=100, pos=randpos, weight=None,)
-                case "weights":
-                    layout = nx.kamada_kawai_layout(graph, weight='weight', pos=randpos)
-                case "MDS":
-                    from pypf.utility import mds_coord
-                    coord = mds_coord(self.dismat, metric=True)
-
-        except Exception as e:
-            print(f"Error in get_layout: {e}")
-
-        if layout is None:
-            layout = nx.kamada_kawai_layout(graph, pos=randpos, )
-
-        if coord is None:
-            coord = np.ndarray(shape=(self.nnodes, 2))
-            for i, node in enumerate(graph.nodes):
-                coord[i, :] = layout[node]
-
-        coord = canonical(coord)
-        # reverse x coords
-        coord[:,0] = -coord[:,0]
-        self.coords = coord
-        graph.name = self.name  # Restore original name
+        from pypf.layouts import get_coords
+        self.coords, self.layout_method = get_coords(network=self, method=method)
 
     def netprint(self, note=None):
         if note is None:
@@ -344,4 +299,5 @@ if __name__ == '__main__':
     print(an.get_info())
     tab = pd.DataFrame(an.get_network_properties())
     print(tab)
+
 

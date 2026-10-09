@@ -18,6 +18,22 @@ import time
 from pypf.stutils import init_pf_session_state, tight_divider, get_selected_values
 from pypf.utility import sorted_keys, get_terms
 
+import logging
+
+# Intercept and drop the st.components.v1.html deprecation notice
+_orig_logger_handle = logging.Logger.handle
+
+def _suppress_html_deprecation(self, record: logging.LogRecord) -> bool:
+  try:
+    msg = record.getMessage()
+    if "st.components.v1.html" in msg or "st.iframe" in msg:
+      return False
+  except Exception:
+    pass
+  return _orig_logger_handle(self, record)
+
+logging.Logger.handle = _suppress_html_deprecation
+
 # alias for st.system_state
 stss = st.session_state
 
@@ -89,7 +105,7 @@ def averageable(col:Collection) -> str:
     prxs = col.selected_prxs
     state = "ok"
     if len(prxs) < 2:
-        return "Click check boxes of 2 or more proximities to average"
+        return "Click check boxes of 2 or more proximities with the same terms to average"
     tid = col.proximities[prxs[0]].termsid
     for prx in prxs[1:]:
         if col.proximities[prx].termsid != tid:
@@ -99,61 +115,38 @@ def averageable(col:Collection) -> str:
 stss.count += 1
 
 # --- Sidebar for Global Actions ---
-def toggle_intro():
-    stss.intro_visible = not stss.intro_visible
 
+#------------------------------------------------------------------------------------------------sidebar
 def hide_sample():
     stss.sample_visible = False
     del_demo(col)
+    stss.intro_visible = False
 
-with st.sidebar:
+
+with (st.sidebar):
     if stss.sample_visible == True:
-        add_demo(col)
-        st.checkbox("**Add Sample Data**", value=True,
-                    on_change=hide_sample,)
+        if stss.count < 2:
+            add_demo(col)
+        st.button(label="**Remove Sample Data**", on_click=hide_sample)
 
-    #st.write("**Comparison Tables**")
     tight_divider()
+    st.write("**Comparison Tables**")
+
     show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
     show_netsim = st.checkbox("Network Similarities", value=False, key="show_netsim")
     tight_divider()
 
-    stss.perm_ave_type = st.radio("**Proximity Average Method**",["mean","median"],
-             index=get_idx(stss.perm_ave_type, ["mean", "median"]),
-             key="averaging", )
-    ave_name = st.text_input("**Average Proximity Name**", key=f"ave_name_{stss.ave_version}")
-    tight_divider()
+    st.text(
+    """Selecting Proximities or Networks in the Lists will enable permissible action buttons for the selections.
+    \nNavigate among pages with the selections at the top.  
+    \nThe View Network page will display the network in View and will allow you to select other networks to view.
+    \nThe Help page will provide more details about the app.
+    """
+    )
 
-    type, params = st.columns([6, 3])
-    with type:
-        stss.perm_net_type = st.radio("**Network Type**",["Pathfinder","Threshold", "Nearest Neighbor"],
-                        index=get_idx(stss.perm_net_type, ["Pathfinder", "Threshold", "Nearest Neighbor"]),
-                        key="network_type", )
-
-    with params:
-        if stss.perm_net_type == "Pathfinder":
-            # Get raw text input
-            q_raw = st.text_input("**q:** (2-inf)", value="inf", key="q_input").lower().strip()
-            r_raw = st.text_input("**r:** (1.0-inf)", value="inf", key="r_input").lower().strip()
-            # Sanitize q: Force to float(inf) or int
-            try:
-                stss.q_param = int(float(q_raw))
-            except:
-                stss.q_param = np.inf
-            # Sanitize r: Force to float
-            if r_raw in ["", "inf", "none"]:
-                stss.r_param = np.inf
-            else:
-                try:
-                    stss.r_param = float(r_raw)
-                except ValueError:
-                    stss.r_param = np.inf
-
-    tight_divider()
-    mrg_name = st.text_input("**Merged Network name**", key=f"mrg_name_{stss.mrg_version}")
     st.write(f"**In View: {stss.col.focus_net.name}**")
 
-# --- Main Panel ---
+# ------------------------------------------------------------------------------------ Main Panel
 
 def make_symmetric_if_force(prx:Proximity) -> Proximity:
     if force_symmetric and not prx.issymmetric:
@@ -162,7 +155,11 @@ def make_symmetric_if_force(prx:Proximity) -> Proximity:
         prx.issymmetric = True
     return prx
 
-with st.expander("**Introductory Information -- click to hide/reveal**", on_change=toggle_intro, expanded=stss.intro_visible):
+def toggle_intro():
+    stss.intro_visible = not stss.intro_visible
+
+with st.expander("**Introductory Information -- click to hide/reveal**",
+                 on_change=toggle_intro, expanded=stss.intro_visible):
     #st.write("**Click to access YouTube videos about Pathfinder Nets and the app**")
     st.link_button("Click to open PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
 
@@ -209,7 +206,7 @@ Go to the **Help** page for more information including required formats for Prox
 This Introductory Information can be hidden by closing the expander.  
     ''')
 
-# --- Project Save and Load ---
+# ---------------------------------------------------------------------------------- Project Save and Load
 savep, loadp = st.columns([1, 1])
 
 with savep:
@@ -351,11 +348,11 @@ if stss.sample_visible:
 
 # ---Proximity and Network Lists
 
-# Proximity List
+# --------------------------------------------------------------------------------------------------Proximity List
 st.subheader("Proximity List")
 prx_names = sorted_keys(col.proximities)
 if not prx_names:
-    st.info("No Proximity objects loaded yet.")
+    st.info("No Proximity files added.")
 else:
     st.write("Click in the box left of Name column to select:")
     prx_df = col.get_proximity_info()
@@ -364,67 +361,143 @@ else:
         width='content',
         height='content',  # Set a height to reflect contents
         hide_index=True,  # Hide index as 'Name' column is present
-        selection_mode=["multi-row","single-cell"],
+        selection_mode=["multi-row", ],
         key=f"prx_selection_df{stss.prx_version}",
         on_select="rerun"  # Crucial for getting selection updates
     )
     col.selected_prxs = get_selected_values(df=prx_df, event=prxs_event, column="name")
 
-    dernet, aveprx, dispprx, delprx, f2, f3 = st.columns(6)
-    with delprx:
-        if st.button("Delete Proximities", key="delete_prx_btn"):
-            if col.selected_prxs:
-                for prx_name in col.selected_prxs:
-                    col.proximities.pop(prx_name)
-                col.selected_prxs = []  # Clear selection after deletion
-                stss.prx_version += 1
-                st.rerun()  # Rerun to update the display
-            else:
-                st.warning("Click one or more proximity check boxes to delete.")
-    with dernet:
-        if st.button("Derive Networks", key="derive_pfnet_btn"):
-            if len(col.selected_prxs) > 0:
-                for prx_name in col.selected_prxs:
-                    # Check if PFnet with this name already exists before deriving
-                    if prx_name in col.pfnets:
-                        st.warning(f"PFnet '{prx_name}' already exists. Not re-deriving.")
-                    else:
-                        prx = col.proximities[prx_name]
-                        match stss.perm_net_type:
-                            case "Pathfinder":
-                                pf = PFnet(prx, q=stss.q_param, r=stss.r_param)
-                            case "Threshold":
-                                pf = PFnet(prx, type="th")
-                            case "Nearest Neighbor":
-                                pf = PFnet(prx, type="nn")
-                        col.add_pfnet(pf)
-                col.selected_prxs = []
-                stss.prx_version += 1
-                st.rerun()
-            else:
-                st.warning("Click one or more proximity check boxes to derive networks.")
-    with aveprx:
-        if st.button("Average Proximities", key="average_prx_btn"):
-            state = averageable(col)
-            if state == "ok":
-                try:
-                    ave_prx = col.average_proximities(ave_name=ave_name,method=stss.averaging)
-                    stss.ave_version += 1
-                    col.add_proximity(ave_prx)
-                    col.selected_prxs = []
-                    stss.prx_version += 1
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error averaging proximities: {e}")
-            else:
-                st.warning(f"Error: {state}.")
-    with dispprx:
-        display_proximity = st.button("Display Distances", )
-        if display_proximity:
-            if len(col.selected_prxs) != 1:
-                st.warning("Select one proximity to display.")
+    dernet, aveprx, dispprx, delprx = st.columns(4)
 
-    if len(col.selected_prxs) == 1 and display_proximity:
+    with delprx:
+        if len(col.selected_prxs) > 0:
+            count = len(col.selected_prxs)
+            label = f"**Delete Selected ({count})**"
+
+            with st.expander(label, expanded=False, key=f"delete_selection_{stss.count}"):
+                st.caption("These will be deleted:")
+                for name in col.selected_prxs:
+                    st.write(f"- `{name}`")
+
+                col_confirm, col_cancel = st.columns(2)
+
+                with col_confirm:
+                    if st.button("Confirm", key="confirm_delete_btn", type="primary"):
+                        for name in col.selected_prxs:
+                            col.proximities.pop(name, None)
+
+                        col.selected_prxs = []
+                        stss.prx_version += 1
+                        st.success(f"Deleted {count} proximities.")
+                        time.sleep(1)
+                        st.rerun()
+
+                with col_cancel:
+                    if st.button("Cancel", key="cancel_delete_btn"):
+                        st.rerun()
+        else:
+            st.button(
+                "Delete Proximities",
+                disabled=True,
+                help="Delete selected proximities.",
+            )
+
+    with dernet:
+        if len(col.selected_prxs) > 0:
+            with st.expander(label="Derive Networks", expanded=False):
+                stss.perm_net_type = st.radio("**Network Type**", ["Pathfinder", "Threshold", "Nearest Neighbor"],
+                                              key="network_type", help="Derive networks from selected proximities.")
+                if stss.perm_net_type == "Pathfinder":
+                    # Get raw text input
+                    q_raw = st.text_input("**q:** (2-inf)", value="inf", key="q_input").lower().strip()
+                    r_raw = st.text_input("**r:** (1.0-inf)", value="inf", key="r_input").lower().strip()
+                    # Sanitize q: Force to float(inf) or int
+                    try:
+                        stss.q_param = int(float(q_raw))
+                    except:
+                        stss.q_param = np.inf
+                    # Sanitize r: Force to float
+                    if r_raw in ["", "inf", "none"]:
+                        stss.r_param = np.inf
+                    else:
+                        try:
+                            stss.r_param = float(r_raw)
+                        except ValueError:
+                            stss.r_param = np.inf
+
+                if st.button("Derive Now", key="derive_pfnet_btn",
+                             #disabled=len(col.selected_prxs) == 0,
+                             help="Select proximities to derive nets"):
+                    if len(col.selected_prxs) > 0:
+                        for prx_name in col.selected_prxs:
+                            # Check if PFnet with this name already exists before deriving
+                            if prx_name in col.pfnets:
+                                st.warning(f"PFnet '{prx_name}' already exists. Not re-deriving.")
+                            else:
+                                prx = col.proximities[prx_name]
+                                match stss.perm_net_type:
+                                    case "Pathfinder":
+                                        pf = PFnet(prx, q=stss.q_param, r=stss.r_param)
+                                    case "Threshold":
+                                        pf = PFnet(prx, type="th")
+                                    case "Nearest Neighbor":
+                                        pf = PFnet(prx, type="nn")
+                                col.add_pfnet(pf)
+                        col.selected_prxs = []
+                        stss.prx_version += 1
+                        st.rerun()
+                    else:
+                        st.warning("Click one or more proximity check boxes to derive networks.")
+        else:
+            st.button("Derive Ntworks", disabled=True, help="Derive Ntworks from selected proximities.")
+    with aveprx:
+        state = averageable(col)
+        if state == "ok":
+            with st.expander("Average Proximities", expanded=False, ):
+
+                ave_name = st.text_input(
+                    "**Average Name**",
+                    value= "", #stss.get("perm_ave_name", ""),
+                    key=f"ave_name_{stss.ave_version}",
+                )
+
+                ave_method = st.radio(
+                    "**Method**",
+                    options=["mean", "median"],
+                    index=0,
+                    key=f"ave_method_radio_{stss.ave_version}",
+                )
+
+                if st.button("Compute Average", ):
+                    try:
+                        ave_prx = col.average_proximities(
+                            ave_name=ave_name, method=ave_method
+                        )
+                        stss.ave_version += 1
+
+                        col.add_proximity(ave_prx)
+                        col.selected_prxs = []
+                        stss.prx_version += 1
+
+                        st.info(f"Average Proximity: {ave_prx.name} created")
+                        time.sleep(3)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error averaging proximities: {e}")
+        else:
+            st.button("Average Proximities", disabled=True,
+                      help="Create new proximity with average distance matrices of selected proximities.")
+
+    with dispprx:
+        display_matrix = st.button("Display Matrix",
+                                      disabled=len(col.selected_prxs) != 1,
+                                      help=f"Show the distance matrix of a selected proximity.")
+        if display_matrix:
+            if len(col.selected_prxs) != 1:
+                st.warning("Show the distance matrix of a selected proximity.")
+
+#---------------------------------------------------------------------------------------------------prx details
+    if len(col.selected_prxs) == 1 and display_matrix:
         prx = col.proximities[col.selected_prxs[0]]
         st.subheader(f"Distance Matrix for {prx.name}")
         if hasattr(prx,"sources") and len(prx.sources) > 0:
@@ -444,11 +517,11 @@ if len(col.proximities) > 1 and show_corrs:
     if not prx_corrs_df.empty:
         st.dataframe(prx_corrs_df, width='content', hide_index=False, height='content')
 
-# Network List
+# ----------------------------------------------------------------------------------------------------Network List
 st.subheader("Network List")
 pfnet_names = sorted_keys(dic=col.pfnets, attrs=["termsid","name"])
 if not pfnet_names:
-    st.info("No networks created yet.")
+    st.info("No networks created.")
 else:
     st.write("Clicking at the top of the boxes selects or deselects all:")
     pfnet_df = col.get_pfnet_info()
@@ -457,40 +530,73 @@ else:
         width='content',
         height='content',
         hide_index=True,
-        selection_mode=["multi-row", "single-cell"],
+        selection_mode=["multi-row", ],
         key=f"pfnet_selection_df{stss.net_version}",
         on_select="rerun"  # Crucial for getting selection updates
     )
     col.selected_nets = get_selected_values(pfnet_df, nets_event)
 
-    dispnet, properties, links, mrgnet, delnet, c3 = st.columns(6)
+    dispnet, properties, links, mrgnet, delnet = st.columns(5)
+
     with delnet:
-        if st.button("Delete Networks", key="delete_pfnet_btn"):
-            if col.selected_nets:
-                for net_name in col.selected_nets:
-                    col.pfnets.pop(net_name)
-                col.selected_nets = []  # Clear selection after deletion
-                stss.net_version += 1
-                st.rerun()  # Rerun
-            else:
-                st.warning("Click one or more network check boxes to delete.")
-    with mrgnet:
-        if st.button("Merge Networks", key="mrg_nets_btn"):
-            state = mergeable(col)
-            if state == "ok":
-                try:
-                    # Assuming col.merge_networks() handles adding the merged net to col.pfnets
-                    col.merge_networks(mrg_name=mrg_name)
+        if len(col.selected_nets) > 0:
+            count = len(col.selected_nets)
+            net_str = "net" if count == 1 else "nets"
+            label = f"Delete {count} {net_str}"
+            with st.expander(label, expanded=False, key=f"delete_net_selection_{stss.count}"):
+                st.caption("Delete:")
+                for name in col.selected_nets:
+                    st.caption(name)
+
+                #col_confirm, col_cancel = st.columns(2)
+
+                #with col_confirm:
+                if st.button("Confirm", key="confirm_delete_net_btn", type="primary"):
+                    for name in col.selected_nets:
+                        col.pfnets.pop(name, None)
+
                     col.selected_nets = []
                     stss.net_version += 1
-                    stss.mrg_version += 1
-                    st.rerun()  # Rerun
-                except Exception as e:
-                    st.error(f"Error merging networks: {e}")
-            else:
-                st.warning(f"Error: {state}.")
+                    st.success(f"Deleted {count} {'networks' if count > 1 else 'network'}.")
+                    time.sleep(1)
+                    st.rerun()
+
+                #with col_cancel:
+                if st.button("Cancel", key="cancel_delete_net_btn"):
+                    st.rerun()
+        else:
+            st.button(
+                "Delete Networks",
+                disabled=True,
+                help="Delete selected networks.",
+            )
+
+    with mrgnet:
+        state = mergeable(col)
+        if state == 'ok':
+            with st.expander(f"Merge {len(col.selected_nets)} nets", expanded=False):
+                mrg_name = st.text_input("**Merged Net Name**", key=f"mrg_name_{stss.mrg_version}")
+                if st.button("Merge Now", key="mrg_nets_btn", ):
+                    state = mergeable(col)
+                    if state == "ok":
+                        try:
+                            # Assuming col.merge_networks() handles adding the merged net to col.pfnets
+                            col.merge_networks(mrg_name=mrg_name)
+                            col.selected_nets = []
+                            stss.net_version += 1
+                            stss.mrg_version += 1
+                            st.info("Networks Merged")
+                            time.sleep(2)
+                            st.rerun()  # Rerun
+                        except Exception as e:
+                            st.error(f"Error merging networks: {e}")
+                    else:
+                        st.warning(f"Error: {state}.")
+                        time.sleep(2)
+        else:
+            st.button("Merge Networks", disabled=True, help="Select 2 or more networks with the same terms to merge them")
     with dispnet:
-        if st.button("Display Network", key="display_net_btn"):
+        if st.button("Display Network", key="display_net_btn", disabled=len(col.selected_nets) != 1,):
             if len(col.selected_nets) == 1:
                 sel = col.pfnets[col.selected_nets[0]]
                 stss.col.focus_net = sel
@@ -500,19 +606,20 @@ else:
                 st.warning("Error: Select one network to display.")
     with links:
         show_link_list = False
-        if st.button("Network Link List", key="link_list_btn"):
+        if st.button("Network Link List", key="link_list_btn", disabled=len(col.selected_nets) != 1):
             if len(col.selected_nets) == 1:
                 show_link_list = True
             else:
                 st.warning("Error: Select one network to display link list.")
     with properties:
         show_props = False
-        if st.button("Network Properties", key="net_props_btn"):
+        if st.button("Network Properties", key="net_props_btn", disabled=len(col.selected_nets) != 1):
             if len(col.selected_nets) == 1:
                 show_props = True
             else:
                 st.warning("Error: Select one network to display properties.")
 
+#------------------------------------------------------------------------------------------------net details
 if len(col.pfnets) > 0 and show_link_list:
     net = col.pfnets[col.selected_nets[0]]
     st.write("**Link List**")
