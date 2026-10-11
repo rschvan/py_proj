@@ -117,12 +117,18 @@ class Collection:
         np.fill_diagonal(cors, 1)
         if n > 1:
             for i in range(n):
-                disi = self.proximities[prxs[i]].dismat
-                for j in range(n):
-                    if i == j:
-                        continue
-                    disj = self.proximities[prxs[j]].dismat
-                    cors[i, j] = discorr(disi, disj)
+                prxi = self.proximities[prxs[i]]
+                disi = prxi.dismat
+                for j in range(i+1, n):
+                    prxj = self.proximities[prxs[j]]
+                    disj = prxj.dismat
+                    if prxi.termsid != prxj.termsid:
+                        pcor = np.nan
+                    else:
+                        pcor = discorr(disi, disj)
+                    cors[i, j] = pcor
+                    cors[j, i] = pcor
+
             return pd.DataFrame(cors, columns=prxs, index=prxs)
         return None
 
@@ -187,17 +193,18 @@ class Collection:
         n = len(netlist)
         if n > 1:
             simmat = np.zeros((n, n))
+            np.fill_diagonal(simmat, 1)
             for i in range(n):
                 inet = self.pfnets[netlist[i]]
-                for j in range(n):
+                for j in range(i+1,n):
                     jnet = self.pfnets[netlist[j]]
-                    if i == j:
-                        simmat[i, j] = 1.0
-                    elif inet.nnodes != jnet.nnodes:
-                        simmat[i, j] = np.nan
+                    if inet.termsid != jnet.termsid:
+                        psim = np.nan
                     else:
                         sim = netsim(inet.adjmat, jnet.adjmat)
-                        simmat[i, j] = sim["similarity"]
+                        psim = sim["similarity"]
+                    simmat[i, j] = psim
+                    simmat[j, i] = psim
 
             return pd.DataFrame(simmat, index=netlist, columns=netlist)
         return None

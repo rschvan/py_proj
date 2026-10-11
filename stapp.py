@@ -15,7 +15,8 @@ from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 from pypf.legacy_files import legacy_txt_files
 import time
-from pypf.stutils import init_pf_session_state, tight_divider, get_selected_values
+from pypf.stutils import (init_pf_session_state, tight_divider, add_proximity_files,
+                          get_selected_values, save_project, load_project,)
 from pypf.utility import sorted_keys, get_terms
 
 import logging
@@ -116,7 +117,7 @@ stss.count += 1
 
 # --- Sidebar for Global Actions ---
 
-#------------------------------------------------------------------------------------------------sidebar
+#----------------------------------------------------------------------------------------------------sidebar
 def hide_sample():
     stss.sample_visible = False
     del_demo(col)
@@ -128,38 +129,57 @@ with (st.sidebar):
         if stss.count < 2:
             add_demo(col)
         st.button(label="**Remove Sample Data**", on_click=hide_sample)
+        tight_divider()
+
+    st.text_input(label="**Project Name**",
+                  value="pypf_project",
+                  key="project_name")
 
     tight_divider()
     st.write("**Comparison Tables**")
+    show_corrs = st.checkbox("**Proximity Correlations**", value=False, key="show_corrs")
+    show_netsim = st.checkbox("**Network Similarities**", value=False, key="show_netsim")
 
-    show_corrs = st.checkbox("Proximity Correlations", value=False, key="show_corrs")
-    show_netsim = st.checkbox("Network Similarities", value=False, key="show_netsim")
     tight_divider()
 
-    st.text(
+    st.info(
     """Selecting Proximities or Networks in the Lists will enable permissible action buttons for the selections.
-    \nNavigate among pages with the selections at the top.  
-    \nThe View Network page will display the network in View and will allow you to select other networks to view.
-    \nThe Help page will provide more details about the app.
     """
     )
 
     st.write(f"**In View: {stss.col.focus_net.name}**")
 
 # ------------------------------------------------------------------------------------ Main Panel
+# ------------------------------------------------------------------------------------ Project Save and Load
 
-def make_symmetric_if_force(prx:Proximity) -> Proximity:
-    if force_symmetric and not prx.issymmetric:
-        prx.dismat = np.minimum(prx.dismat, prx.dismat.T)
-        prx.name += "_fs"
-        prx.issymmetric = True
-    return prx
+st.subheader("**Manage Data Files**")
+stss.data_option = st.radio(label="**Select File Operation**",
+         index=0,
+         key=f"manage_data_{stss.manage_data_version}",
+         options=["**None**", "**Add Proximity Data**",
+                  "**Load Project File**",
+                  "**Save Project File**",],
+        on_change=st.rerun
+                            )
+
+if stss.data_option is not "**None**":
+    with st.container(border=True, width="content", height="content", gap="small"):
+        st.write(f"**{stss.data_option}**")
+        match stss.data_option:
+            case "**Save Project File**":
+                save_project(col, name=stss.project_name)
+
+            case "**Load Project File**":
+                load_project(col)
+
+            case "**Add Proximity Data**":
+                add_proximity_files(col)
 
 def toggle_intro():
     stss.intro_visible = not stss.intro_visible
 
 with st.expander("**Introductory Information -- click to hide/reveal**",
-                 on_change=toggle_intro, expanded=stss.intro_visible):
+                 on_change=toggle_intro, expanded=stss.intro_visible, ):
     #st.write("**Click to access YouTube videos about Pathfinder Nets and the app**")
     st.link_button("Click to open PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
 
@@ -206,135 +226,6 @@ Go to the **Help** page for more information including required formats for Prox
 This Introductory Information can be hidden by closing the expander.  
     ''')
 
-# ---------------------------------------------------------------------------------- Project Save and Load
-savep, loadp = st.columns([1, 1])
-
-with savep:
-    # Step 1: User clicks to "prepare" the data
-    if st.button("**📝 Save Project File**", use_container_width=True):
-        stss.pending_json = col.get_project_state()
-        stss.json_ready = True
-
-    # Step 2: The actual download button appears only when the JSON exists
-    if stss.get("json_ready"):
-        st.download_button(
-            label="📥 Download Now",
-            data=stss.pending_json,
-            file_name="pypf_project.json",
-            mime="application/json",
-            use_container_width=True
-        )
-        # Step 3: Clear the flags so the button disappears on the NEXT interaction
-        stss.json_ready = False
-        stss.pending_json = None
-
-with loadp:
-    # Step 1: User clicks to "trigger" the loading process
-    if st.button("**📂 Load Project File**", use_container_width=True):
-        stss.load_ready = True
-
-    # Step 2: The uploader and Confirm button appear only when triggered
-    if stss.get("load_ready"):
-        uploaded_file = st.file_uploader(
-            "Select project file (.json)",
-            type="json",
-            key="main_project_loader",
-        )
-
-        if uploaded_file is not None:
-            if st.button("🚀 Confirm and Load", use_container_width=True):
-                try:
-                    project_data = uploaded_file.read().decode("utf-8")
-                    col.load_project_state(project_data)
-                    st.success("Project Added Successfully!")
-
-                    # Step 3: Reset flags and refresh the UI
-                    stss.load_ready = False
-                    time.sleep(2)
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error: {e}")
-                    time.sleep(2)
-        #stss.load_ready = False
-
-        #Optional: A cancel button to hide the loader if you change your mind
-        if st.button("❌ Cancel Load", use_container_width=True):
-            stss.load_ready = False
-            st.rerun()
-
-# --- Upload Files and Create Proximities (Now in an Expander) ---
-if hasattr(stss,"xlerror") and stss.xlerror:
-    st.error(stss.xlerror)
-    stss.xlerror = None
-with st.expander(label="📥 **Add Proximity Data Files**", expanded=False, width=480,
-                 key=f"fexpand{stss.file_version}"):
-    stss.perm_file_type = st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
-             index=get_idx(stss.perm_file_type, ["Spreadsheet", "Legacy Text"]),
-             key="prx_file_type", )
-
-    tog, val, fil = st.columns([5, 2, 2])
-    with tog:
-        force_symmetric = st.toggle("Force Proximity Symmetric  = ", value=False,
-                                    help="When True, uses minimum of dij and dji if asymmetric",)
-    with val:
-        " "
-        force_symmetric
-
-    # File loaders
-    match stss.perm_file_type:
-        case "Spreadsheet":
-            #st.write("**Add Proximity Spreadsheet Files**")
-            ss_files = st.file_uploader("**Upload Proximity Spreadsheets (.xlsx or .csv)**", type=["xlsx","csv"],
-                                key = f"ss_files{stss.file_version}", accept_multiple_files=True,
-                                help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
-                                )
-            if len(ss_files) > 0:
-                # Sort the uploaded files alphabetically by their filename before processing
-                sorted_ss_files = sorted(ss_files, key=lambda f: f.name)
-                for ss_file in sorted_ss_files:
-                    if ss_file is not None:
-                        try:
-                            new_prx = Proximity(filepath=ss_file)
-                            new_prx = make_symmetric_if_force(new_prx)
-                            col.add_proximity(new_prx)
-                        except Exception as e:
-                            stss.xlerror = "Error: an invalid proximity file was loaded."
-                stss.file_version += 1
-                st.rerun()
-
-        case "Legacy Text":
-            #st.subheader("Add Legacy Proximity and Terms Text Files")
-            leg_files = st.file_uploader("**Upload Legacy Proximity and Terms Text Files (.txt)**", type=["txt"],
-                                        accept_multiple_files=True,
-                                        help="Upload one or more files (.txt) to add to the app.",
-                                        key=f"leg_files_key{stss.file_version}",)
-            if len(leg_files) > 0:
-                leg_dir = "temp_leg"
-                os.makedirs(leg_dir, exist_ok=True)
-                for leg_file in leg_files:
-                    if leg_file is not None:
-                        file = os.path.join(leg_dir, leg_file.name)
-                        with open(file, "wb") as f:
-                            f.write(leg_file.getbuffer())
-                all_leg_files = sorted(os.listdir(leg_dir))
-                for leg_file in all_leg_files:
-                    fname = os.path.join(leg_dir, leg_file)
-                    with open(fname) as f:
-                        raw_lines = f.readlines()
-                    pdict = legacy_txt_files(prx_file=fname, raw_lines=raw_lines)
-                    if pdict["error"]:  # error occurred on this file
-                        continue
-                    pdict["terms"] = get_terms(name=pdict["name"], n=pdict["nnodes"], fdir=leg_dir)
-                    new_prx = Proximity(terms=pdict["terms"], dismat=pdict["dismat"], name=pdict["name"])
-                    new_prx = make_symmetric_if_force(new_prx)
-                    col.add_proximity(new_prx)
-                for file in all_leg_files:
-                    os.remove(os.path.join(leg_dir, file))
-                os.rmdir(leg_dir)
-                stss.file_version += 1
-                st.rerun()
-    #stss.file_version += 1
-    #st.rerun()
 
 # sample sources
 if stss.sample_visible:
@@ -374,27 +265,22 @@ else:
             count = len(col.selected_prxs)
             label = f"**Delete Selected ({count})**"
 
-            with st.expander(label, expanded=False, key=f"delete_selection_{stss.count}"):
-                st.caption("These will be deleted:")
-                for name in col.selected_prxs:
-                    st.write(f"- `{name}`")
+            with st.expander(label, expanded=False,
+                             key=f"delete_selection_{stss.count}"):
 
-                col_confirm, col_cancel = st.columns(2)
+                if st.button("Confirm", key="confirm_delete_btn", type="primary"):
+                    for name in col.selected_prxs:
+                        col.proximities.pop(name, None)
 
-                with col_confirm:
-                    if st.button("Confirm", key="confirm_delete_btn", type="primary"):
-                        for name in col.selected_prxs:
-                            col.proximities.pop(name, None)
+                    col.selected_prxs = []
+                    stss.prx_version += 1
+                    st.success(f"Deleted {count} proximities.")
+                    time.sleep(1)
+                    st.rerun()
 
-                        col.selected_prxs = []
-                        stss.prx_version += 1
-                        st.success(f"Deleted {count} proximities.")
-                        time.sleep(1)
-                        st.rerun()
-
-                with col_cancel:
-                    if st.button("Cancel", key="cancel_delete_btn"):
-                        st.rerun()
+                if st.button("Cancel", key="cancel_delete_btn"):
+                    stss.prx_version -= 1
+                    st.rerun()
         else:
             st.button(
                 "Delete Proximities",
@@ -544,13 +430,7 @@ else:
             net_str = "net" if count == 1 else "nets"
             label = f"Delete {count} {net_str}"
             with st.expander(label, expanded=False, key=f"delete_net_selection_{stss.count}"):
-                st.caption("Delete:")
-                for name in col.selected_nets:
-                    st.caption(name)
 
-                #col_confirm, col_cancel = st.columns(2)
-
-                #with col_confirm:
                 if st.button("Confirm", key="confirm_delete_net_btn", type="primary"):
                     for name in col.selected_nets:
                         col.pfnets.pop(name, None)
@@ -561,7 +441,6 @@ else:
                     time.sleep(1)
                     st.rerun()
 
-                #with col_cancel:
                 if st.button("Cancel", key="cancel_delete_net_btn"):
                     st.rerun()
         else:

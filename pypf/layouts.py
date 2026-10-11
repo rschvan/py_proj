@@ -150,7 +150,7 @@ def get_coords(network, method="auto") -> (np.ndarray, str):
     coord = canonical(coord)
     # Reverse x coords
     coord[:, 0] = -coord[:, 0]
-    if actual == "tree":
+    if actual in ["tree", "sugiyama"]:
         coord[:, 1] = -coord[:, 1] # tree grows down
     #network.coords = coord --  make assignment in network
     return coord, actual

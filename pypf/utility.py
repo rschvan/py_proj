@@ -390,14 +390,13 @@ def netsim(adj1:np.ndarray, adj2:np.ndarray) -> dict[str, float | int | None]:
     """
 
     if adj1.shape != adj2.shape:
-        print("Incompatible nets")
+        return None
 
     adj1 = adj1.astype(bool)
     adj2 = adj2.astype(bool)
     n = adj1.shape[0]
 
     is_symmetric = np.array_equal(adj1, adj1.T) and np.array_equal(adj2, adj2.T)
-    #n_possible_links = (n**2 - n) // 2
     mask = ~np.eye(n, dtype=bool)
 
     if is_symmetric:
