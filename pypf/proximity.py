@@ -39,15 +39,8 @@ class Proximity:
         self.sources: list[str] = []
 
         if dismat is None:  # must read a file
-            if filepath is None: # must prompt for the file
-                from tkinter.filedialog import askopenfilename
-                filepath = askopenfilename(
-                    title="Select a spreadsheet file",
-                    filetypes=[("Spreadsheet files", "*.xlsx *.csv")]
-                )
-                if not filepath:
-                    print("No file selected.")
-                    return
+            if filepath is None: # return default collection
+                return
             self.filepath = filepath
             if hasattr(filepath, 'name'):
                 self.filename = filepath.name
@@ -71,7 +64,7 @@ class Proximity:
                 print(f"Error reading file: {e}")
                 return
         else: # create proximity from inputs
-            dismat = np.array(dismat)
+            dismat = np.asarray(dismat, dtype=float)
             nr, nc = dismat.shape
             if terms is None:
                 print(f"Error expected terms: )")
@@ -156,7 +149,7 @@ class Proximity:
         print(f"coh: {self.coh}")
 
 if __name__ == "__main__":
-    p = Proximity("data\psyinf.prx.xlsx")
+    f = "data\psyinf.prx.xlsx"
+    p = Proximity(f)
     p.prxprint()
     print(p.get_info())
-    print(p.dismat)

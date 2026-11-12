@@ -1,5 +1,5 @@
 [server]
 enableStaticServing = true
 enableCORS = false
-enableXsrfProtection = false
+enableXsrfProtection = true
 runOnSave = true

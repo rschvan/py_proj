@@ -76,28 +76,79 @@ def coherence(dis: Union[np.ndarray, pd.DataFrame], maxprx: float) -> Optional[f
     else:
         return np.nan
 
-def dijkstra(dis:np.ndarray, q:int, r:float)->np.ndarray:
+def compute_merged_net_ranks(
+    adj_weights: np.ndarray, links: np.ndarray, directed: bool = False
+) -> tuple[dict[tuple[int, int], int], list[int]]:
+  """Computes link ranks for merged networks based on population count (bit_count).
+
+  Rank 1 corresponds to the most 1-bits (edges present in the most networks),
+  descending to the least 1-bits.
+
+  Parameters
+  ----------
+  adj_weights : np.ndarray (int)
+      Adjacency matrix containing the bit-coded integer link weights.
+  links : np.ndarray (bool)
+      Boolean adjacency matrix indicating active links.
+  directed : bool, default=False
+      If False, only upper triangle (row < col) links are considered.
+
+  Returns
+  -------
+  link_ranks : dict[tuple[int, int], int]
+      Dictionary mapping (row, col) coordinates to dense rank (1, 2, ...).
+  unique_bit_counts : list[int]
+      Sorted list of distinct bit counts in descending order (e.g., [4, 3, 1]).
+  """
+  # Respect network directedness to avoid duplicate undirected edges
+  if not directed:
+    mask = links & np.triu(np.ones_like(links, dtype=bool), k=1)
+  else:
+    mask = links
+
+  rows, cols = np.where(mask)
+  if len(rows) == 0:
+    return {}, []
+
+  # Extract integer bitmask weights for all active links
+  edge_weights = adj_weights[rows, cols].astype(np.int64)
+
+  # Calculate bit counts (number of 1s) for each edge
+  bit_counts = np.array([int(w).bit_count() for w in edge_weights])
+
+  # Get unique bit counts sorted descending: highest count first
+  # Using -bit_counts allows np.unique to sort in descending order
+  neg_unique, inverse_indices = np.unique(-bit_counts, return_inverse=True)
+  unique_bit_counts = (-neg_unique).tolist()
+
+  # Map (row, col) -> rank (1-indexed, dense ranking)
+  link_ranks = {
+      (int(r), int(c)): int(rank + 1)
+      for r, c, rank in zip(rows, cols, inverse_indices)
+  }
+
+  return link_ranks, unique_bit_counts
+
+def dijkstra(dis: np.ndarray, q: int, r: float) -> np.ndarray:
+    """Minimum distances over paths of at most q links (Minkowski-r path length).
+
+    Same results as the loop version: each pass extends paths by one link,
+    using the previous pass's matrix (m) and the direct distances (dis).
+    """
     dis = np.array(dis, dtype=float)
     n = len(dis)
-    mindis = np.copy(dis)
+    mindis = dis.copy()
     pass_count = 1
-    changed = True
-    while changed and (pass_count < q):
+    while pass_count < q:
         pass_count += 1
-        changed = False
-        m = np.copy(mindis)
-        for row in range(n):
-            for col in range(n):
-                for ind in range(n):
-                    indirect1 = minkowski(dis[row, ind].item(), m[ind, col].item(), r)
-                    indirect2 = minkowski(m[row, ind].item(), dis[ind, col].item(), r)
-                    indirect = min(indirect1, indirect2)
-                    if indirect < mindis[row, col]:
-                        mindis[row, col] = indirect
-                        changed = True
-        # Check for convergence (no changes in this pass)
-        if np.array_equal(m, mindis):
-            changed = False
+        m = mindis.copy()
+        for k in range(n):
+            # direct link row->k, then best (pass-1)-link path k->col
+            np.minimum(mindis, minkowski(dis[:, k, None], m[None, k, :], r), out=mindis)
+            # best (pass-1)-link path row->k, then direct link k->col
+            np.minimum(mindis, minkowski(m[:, k, None], dis[None, k, :], r), out=mindis)
+        if np.array_equal(m, mindis):  # converged: no change this pass
+            break
     return mindis
 
 def discorr(dis1: np.ndarray, dis2: np.ndarray)->float:
@@ -162,42 +213,15 @@ def extended_jaccard(matrix_a, matrix_b):
 
     return numerator / denominator if denominator != 0 else 0.0
 
-def floyd(dismat:np.ndarray, r:float)->np.ndarray:
-    """
-    Computes the shortest paths in a weighted graph using the Floyd-Warshall algorithm
-    and applies the Minkowski distance-based interpolation to update the path weights.
-
-    The function takes as input a distance matrix `dismat` and a Minkowski parameter `r`.
-    The `dismat` parameter represents the adjacency matrix of the graph, where each element
-    is the weight of the edge between vertices. The function applies an iterative approach
-    to compute the shortest paths between nodes, updating the distance matrix at each step.
-
-    :param dismat:
-        A 2D array or list containing the distances between nodes in the graph. The
-        dimensions of this matrix should be NxN, where N is the number of nodes.
-        The element at position (i, j) represents the weight of the edge from node
-        i to node j.
-
-    :param r:
-        A numeric value representing the Minkowski power parameter. This is used
-        in the Minkowski distance calculation to adjust the behavior of path weight
-        comparisons and updates.
-
-    :return:
-        A 2D numpy array representing the shortest distance between every pair of
-        nodes in the graph after the algorithm has been applied. The dimensions
-        of the array will match the input `dismat`.
-    """
-    dismat = np.array(dismat, dtype=float)
-    n = len(dismat)
-    mindis = np.copy(dismat)
-    for ind in range(n):
-        for row in range(n):
-            for col in range(n):
-                indirect = minkowski(mindis[row, ind].item(), mindis[ind, col].item(), r)
-                if indirect < mindis[row, col]:
-                    mindis[row, col] = indirect
-    return mindis
+def floyd(dismat, r):
+    m = np.array(dismat, dtype=float)
+    for k in range(len(m)):
+        a, b = m[:, k, None], m[None, k, :]
+        if r == 1:          ind = a + b
+        elif np.isinf(r):   ind = np.maximum(a, b)
+        else:               ind = np.round((a**r + b**r)**(1/r), 12)
+        np.minimum(m, ind, out=m)
+    return m
 
 def gen_var_name(proposed:str, exclude:list[str]=None) -> str:
     """
@@ -226,6 +250,50 @@ def gen_var_name(proposed:str, exclude:list[str]=None) -> str:
             legal = legal + str(count)
             count += 1
     return legal
+
+def get_link_ranks(
+    dismat: np.ndarray, links: np.ndarray, directed: bool = False
+) -> tuple[dict[tuple[int, int], int], list[float]]:
+  """Constructs a sparse link rank dictionary and unique distance list.
+
+  Parameters
+  ----------
+  dismat : np.ndarray
+      Distance / dissimilarity matrix.
+  links : np.ndarray (bool)
+      Boolean adjacency matrix indicating active links.
+  directed : bool, default=False
+      If False, only the upper triangle (row < col) is indexed.
+
+  Returns
+  -------
+  link_ranks : dict[tuple[int, int], int]
+      Dictionary mapping (row, col) to dense rank (1, 2, ...).
+  unique_distances : list[float]
+      Sorted list of distinct distance values across active links.
+  """
+  # For undirected networks, keep only the upper triangle to avoid duplicates
+  if not directed:
+    mask = links & (np.triu(np.ones_like(links, dtype=bool), k=1))
+  else:
+    mask = links
+
+  rows, cols = np.where(mask)
+
+  if len(rows) == 0:
+    return {}, []
+
+  # Extract distances, find unique values, and compute dense ranks
+  distances = dismat[rows, cols]
+  unique_dists, inverse_indices = np.unique(distances, return_inverse=True)
+
+  # Build the (row, col) -> rank mapping (1-indexed)
+  link_ranks = {
+      (int(r), int(c)): int(rank + 1)
+      for r, c, rank in zip(rows, cols, inverse_indices)
+  }
+
+  return link_ranks, unique_dists.tolist()
 
 def get_lower(m: np.ndarray, diag: int = -1) -> np.ndarray:
     """
@@ -350,16 +418,14 @@ def mds_coord(dismat:np.ndarray, ndims=2, metric=True)->np.ndarray:
     coord = canonical(coord)
     return coord
 
-def minkowski(dis1:float, dis2:float, r:float) -> float:
+def minkowski(a: np.ndarray, b: np.ndarray, r: float) -> np.ndarray:
+    """Element-wise Minkowski combination of two path lengths (broadcasts)."""
     if r == 1:
-        dis = dis1 + dis2
-    elif np.isinf(r):
-        dis = max(dis1, dis2)
-    else:
-        dis = (dis1**r + dis2**r)**(1/r)
-        # Remove rounding errors
-        dis = round(dis, 12)
-    return dis
+        return a + b
+    if np.isinf(r):
+        return np.maximum(a, b)
+    with np.errstate(over="ignore", invalid="ignore"):
+        return np.round((a**r + b**r) ** (1.0 / r), 12)
 
 def mypfnets_dir():
     """
@@ -595,13 +661,22 @@ def split_long_term(term:str)->str:
             return term
 
 if __name__ == '__main__':
-    # from pypf.proximity import Proximity
-    # from pypf.collection import Collection
-    # tcol = Collection()
-    # psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    # tcol.add_proximity(psyprx, add_pfnet=True)
-    # bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    # tcol.add_proximity(bioprx, add_pfnet=True)
-    # print(split_long_term("San Francisco, California"))
-    terms = get_terms(name="t_liv2007", n=25, fdir=os.path.join("C:\\","easy"))
-    print(terms)
+    from pypf.proximity import Proximity
+    from pypf.collection import Collection
+    tcol = Collection()
+    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
+    tcol.add_proximity(psyprx, add_pfnet=True)
+    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
+    tcol.add_proximity(bioprx, add_pfnet=True)
+    dismat = psyprx.dismat
+    links = tcol.pfnets["psy_pf"].adjmat
+    links = links.astype(bool)
+    # unique_distances, link_rank = compute_link_ranks(dismat, links)
+    # print(unique_distances)
+    # print(link_rank)
+    u_d, linklist = get_link_ranks(dismat, links, False)
+    print("List format")
+    print(u_d)
+    print(linklist)
+
+

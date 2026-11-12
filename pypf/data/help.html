@@ -75,13 +75,13 @@
   	<div id="welcome" class="help-section">
         <h2 class="help-header">About PyPathfinder </h2>
         <p>PyPathfinder is a Python-based Streamlit app for creating and analyzing Pathfinder Networks. It allows you to load 
-		Proximity data files and create Pathfinder Networks as well as Threshold  and Nearest Neighbor networks. 
+		Proximity data files and create Pathfinder Networks and Nearest Neighbor networks. 
 		It provides information about the networks and data files, and tools for averaging compatible data sets. 
 		There are pages  for visualizing and saving images of networks and for getting help in using the app.</p>
 		<p>Some sample proximities and derived networks are loaded when the app starts. Use the examples to explore 
 		the functions in the app. Play with the various tools to learn about their effects. Load your own data files 
-		whenever you like. You can remove the sample data by unchecking the <strong>Add Sample Data</strong> 
-		check box in the sidebar.</p> 
+		whenever you like. You can remove the sample data by clicking the <strong>Remove Sample Data </strong> 
+		button in the sidebar.</p> 
         <p>Introductory information is also displayed when the app starts. This can  be hidden by closing its expander. </p>
  	</div>
 
@@ -89,7 +89,7 @@
         <h2 class="help-header">Proximity and Network Lists</h2>
         <p>The Proximity and Network lists provide details about the proximity data sets loaded and the networks 
 		generated. One or more can be selected by checking the boxes at the left of each row. Operations can be 
-		performed on selected items using the buttons below the lists. When a proximity file is loaded, the minimum Pathfinder Network (q and r equal infinity) is derived as well. This base network shows the minimum set of links in any Pathfinder network. These links will be in all Pathfinder networks with various q and r values. </p>
+		performed on selected items using the buttons below the lists. These buttons are enabled when appropriate items are selected by clicking the selection boxes to the left of the <strong>Name</strong> column. When a proximity file is loaded, the minimum Pathfinder Network (q and r equal infinity) is derived as well. This base network shows the minimum set of links in any Pathfinder network. These links will be in all Pathfinder networks with various q and r values. </p>
   	</div>
 
     <div id="tips" class="help-section">
@@ -98,8 +98,7 @@
           <li><strong>Idle  App loses new data </strong><br>
           The app will  lose data when left idle for awhile. Saving your project when an idle period will occur will allow you to reload it when you return. </li>
             <li><b>Selection of Proximities or Networks<br>
-            </b>A single item can be selected from the lists by clicking its name, 
-			but multiple items require checking the select boxes to the left of the names. 
+            </b>Selecting items in the lists requires you to check the select boxes to the left of the names. 
 			Clicking at the top of the select boxes will select or deselect all items in a list. </li>
             <li><strong>Proximity Coherence</strong><br>
               Coherence is a correlational measure of the internal consistency of the proximity distances. It is based on the idea that nodes that are near to one another should have similar correlations over other nodes in the set. With data created from human ratings, coherence may reflect levels of knowledge about the nodes which has been found in studies of expertise and learning. Ratings generated randomly will produce  coherence scores close to zero. </li>
@@ -107,9 +106,7 @@
             </b>Checking <b>Force Proximity Symmetric</b> will create a Proximity with symmetric distances 
 			(the minimum of the two distances is used) when the proximity matrix is asymmetric. This can be 
 			useful when you prefer working with undirected graphs creating links based on the minimum of the 
-			two proximities for each potential link. </li>
-            <li><strong>Show links slider</strong><br>
-            You can show or hide links of varying strength (distance) using this slider. Links with weights less than or equal to the slider value are shown. With merged networks, the slider will show links in terms of the number of nets including the link from 1 to the number of merged nets. The value 1 shows all of the links (link is in 1 or more nets), 2 shows all links in 2 or more nets, etc.. </li>
+			two proximities for each potential link. The name of a proximity that is made symmetric this way will have &quot;_fs&quot; appended to its name. </li>
             <li><b>Downloading Tables and Network Layouts <br>
             </b>Tables can be downloaded  as .csv spreadsheet files by hovering over the toolbar at the top right 
 			of the table and clicking the download icon. Save network figures as .png files by right-clicking t
@@ -122,10 +119,10 @@
             <li><strong>r-value</strong><br>
               The r-value controls the computation of path distances where r is the vector norm. When r = inf, the length of a path is the maximum distance over links in the path. For r = 1, path length is the sum of the link distances. With r = 2, the path length is the euclidean distance. See the Pathfinder Network Wikipedia page for more details. </li>
           <li><strong>Average Proximities</strong><br>
-            Proximities with the same nodes can be averaged  to produce an average proximity where each cell in the distance matrix is the average over the same cells in the set of matrices to be averaged. You can provide a name for an average proximity in the sidebar. Select the proximities and provide the name before clicking the Average Proximities button.</li>
-            <li><strong>Proximity Correlations</strong> shows a matrix of the pairwise correlations of the distances in proximity data files. Correlations are only computed for proximities with the same number of terms. &quot;None&quot; is shown for pairs of proximities with different terms. </li>
+            Proximities with the same nodes can be averaged  to produce an average proximity where each cell in the distance matrix is the average over the same cells in the set of matrices to be averaged. You can select an averaging metjod and provide a name for the average proximity.</li>
+            <li><strong>Proximity Correlations</strong> shows a matrix of the pairwise correlations of the distances in proximity data files. Correlations are only computed for proximities with the same   terms. &quot;None&quot; is shown for pairs of proximities with different terms. </li>
             <li> <strong>Network Similarity</strong> shows a matrix of pairwse similarities which are the number of links found in both networks divided by the number of unique links in the two networks (intersection over union). &quot;None&quot; is shown for pairs of netowrks with different terms. </li>
-            <li><b>MDS Layout<br>
+            <li><b>MDS DistanceLayout<br>
               </b>The MDS layout uses the complete distance matrix for a 2-D Multidimensional Scaling Fit. 
 			  It is particularly useful when all distances are meaningful and you would like the node positions 
 			  to reflect the constraints of all the distances. Geographical distances are examples of this as in 
@@ -151,13 +148,13 @@ The spreadsheet files are easier to create and are much simpler than the legacy 
 		 find a solution with the node in the held position, but the final position will still be 
 		 determined by the algorithm. When you uncheck the <strong>enabled checkbox</strong>, 
 		 the display will become static and you can drag nodes to  positions you choose. 
-	     The best way to <strong>save the image of a network</strong> is to take a screenshot of the desired area of the screen. </p>
+	     The best way to <strong>save the image of a network</strong> is to take a screenshot of the desired area of the screen. There are widgets in the display to allow you to change the font size, to toggle the visibility of the ranks of the links (ranked from shortest to longest distance or stronger to weaker links), and a slider to hide links of higher ranks.</p>
     </div>
 
   <div id="saving" class="help-section">
         <h2 class="help-header">Saving &amp; Loading Projects</h2>
         <p>The Collections of Proximity files and Networks you create can be stored in files on your computer and later reloaded using the <strong>Save Project File</strong> 
-		 and <strong>Load Project File </strong>buttons at the top of the Build Nets page. It is a good idea to 
+		 and <strong>Load Project File </strong>options in the <strong>Manage Data Files</strong> section  at the top of the Build Nets page. It is a good idea to 
 		 save your work periodically to ensure that you can easily recover the state of your project. The website 
 		 server may go into hibernation when the site  is idle for a period of time. When this happens, 
 		 you will have to recover your project by loading it when you restart later. Of course, you can only recover 
@@ -167,7 +164,7 @@ The spreadsheet files are easier to create and are much simpler than the legacy 
 		 The app will display these options for you.</p>
  
 
-    <div id="format" class="help-section">
+        <div id="format" class="help-section">
         <h2 class="help-header">Spreadsheet Data File Format (.xlsx or .csv)</h2>
         <p>With <i>n</i> terms, the proximity file spreadsheet must consist of <i>n+1</i> rows and <i>n+1</i> columns. 
 		The part of the filename before the first period is the name of the proximity. The first row must contain the terms (node names)

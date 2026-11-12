@@ -9,7 +9,8 @@ import pandas as pd
 from pypf import pfnet
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.utility import get_termsid, mypfnets_dir, sorted_keys, get_unique_name
+from pypf.utility import (get_termsid, sorted_keys, get_unique_name,
+                          get_link_ranks, compute_merged_net_ranks)
 
 
 class Collection:
@@ -21,8 +22,6 @@ class Collection:
         self.selected_prxs: list[str] = []  # proximity names
         self.selected_nets: list[str] = []  # network names
         self.focus_net: PFnet | None = None
-        self.mypfnets_dir: str = mypfnets_dir()
-        self.project_dirs: list[str] = [self.mypfnets_dir]
 
     def register_terms(self, terms: list[str] | tuple[str, ...]) -> str | None:
         """Registers a sequence of terms as an immutable tuple. Returns termsid."""
@@ -135,11 +134,12 @@ class Collection:
     def average_proximities(self, ave_name=None, method="mean") -> Proximity | None:
         from pypf.utility import coherence
 
-        def replace_infinite_distances(prx: Proximity) -> Proximity:
-            if np.isinf(prx.dismat).any():
-                inf_mask = np.isinf(prx.dismat)
-                prx.dismat[inf_mask] = prx.max*1.1
-            return prx
+        def replace_infinite_distances(dismat) -> np.ndarray:
+            cdismat = copy.deepcopy(dismat)
+            if np.isinf(cdismat).any():
+                inf_mask = np.isinf(cdismat)
+                cdismat[inf_mask] = prx.max*1.1
+            return cdismat
 
         selected = self.selected_prxs
         num = len(selected)
@@ -148,18 +148,11 @@ class Collection:
 
         proxes = [self.proximities[name] for name in selected]
         first_prx = proxes[0]
-        first_tid = getattr(first_prx, "termsid", None) or get_termsid(list(first_prx.terms))
-
-        for prx in proxes[1:]:
-            prx_tid = getattr(prx, "termsid", None) or get_termsid(list(prx.terms))
-            if prx_tid != first_tid:
-                return None
 
         ave_prx: Proximity = copy.deepcopy(first_prx)
         ave_prx.filename = None
         ave_prx.filepath = None
         ave_prx.sources = selected
-        replace_infinite_distances(ave_prx)
 
         prefix = "!\u0078\u0305" if method == "mean" else "!mdn"
         if not ave_name:
@@ -171,9 +164,10 @@ class Collection:
         match method:
             case "mean":
                 for prx in proxes:
-                    replace_infinite_distances(prx)
+                    cdismat = copy.deepcopy(prx.dismat)
+                    cdismat = replace_infinite_distances(cdismat)
                     ave_prx.max = max(ave_prx.max, prx.max)
-                    ave = ave + prx.dismat
+                    ave = ave + cdismat
                 ave = ave / num
             case "median":
                 for i in range(nterms):
@@ -238,7 +232,7 @@ class Collection:
         if not mrg_name:
             mrg_name = "|".join(net_names)
 
-        merged_net.name = f"!!mg{n_nets}_{mrg_name}"
+        merged_net.name = f"~~mg{n_nets}_{mrg_name}"
         merged_net.graph.name = merged_net.name
         merged_net.type = "mg"
         merged_net.proximity = None
@@ -263,9 +257,11 @@ class Collection:
         merged_net.graph.name = merged_net.name
         merged_net.get_eccentricity()
         merged_net.is_planar = nx.is_planar(merged_net.graph)
-        self.add_pfnet(merged_net)
         self.selected_nets = []
-        merged_net.unique_weights = list(range(1, n_nets + 1))
+        links = merged_net.adjmat.astype(bool)
+        merged_net.links, unique_distances = compute_merged_net_ranks(merged_net.adjmat, links, merged_net.isdirected )
+        merged_net.unique_weights = unique_distances
+        self.add_pfnet(merged_net)
         return merged_net
 
     def get_project_state(self) -> str:
@@ -293,32 +289,25 @@ class Collection:
                 return v.lower() == "inf"
             return isinstance(v, (int, float)) and np.isinf(v)
 
-        # 2. Network Recipes ordered by termsid and name (base nets first, merges after)
+        # 2. Network recipes ordered by termsid and name.
+        #    Merged networks are not saved; users re-create them after loading.
         for name in sorted_keys(self.pfnets):
             net = self.pfnets[name]
             if net.type == "mg":
-                state["network_recipes"].append({
-                    "name": net.name,
-                    "type": "mg",
-                    "sources": getattr(net, "sources", [])
-                })
-            else:
-                state["network_recipes"].append({
-                    "name": net.name,
-                    "type": net.type,
-                    "q": "inf" if safe_inf_check(net.q) else net.q,
-                    "r": "inf" if safe_inf_check(net.r) else net.r,
-                    "parent_proximity": (
-                        net.proximity.name
-                        if hasattr(net, "proximity") and net.proximity
-                        else None
-                    )
-                })
+                continue
+            state["network_recipes"].append({
+                "name": net.name,
+                "type": net.type,
+                "q": "inf" if safe_inf_check(net.q) else net.q,
+                "r": "inf" if safe_inf_check(net.r) else net.r,
+                "parent_proximity": net.proximity.name if getattr(net, "proximity", None) else None,
+            })
 
         return json.dumps(state, indent=4)
 
     def load_project_state(self, json_data: str) -> None:
         """Reconstructs the collection from JSON, replaying base and merge network recipes."""
+
         data = json.loads(json_data)
 
         # 1. Restore shared terms dictionary
@@ -327,6 +316,7 @@ class Collection:
                 self.terms[tid] = tuple(terms_list)
 
         # 2. Restore Proximities
+        prx_name_map = {}
         for p_data in data.get("proximities", []):
             terms_seq = None
             tid = p_data.get("termsid")
@@ -347,34 +337,22 @@ class Collection:
             if tid:
                 new_prx.terms = self.terms[tid]
 
+            name = new_prx.name
             self.add_proximity(new_prx, add_pfnet=False)
+            prx_name_map[name] = new_prx.name
 
         # 3. Restore Networks from Recipes
         for r_data in data.get("network_recipes", []):
             net_type = r_data.get("type")
-
             if net_type == "mg":
-                # Reconstruct merge network using its recorded source networks
-                sources = r_data.get("sources", [])
-                if sources and all(src in self.pfnets for src in sources):
-                    self.selected_nets = list(sources)
-                    mrg_net = self.merge_networks()
-                    if mrg_net:
-                        # Ensure the exact original name is preserved
-                        if mrg_net.name != r_data["name"]:
-                            self.pfnets.pop(mrg_net.name, None)
-                            mrg_net.name = r_data["name"]
-                            mrg_net.graph.name = r_data["name"]
-                            self.pfnets[mrg_net.name] = mrg_net
-            else:
-                parent_prx = self.get_proximity(r_data["parent_proximity"])
-                if parent_prx:
-                    q = np.inf if r_data["q"] == "inf" else r_data["q"]
-                    r = np.inf if r_data["r"] == "inf" else r_data["r"]
-
-                    new_net = PFnet(parent_prx, q=q, r=r, type=net_type)
-                    new_net.name = r_data["name"]
-                    self.add_pfnet(new_net)
+                continue  # older project files may contain merges; they are not restored
+            # Skip networks whose proximity was deleted before saving
+            prx_name = prx_name_map.get(r_data.get("parent_proximity"))
+            parent_prx = self.get_proximity(prx_name) if prx_name else None
+            if parent_prx:
+                q = np.inf if r_data["q"] == "inf" else r_data["q"]
+                r = np.inf if r_data["r"] == "inf" else r_data["r"]
+                self.add_pfnet(PFnet(parent_prx, q=q, r=r, type=net_type))
 
 if __name__ == '__main__':
     col = Collection()

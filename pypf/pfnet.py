@@ -3,8 +3,8 @@ import numpy as np
 import os
 from pypf.proximity import Proximity
 from pypf.utility import (floyd, dijkstra, graph_from_adjmat, get_lower,
-                          get_off_diagonal, get_termsid,
-                          canonical,)
+                          get_off_diagonal, get_termsid, get_link_ranks,
+                          )
 import networkx as nx
 
 class PFnet:
@@ -40,10 +40,11 @@ class PFnet:
         self.dismat = np.array([])  # distance matrix
         self.mindis = np.array([])  # minimum distances
         self.adjmat = np.array([])  # adjacency matrix with link weights
+        self.links:dict = {tuple: int}  # dictionary with key = (source node index, target node index) and value = rank
         self.isconnected = True
         self.isdirected = False  # true for directed graph
         self.name:str = "default"  # Initialize the name property
-        self.graph = nx.Graph() # or nx.Digraph if directed
+        self.graph = nx.Graph() or nx.DiGraph()
         self.is_planar:bool
         self.layers = None  # nodes in each shell
         self.eccentricity:dict = {}
@@ -65,8 +66,7 @@ class PFnet:
             if self.termsid == "":
                 self.termsid = get_termsid(self.terms)
 
-            links = np.full((self.nnodes, self.nnodes), True, dtype=bool)
-            np.fill_diagonal(links, False)
+            links = np.full((self.nnodes, self.nnodes), False, dtype=bool)
 
             # noinspection PyUnreachableCode
             match self.type:
@@ -78,7 +78,9 @@ class PFnet:
                         self.name = self.name + "_r" + str(self.r)
                     self.isdirected = not np.array_equal(self.dismat, self.dismat.T)
                     self.mindis = self._getmindis(self.q, self.r, self.dismat)
-                    links = (self.dismat < np.inf) & (self.dismat == self.mindis)
+                    limit = 1.1 * self.proximity.max
+                    links = (self.dismat < limit) & (self.dismat == self.mindis)
+                    np.fill_diagonal(links, False)
                     self.adjmat = np.copy(self.dismat)
                     self.adjmat[~links] = 0
                     self.nlinks = np.count_nonzero(self.adjmat)
@@ -91,46 +93,31 @@ class PFnet:
                     self.name = self.name + "_nn"
                     dis = self.dismat.copy()
                     # set diagonal to np.inf
-                    dis[np.diag_indices_from(dis)] = np.inf
+                    np.fill_diagonal(dis, np.inf)
                     # get the minimum from each row
                     min_neighbor_val = np.min(dis, axis=1)
                     self.adjmat = np.copy(self.dismat)
                     for i in range(self.nnodes):
                         for j in range(self.nnodes):
-                            if self.dismat[i,j] == np.inf or self.dismat[i,j] != min_neighbor_val[i]:
+                            if (self.dismat[i,j] >= self.proximity.max or
+                                    self.dismat[i,j] != min_neighbor_val[i]):
                                 self.adjmat[i,j] = 0
-                                links[i,j] = 0
+                            else:
+                                if i != j:
+                                    links[i,j] = True
                     self.nlinks = np.count_nonzero(links)
-                case "th": # threshold
-                    self.q = None
-                    self.r = None
-                    self.name = self.name + "_th"
-                    if proximity.issymmetric:
-                        values = get_lower(self.dismat)
-                        self.isdirected = False
-                    else:
-                        values = get_off_diagonal(self.dismat)
-                        self.isdirected = True
-                    values = np.sort(values)
-                    cut = values[self.nnodes-1]
-                    links[self.dismat > cut] = False
-                    self.adjmat = np.copy(self.dismat)
-                    self.adjmat[~links] = 0
-                    self.nlinks = np.count_nonzero(self.adjmat)
-                    if not self.isdirected:
-                        self.nlinks = int(self.nlinks / 2)
                 case _:
                     print("Error: PFnet type not valid")
 
             np.fill_diagonal(links, False)
             self.adjmat = np.round(self.adjmat, 6)
-            self.adjmat[links & (self.adjmat == 0)] = 1.0e-20
+            self.adjmat[links & (self.adjmat == 0)] = 1.0e-20 # placeholder for 0 weight links
+            self.links, self.unique_weights = get_link_ranks(self.dismat, links, self.isdirected)
             self.eccentricity = self.get_eccentricity()
             self.graph = graph_from_adjmat(self.adjmat, self.terms)
             self.graph.name = self.name
             self.is_planar = nx.is_planar(self.graph)
             self.get_layout() # default coords
-            self.unique_weights = np.unique(self.adjmat)
 
         else:
             print("Error: proximity not valid")
@@ -267,8 +254,12 @@ class PFnet:
         dist_noinf = dist_matrix.copy()
         dist_noinf[np.isinf(dist_noinf)] = 0
         ecc = np.max(dist_noinf, axis=1)
-        radius = np.min(ecc[ecc > 0])
-        diameter = np.max(ecc)
+        try:
+            radius = np.min(ecc[ecc > 0])
+            diameter = np.max(ecc)
+        except ValueError:  # no links: every eccentricity is 0
+            radius = np.int64(0)
+            diameter = np.int64(0)
         center = np.where(ecc == radius)[0].astype(int).tolist()
         mean_links = np.mean(dist_noinf, axis=1).astype(float).tolist()
         min_mean_links = np.min(mean_links).astype(float)
@@ -293,11 +284,13 @@ def get_test_pf(name:str="psy") -> PFnet:
 if __name__ == '__main__':
     import pandas as pd
     ap = Proximity("data/cities.prx.xlsx")
-    an = PFnet(ap, type="pf",)
-    nljst = an.get_json_node_link_string()
-    print(nljst)
-    print(an.get_info())
-    tab = pd.DataFrame(an.get_network_properties())
-    print(tab)
+    an = PFnet(ap, type="nn",)
+    an.netprint()
+
+    # nljst = an.get_json_node_link_string()
+    # print(nljst)
+    # print(an.get_info())
+    # tab = pd.DataFrame(an.get_network_properties())
+    # print(tab)
 
 

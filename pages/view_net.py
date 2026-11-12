@@ -1,14 +1,5 @@
 # pages/view_net.py
-import warnings
-
-# Suppress the specific Streamlit components deprecation warning
-warnings.filterwarnings(
-    "ignore",
-    message=r".*st\.components\.v1\.html.*will be removed.*",
-    category=Warning,
-)
 import streamlit as st
-import streamlit.components.v1 as components
 from pyvis.network import Network
 from pypf import PFnet
 from pypf.stutils import init_pf_session_state, tight_divider
@@ -25,32 +16,36 @@ st.set_page_config(
     page_icon="🌐")
 
 # set best scrolling position
-st.html("""
-    <script>
-        function scrollToTop() {
-            const doc = window.parent.document;
-            const container = doc.querySelector('section.main') 
-                           || doc.querySelector('[data-testid="stMain"]')
-                           || doc.querySelector('[data-testid="stAppViewContainer"]')
-                           || window.parent;
-            if (container) {
-                container.scrollTo({ top: 0, behavior: 'instant' });
-            }
-        }
-
-        // Run immediately and across the render lifecycle
-        scrollToTop();
-        [100, 300, 600, 1000, 1500].forEach(delay => setTimeout(scrollToTop, delay));
-    </script>
-    """)
+# st.html("""
+#     <script>
+#         function scrollToTop() {
+#             const doc = window.parent.document;
+#             const container = doc.querySelector('section.main')
+#                            || doc.querySelector('[data-testid="stMain"]')
+#                            || doc.querySelector('[data-testid="stAppViewContainer"]')
+#                            || window.parent;
+#             if (container) {
+#                 container.scrollTo({ top: 0, behavior: 'instant' });
+#             }
+#         }
+#
+#         // Run immediately and across the render lifecycle
+#         scrollToTop();
+#         [100, 300, 600, 1000, 1500].forEach(delay => setTimeout(scrollToTop, delay));
+#     </script>
+#     """)
 
 if "col" not in stss:
     init_pf_session_state()
 
 # focus_net = stss.col.focus_net # alias for easy reference
 
-warning_message = None
-
+@st.cache_data(max_entries=20, show_spinner=False)
+def cached_net_html(_fnet: PFnet, name: str, termsid: str, links_key: int,
+                    coords_key: bytes, font_size: int) -> str:
+    # Only _fnet is used; the other arguments are the cache key.
+    html, _ = create_visjs_html(_fnet, font_size=font_size)
+    return html
 
 def do_rotation():
     rotation = stss.rotation
@@ -68,35 +63,11 @@ def do_rotation():
     time.sleep(.5)
     stss.rotation = 0
 
-
-def weight_string(weight):
-    if focus_net.type == "mg":
-        # Convert integer bitmask to binary string (e.g., 3 -> '11')
-        # [2:] removes the '0b' prefix from Python's bin() output
-        ws = bin(int(weight))[2:]
-    else:
-        # Standard Pathfinder distance formatting
-        if (weight > 100) or (weight < 1.0e-10):
-            # Show as integer if it's larger than 100 or the 1e-20 placeholder
-            ws = f"{weight:.0f}"
-        else:
-            # Otherwise use 4 significant digits
-            ws = f"{weight:.4g}"
-    return ws
-
-
-def show_link(wt) -> bool:
-    if focus_net.type == "mg":
-        nn = int(wt).bit_count()
-        return nn >= cutoff
-    else:
-        return wt <= cutoff
-
-
 def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
     """Generates an HTML string for pyvis with proportional scaling,
 
-    persistent edge weight labels, and client-side font & visibility controls.
+    persistent edge weight labels, and client-side font & rank visibility
+    controls.
     """
     g = Network(
         height="600px",
@@ -130,45 +101,40 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
             borderWidth=0 * global_scale,
         )
 
-    # 2. Add Edges (Always include formatted weight in originalLabel; start label as None)
-    for i in range(fnet.nnodes):
-        for j in range(fnet.nnodes):
-            weight = float(fnet.adjmat[i, j])
-            if 0 < weight and show_link(weight):
-                s_node = fnet.terms[i]
-                t_node = fnet.terms[j]
-                wt_str = weight_string(weight)
+    # 2. Determine max rank safely
+    max_rank = max(fnet.links.values()) if fnet.links else 1
 
-                g.add_edge(
-                    s_node,
-                    t_node,
-                    label=None,  # Initial state: invisible
-                    originalLabel=wt_str,  # Preserved in Vis.js dataset
-                    width=1.5 * global_scale,
-                    arrows={
-                        "to": {
-                            "enabled": fnet.isdirected,
-                            "scaleFactor": arrow_scale,
-                        }
-                    },
-                    color="blue",
-                    font={
-                        "size": initial_edge_font_size,
-                        "color": "blue",
-                        "align": "top",
-                    },
-                    smooth={
-                        "enabled": fnet.isdirected,
-                        "type": "curvedCW",
-                        "roundness": 0.15,
-                    }
-                    if fnet.isdirected
-                    else False,
-                    arrowStrikethrough=False,
-                    physics=True,
-                )
+    # 3. Add Edges (storing rank in originalLabel for client-side filtering)
+    for (i, j), rank in fnet.links.items():
+        s_node = fnet.terms[i]
+        t_node = fnet.terms[j]
+        wt_str = str(rank)
 
-    # 3. Configure Options
+        g.add_edge(
+            s_node,
+            t_node,
+            label=None,  # Initial state: invisible label
+            originalLabel=wt_str,  # Preserved in Vis.js edge object
+            width=1.5 * global_scale,
+            arrows={"to": {"enabled": fnet.isdirected, "scaleFactor": arrow_scale}},
+            color="blue",
+            font={
+                "size": initial_edge_font_size,
+                "color": "blue",
+                "align": "top",
+            },
+            smooth={
+                "enabled": fnet.isdirected,
+                "type": "curvedCW",
+                "roundness": 0.15,
+            }
+            if fnet.isdirected
+            else False,
+            arrowStrikethrough=False,
+            physics=True,
+        )
+
+    # 4. Configure Vis.js Options
     g.options = {
         "physics": {
             "enabled": False,
@@ -201,26 +167,28 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
     }
     raw_html = g.generate_html(notebook=True)
 
-    # Floating Controls: A-, A+, and Weights Toggle
+    # 5. Pure string overlay (no f-string syntax conflict)
     overlay_script = """
-        <!-- Floating Font & Visibility Controls -->
+        <!-- Floating Font, Visibility, & Rank Slider Controls -->
         <div id="font-controls" style="
             position: absolute;
             top: 15px;
             right: 15px;
             z-index: 9999;
             display: flex;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.85);
-            padding: 5px 8px;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 6px 12px;
             border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
             font-family: sans-serif;
+            font-size: 13px;
         ">
             <button id="font-dec" title="Decrease Font" style="
                 cursor: pointer;
-                padding: 4px 10px;
-                font-size: 14px;
+                padding: 4px 8px;
+                font-size: 13px;
                 font-weight: bold;
                 border: 1px solid #ccc;
                 border-radius: 4px;
@@ -228,8 +196,8 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
             ">A-</button>
             <button id="font-inc" title="Increase Font" style="
                 cursor: pointer;
-                padding: 4px 10px;
-                font-size: 14px;
+                padding: 4px 8px;
+                font-size: 13px;
                 font-weight: bold;
                 border: 1px solid #ccc;
                 border-radius: 4px;
@@ -237,13 +205,20 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
             ">A+</button>
             <button id="toggle-weights" title="Toggle Edge Weights" style="
                 cursor: pointer;
-                padding: 4px 10px;
-                font-size: 13px;
+                padding: 4px 8px;
+                font-size: 12px;
                 font-weight: 500;
                 border: 1px solid #ccc;
                 border-radius: 4px;
                 background: #f8f9fa;
-            ">Weights: Off</button>
+            ">Ranks: Off</button>
+
+            <!-- Rank Threshold Slider -->
+            <div style="display: flex; align-items: center; gap: 6px; margin-left: 6px; border-left: 1px solid #ddd; padding-left: 8px;">
+                <label for="rank-slider" style="font-weight: 600; color: #333;">Max Rank:</label>
+                <input type="range" id="rank-slider" min="1" max="__MAX_RANK__" value="__MAX_RANK__" step="1" style="cursor: pointer; width: 100px;">
+                <span id="rank-display" style="font-weight: bold; min-width: 22px; color: #0066cc;">__MAX_RANK__</span>
+            </div>
         </div>
 
         <script type="text/javascript">
@@ -258,24 +233,20 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
                     network.fit(fitOptions);
                     network.on("stabilizationIterationsDone", function () { network.fit(fitOptions); });
                     network.on("stabilized", function () { network.fit(fitOptions); });
-                    
-                    // Force the parent Streamlit container back to the top once Vis.js stabilizes
-                        try {
-                            const parentDoc = window.parent.document;
-                            const scrollContainer = parentDoc.querySelector('section.main') 
-                                                 || parentDoc.querySelector('[data-testid="stMain"]')
-                                                 || parentDoc.querySelector('[data-testid="stAppViewContainer"]')
-                                                 || window.parent;
-                            if (scrollContainer) {
-                                scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
-                            }
-                        } catch (e) {
-                            // Suppress cross-origin warnings if embedded externally
+
+                    try {
+                        const parentDoc = window.parent.document;
+                        const scrollContainer = parentDoc.querySelector('section.main') 
+                                             || parentDoc.querySelector('[data-testid="stMain"]')
+                                             || parentDoc.querySelector('[data-testid="stAppViewContainer"]')
+                                             || window.parent;
+                        if (scrollContainer) {
+                            scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
                         }
+                    } catch (e) {}
 
                     // Synchronized Font Scaling for Nodes & Edges
                     function adjustFontSize(delta) {
-                        // 1. Scale Nodes
                         const nodesData = network.body.data.nodes;
                         const allNodes = nodesData.get();
                         const nodeUpdates = [];
@@ -294,7 +265,6 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
                         });
                         nodesData.update(nodeUpdates);
 
-                        // 2. Scale Edge Weights
                         const edgesData = network.body.data.edges;
                         const allEdges = edgesData.get();
                         const edgeUpdates = [];
@@ -318,21 +288,36 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
                     function toggleWeightVisibility() {
                         weightsVisible = !weightsVisible;
                         const btn = document.getElementById("toggle-weights");
-                        btn.innerText = weightsVisible ? "Weights: On" : "Weights: Off";
+                        btn.innerText = weightsVisible ? "Ranks: On" : "Ranks: Off";
                         btn.style.background = weightsVisible ? "#e2e6ea" : "#f8f9fa";
-                    
+
                         const edgesData = network.body.data.edges;
                         const allEdges = edgesData.get();
                         const updates = [];
-                    
+
                         allEdges.forEach(function(edge) {
                             updates.push({
                                 id: edge.id,
-                                // A space " " reliably clears the Vis.js canvas text renderer without being ignored as empty
                                 label: weightsVisible ? (edge.originalLabel || "") : " "
                             });
                         });
-                        
+                        edgesData.update(updates);
+                    }
+
+                    // Filter Edge Visibility by Rank using originalLabel
+                    function updateEdgeRankVisibility(maxAllowedRank) {
+                        const edgesData = network.body.data.edges;
+                        const allEdges = edgesData.get();
+                        const updates = [];
+
+                        allEdges.forEach(function(edge) {
+                            const edgeRank = parseInt(edge.originalLabel, 10);
+                            const shouldHide = !isNaN(edgeRank) && (edgeRank > maxAllowedRank);
+                            updates.push({
+                                id: edge.id,
+                                hidden: shouldHide
+                            });
+                        });
                         edgesData.update(updates);
                     }
 
@@ -350,10 +335,22 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
                         e.preventDefault();
                         toggleWeightVisibility();
                     });
+
+                    const rankSlider = document.getElementById("rank-slider");
+                    const rankDisplay = document.getElementById("rank-display");
+                    rankSlider.addEventListener("input", function(e) {
+                        const currentVal = parseInt(e.target.value, 10);
+                        rankDisplay.innerText = currentVal;
+                        updateEdgeRankVisibility(currentVal);
+                    });
                 }
             });
         </script>
         """
+
+    # Safely replace placeholders without touching JavaScript braces
+    overlay_script = overlay_script.replace("__MAX_RANK__", str(max_rank))
+
     final_html = raw_html.replace("</body>", f"{overlay_script}</body>")
     return final_html, g
 
@@ -364,6 +361,10 @@ def new_net():
     stss.col.focus_net = stss.col.pfnets[new]
     stss.layout_version += 1
 
+if not stss.col.pfnets:
+    st.info("No networks yet. Add proximity data on the **Build Nets** page.")
+    st.stop()
+
 #---------------------------------------------------------------------------------------------------------sidebar
 with st.sidebar:
     # nets
@@ -372,14 +373,17 @@ with st.sidebar:
     if nnets == 1:
         stss.col.focus_net = stss.col.pfnets[pfnet_names[0]]
     elif nnets > 1:
+        if stss.col.focus_net is None or stss.col.focus_net.name not in stss.col.pfnets:
+            stss.col.focus_net = stss.col.pfnets[pfnet_names[0]]
         index = pfnet_names.index(stss.col.focus_net.name)
-        net_selected = st.selectbox(label="**Select Network**",
-                                    options=pfnet_names,
-                                    index=index,
-                                    key="selected_net_name",
-                                    on_change=new_net,
-                                    )
-        tight_divider()
+        st.selectbox(label="**Select Network** (searchable)",
+                     options=pfnet_names,
+                     index=index,
+                     filter_mode="fuzzy",
+                     key="selected_net_name",
+                     on_change=new_net,
+                     )
+    tight_divider()
     focus_net = stss.col.focus_net
 
     # LAYOUT:
@@ -389,6 +393,7 @@ with st.sidebar:
         label="**Select Algorithm**",
         options=stss.layouts,
         index=0,
+        filter_mode="prefix",
         key=f"layout_selector_{stss.layout_version}"
     )
 
@@ -404,6 +409,7 @@ with st.sidebar:
     with c2:
         if st.button("x <> y"):
             focus_net.coords[:, :] = focus_net.coords[:, [1, 0]]
+            focus_net.coords[:, 0] *= -1
 
         if layout_choice in ['gravity', 'kamada_kawai', "davidson_harel", "spring"]:
             redraw_pushed = st.button("redraw")
@@ -412,34 +418,10 @@ with st.sidebar:
     rotate = st.slider("**Rotate Clockwise (degrees)**", 0, 360,
                        key="rotation", on_change=do_rotation)
     tight_divider()
-    # show_weights = st.checkbox("**Show Link Weights**")
-    # tight_divider()
-    mx = max(focus_net.unique_weights)
-    if focus_net.type == "mg":
-        val = 1
-        lab = "**Links in at least __ nets**"
-    else:
-        val = mx
-        lab = "**Hide links by distance**"
-
-    cutoff = st.select_slider(
-        label=lab,
-        options=focus_net.unique_weights,
-        value=val,
-        format_func=lambda x: "{:.4g}".format(x)
-    )
-
-    if focus_net.type == "mg":
-        srces = f"bit code for nets in merge:  \n"
-        for i, src in enumerate(focus_net.sources):
-            b = f"{int(2 ** i):b}"
-            srces += f"{src}: {b}  \n"
-        st.write(srces)
 
     if redraw_pushed or layout_changed:
         focus_net.get_layout(method=layout_choice)
         stss.layout = layout_choice
-
 
 #-------------------------------------------------------------------------------------------  MAIN PANEL
 
@@ -449,17 +431,25 @@ st.write(f"**{focus_net.name}: {focus_net.nnodes} nodes, "
 
 scale = 30.0 / focus_net.nnodes
 scale = np.clip(scale, a_min=1.2, a_max=2.0)
-interactive_html, pyvis_net = create_visjs_html(fnet=focus_net,
-                                                font_size=round(scale * base_font), )
+# interactive_html, pyvis_net = create_visjs_html(fnet=focus_net,
+#                                                 font_size=round(scale * base_font), )
+font_size = round(scale * base_font)
+interactive_html = cached_net_html(
+    focus_net,
+    name=focus_net.name,
+    termsid=focus_net.termsid,
+    links_key=hash(tuple(sorted(focus_net.links.items()))),
+    coords_key=focus_net.coords.tobytes(),
+    font_size=font_size,
+)
 
 # Embed the HTML directly into the Streamlit app
 # The height must be set to ensure the visualization is visible
 if interactive_html:
-    components.html(
+    st.iframe(
         interactive_html,
         width="stretch",
-        height=1200,  # Set height to match the '600px' defined in pyvis + physics
-        scrolling=True,
+        height=1200,  # room for the 600px network plus the physics settings panel
     )
 else:
     st.error("Failed to generate interactive network HTML.")

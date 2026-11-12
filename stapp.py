@@ -1,39 +1,16 @@
 # stapp.py: streamlit interface
-import math
 import sys
 import os
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import networkx as nx
-import copy
-from streamlit import fragment
+import time
 
 from pypf.collection import Collection
-from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
-from pypf.legacy_files import legacy_txt_files
-import time
 from pypf.stutils import (init_pf_session_state, tight_divider, add_proximity_files,
                           get_selected_values, save_project, load_project,)
-from pypf.utility import sorted_keys, get_terms
-
-import logging
-
-# Intercept and drop the st.components.v1.html deprecation notice
-_orig_logger_handle = logging.Logger.handle
-
-def _suppress_html_deprecation(self, record: logging.LogRecord) -> bool:
-  try:
-    msg = record.getMessage()
-    if "st.components.v1.html" in msg or "st.iframe" in msg:
-      return False
-  except Exception:
-    pass
-  return _orig_logger_handle(self, record)
-
-logging.Logger.handle = _suppress_html_deprecation
+from pypf.utility import sorted_keys
 
 # alias for st.system_state
 stss = st.session_state
@@ -46,7 +23,6 @@ sample_col = stss.sample_col
 sample_sources = stss.sample_sources
 col = stss.col
 
-# --- Streamlit Application Layout (MUST BE FIRST Streamlit command) ---
 st.set_page_config(layout="wide", page_title="PyPathfinder", page_icon="🏠")
 
 home_dir = os.path.dirname(os.path.abspath(__file__))
@@ -68,20 +44,6 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 # Add the project root to sys.path
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-def get_idx(val, opt_list):
-    try:
-        return opt_list.index(val)
-    except ValueError:
-        return 0  # Default to the first item if something goes wrong
-
-def add_demo(col):
-    for px in sample_col.proximities.values():
-        if not px.name in col.proximities:
-            col.add_proximity(px)
-    for pfn in sample_col.pfnets.values():
-        if not pfn.name in col.pfnets:
-            col.add_pfnet(pfn)
 
 def del_demo(col):
     for demoprx in sample_col.proximities.keys():
@@ -113,8 +75,6 @@ def averageable(col:Collection) -> str:
             state = "All proximities must have same terms to average."
     return state
 
-stss.count += 1
-
 # --- Sidebar for Global Actions ---
 
 #----------------------------------------------------------------------------------------------------sidebar
@@ -126,14 +86,13 @@ def hide_sample():
 
 with (st.sidebar):
     if stss.sample_visible == True:
-        if stss.count < 2:
-            add_demo(col)
-        st.button(label="**Remove Sample Data**", on_click=hide_sample)
+        #st.info("**Click to Bypass Demo**")
+        st.button(label="**Clear Demo**", on_click=hide_sample)
         tight_divider()
 
-    st.text_input(label="**Project Name**",
-                  value="pypf_project",
-                  key="project_name")
+    stss.project_name =st.text_input(label="**Project Name**",
+                  value=stss.project_name,
+                  key=f"proj_name_{stss.proj_name_ver}",)
 
     tight_divider()
     st.write("**Comparison Tables**")
@@ -147,33 +106,41 @@ with (st.sidebar):
     """
     )
 
-    st.write(f"**In View: {stss.col.focus_net.name}**")
+    if stss.col.focus_net is not None and stss.col.focus_net.name in col.pfnets:
+        st.write(f"**In View: {stss.col.focus_net.name}**")
 
 # ------------------------------------------------------------------------------------ Main Panel
 # ------------------------------------------------------------------------------------ Project Save and Load
 
-st.subheader("**Manage Data Files**")
-stss.data_option = st.radio(label="**Select File Operation**",
-         index=0,
-         key=f"manage_data_{stss.manage_data_version}",
-         options=["**None**", "**Add Proximity Data**",
-                  "**Load Project File**",
-                  "**Save Project File**",],
-        on_change=st.rerun
-                            )
+manage, act = st.columns([0.30,0.70])
 
-if stss.data_option is not "**None**":
-    with st.container(border=True, width="content", height="content", gap="small"):
-        st.write(f"**{stss.data_option}**")
-        match stss.data_option:
-            case "**Save Project File**":
-                save_project(col, name=stss.project_name)
+with manage:
+    st.subheader("**Manage Data Files**")
+    stss.data_option = st.radio(label="**Select File Operation**",
+             index=None,
+             key=f"manage_data_{stss.manage_data_version}",
+             options=[ "**Add Proximity Data Files**",
+                      "**Load Project File**",
+                      "**Save Project File**",],
+                                )
+with act:
+    if stss.data_option:
+        with st.container(border=True, width="content", height="content", gap="small"):
+            st.write(f"**{stss.data_option}**")
+            match stss.data_option:
+                case "**Save Project File**":
+                    save_project(col, name=stss.project_name)
 
-            case "**Load Project File**":
-                load_project(col)
+                case "**Load Project File**":
+                    load_project(col)
 
-            case "**Add Proximity Data**":
-                add_proximity_files(col)
+                case "**Add Proximity Data Files**":
+                    add_proximity_files(col)
+
+# Report files that could not be added (shown once, after the upload rerun)
+if stss.get("upload_errors"):
+    st.error("**Some files could not be added:**  \n" + "  \n".join(stss.upload_errors))
+    stss.upload_errors = []
 
 def toggle_intro():
     stss.intro_visible = not stss.intro_visible
@@ -201,29 +168,28 @@ cycles in the minimum network.
 
 The **Proximity and Network Lists** allow you to select Proximities or Networks to perform various operations. 
 You select items by clicking the check box left of the Name column, and possible operations are invoked by 
-clicking the buttons below the lists. You control the type of network generated with the controls in the sidebar.
+clicking the buttons below the lists. You control the type of network generated with the controls in the sidebar. 
+Permissible action buttons are enabled when appropriate proximities or networks are selected by clicking the 
+selection boxes left of the Name column.
 
-The **View Network** page allows you to try different layouts and view the network in various ways. The Layout Tools 
+The **View Network** page allows you to try different layouts and view a network in various ways. The Layout Tools 
 allow you to use different algorithms to generate node positions, and the other widgets allow you to adjust the 
 positions.  The **redraw** button will generate a new layout which will usually be different because a random 
 layout is used as a starting point.  You can drag nodes to improve the layout, and you can change the font size
-with the buttons in the display. Checking **enabled** checkbox below the display will engage an active layout 
+with the buttons in the display. Checking the **enabled** checkbox below the display will engage an active layout 
 engine which will further adjust the nodes. Dragging nodes with it engaged will influence the adjustments, but the
 engine will continue to adjust the nodes until a stable point is reached. Disenabling the engine will allow you
 to move only individual nodes.
 
-The **Add Sample Data** checkbox controls the inclusion of 
-the sample Proximities and Networks to allow you to explore 
-the app's functionality.  Remove these resources by unchecking the checkbox.
+Sample data is available when you start the app. Use these sample Proximities and Networks to explore 
+the app's functionality.  Remove these resources by clicking the **Clear Demo** button.
 
-Load your own proximity data using the **Add Proximity Data Files** utility. The sparsest Pathfinder Network 
-is also created for each file you add.
-
-You can save the state of a project to a json file on your computer and later reload it using the following buttons.
+Load your own proximity data using the **Manage Data Files** section.  This section also allows you to 
+save the state of a project to a json file on your computer and later reload it.
 
 Go to the **Help** page for more information including required formats for Proximity files.
 
-This Introductory Information can be hidden by closing the expander.  
+This Introductory Information can be hidden or revealed by clicking the header.  
     ''')
 
 
@@ -266,7 +232,7 @@ else:
             label = f"**Delete Selected ({count})**"
 
             with st.expander(label, expanded=False,
-                             key=f"delete_selection_{stss.count}"):
+                             key=f"delete_selection_{stss.prx_version}"):
 
                 if st.button("Confirm", key="confirm_delete_btn", type="primary"):
                     for name in col.selected_prxs:
@@ -274,12 +240,12 @@ else:
 
                     col.selected_prxs = []
                     stss.prx_version += 1
-                    st.success(f"Deleted {count} proximities.")
-                    time.sleep(1)
+                    st.info(f"Deleted {count} proximities.")
+                    time.sleep(2)
                     st.rerun()
 
                 if st.button("Cancel", key="cancel_delete_btn"):
-                    stss.prx_version -= 1
+                    stss.prx_version += 1
                     st.rerun()
         else:
             st.button(
@@ -290,16 +256,18 @@ else:
 
     with dernet:
         if len(col.selected_prxs) > 0:
-            with st.expander(label="Derive Networks", expanded=False):
-                stss.perm_net_type = st.radio("**Network Type**", ["Pathfinder", "Threshold", "Nearest Neighbor"],
+            with st.expander(label=f"Derive Networks ({len(col.selected_prxs)})", expanded=False):
+                stss.perm_net_type = st.radio("**Network Type**", ["Pathfinder", "Nearest Neighbor"],
                                               key="network_type", help="Derive networks from selected proximities.")
                 if stss.perm_net_type == "Pathfinder":
                     # Get raw text input
-                    q_raw = st.text_input("**q:** (2-inf)", value="inf", key="q_input").lower().strip()
+                    q_raw = st.text_input("**q:** (1-inf)", value="inf", key="q_input").lower().strip()
                     r_raw = st.text_input("**r:** (1.0-inf)", value="inf", key="r_input").lower().strip()
                     # Sanitize q: Force to float(inf) or int
                     try:
                         stss.q_param = int(float(q_raw))
+                        if stss.q_param < 1:
+                            stss.q_param = 1
                     except:
                         stss.q_param = np.inf
                     # Sanitize r: Force to float
@@ -308,6 +276,8 @@ else:
                     else:
                         try:
                             stss.r_param = float(r_raw)
+                            if stss.r_param < 1:
+                                stss.r_param = 1
                         except ValueError:
                             stss.r_param = np.inf
 
@@ -316,30 +286,24 @@ else:
                              help="Select proximities to derive nets"):
                     if len(col.selected_prxs) > 0:
                         for prx_name in col.selected_prxs:
-                            # Check if PFnet with this name already exists before deriving
-                            if prx_name in col.pfnets:
-                                st.warning(f"PFnet '{prx_name}' already exists. Not re-deriving.")
-                            else:
-                                prx = col.proximities[prx_name]
-                                match stss.perm_net_type:
-                                    case "Pathfinder":
-                                        pf = PFnet(prx, q=stss.q_param, r=stss.r_param)
-                                    case "Threshold":
-                                        pf = PFnet(prx, type="th")
-                                    case "Nearest Neighbor":
-                                        pf = PFnet(prx, type="nn")
-                                col.add_pfnet(pf)
+                            prx = col.proximities[prx_name]
+                            match stss.perm_net_type:
+                                case "Pathfinder":
+                                    pf = PFnet(prx, q=stss.q_param, r=stss.r_param)
+                                case "Nearest Neighbor":
+                                    pf = PFnet(prx, type="nn")
+                            col.add_pfnet(pf)
                         col.selected_prxs = []
                         stss.prx_version += 1
                         st.rerun()
                     else:
                         st.warning("Click one or more proximity check boxes to derive networks.")
         else:
-            st.button("Derive Ntworks", disabled=True, help="Derive Ntworks from selected proximities.")
+            st.button("Derive Networks", disabled=True, help="Derive Networks from selected proximities.")
     with aveprx:
         state = averageable(col)
         if state == "ok":
-            with st.expander("Average Proximities", expanded=False, ):
+            with st.expander(f"Average Proximities ({len(col.selected_prxs)})", expanded=False, ):
 
                 ave_name = st.text_input(
                     "**Average Name**",
@@ -398,7 +362,7 @@ else:
 
 if len(col.proximities) > 1 and show_corrs:
     st.subheader("Proximity Correlations")
-    st.info("""Correlations of the distance data in pairs of equal sized data sets""")
+    st.info("""Correlations of the distance data in pairs of data sets with the same terms""")
     prx_corrs_df = col.get_proximity_correlations()
     if not prx_corrs_df.empty:
         st.dataframe(prx_corrs_df, width='content', hide_index=False, height='content')
@@ -429,7 +393,7 @@ else:
             count = len(col.selected_nets)
             net_str = "net" if count == 1 else "nets"
             label = f"Delete {count} {net_str}"
-            with st.expander(label, expanded=False, key=f"delete_net_selection_{stss.count}"):
+            with st.expander(label, expanded=False, key=f"delete_net_selection_{stss.net_version}"):
 
                 if st.button("Confirm", key="confirm_delete_net_btn", type="primary"):
                     for name in col.selected_nets:
@@ -437,11 +401,12 @@ else:
 
                     col.selected_nets = []
                     stss.net_version += 1
-                    st.success(f"Deleted {count} {'networks' if count > 1 else 'network'}.")
+                    st.info(f"Deleted {count} {'networks' if count > 1 else 'network'}.")
                     time.sleep(1)
                     st.rerun()
 
                 if st.button("Cancel", key="cancel_delete_net_btn"):
+                    stss.net_version += 1
                     st.rerun()
         else:
             st.button(
@@ -470,7 +435,7 @@ else:
                         except Exception as e:
                             st.error(f"Error merging networks: {e}")
                     else:
-                        st.warning(f"Error: {state}.")
+                        st.info(f"Error: {state}.")
                         time.sleep(2)
         else:
             st.button("Merge Networks", disabled=True, help="Select 2 or more networks with the same terms to merge them")
@@ -534,12 +499,10 @@ if len(col.pfnets) > 0 and show_props:
 
 if show_netsim and len(col.pfnets) > 1:
     st.subheader("Network Similarity")
-    st.info("""Similarity is the number of shared links 
-        divided by the number of unique links in two networks.""")
+    st.info("""Similarity: The number of common links 
+        divided by the number of unique links in two networks with the same terms""")
     sim_df = col.network_similarity()
     if not sim_df.empty:
         st.dataframe(sim_df, width='content', hide_index=False, height='content')
     else:
         st.info("No PFnet objects.")
-
-stss.count += 1

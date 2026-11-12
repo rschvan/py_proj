@@ -158,7 +158,7 @@ def legacy_txt_files(prx_file:str, raw_lines:list[str]) :
         return pdict
 
     if dat.size != nvals:
-        pdict["error"] = "Expected {nvals} data values, found {dat.size}"
+        pdict["error"] = f"Expected {nvals} data values, found {dat.size}"
         return pdict
 
     #  Initialize proximity matrix
