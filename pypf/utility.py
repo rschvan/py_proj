@@ -410,13 +410,13 @@ def map_indices_to_terms(list_of_index_lists: list[list[int]], terms: list[str])
         result_list.append(term_list)
     return result_list
 
-def mds_coord(dismat:np.ndarray, ndims=2, metric=True)->np.ndarray:
-    from sklearn.manifold import MDS
-    mds = MDS(n_components=ndims, init='random', metric_mds=metric, n_init=1,
-              max_iter=1000, eps=1e-6, metric='precomputed')
-    coord = mds.fit_transform(dismat)
-    coord = canonical(coord)
-    return coord
+# def mds_coord(dismat:np.ndarray, ndims=2, metric=True)->np.ndarray:
+#     from sklearn.manifold import MDS
+#     mds = MDS(n_components=ndims, init='random', metric_mds=metric, n_init=1,
+#               max_iter=1000, eps=1e-6, metric='precomputed')
+#     coord = mds.fit_transform(dismat)
+#     coord = canonical(coord)
+#     return coord
 
 def minkowski(a: np.ndarray, b: np.ndarray, r: float) -> np.ndarray:
     """Element-wise Minkowski combination of two path lengths (broadcasts)."""

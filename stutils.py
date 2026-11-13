@@ -1,7 +1,9 @@
-# stutils.py
+# stutils.py: streamlit helpers for the app (project root, kept out of the pypf package)
 import time
 import streamlit as st
+from pathlib import Path
 from typing import Literal
+import pypf
 from pypf.collection import Collection
 from pypf.proximity import Proximity
 from pypf.legacy_files import legacy_txt_files
@@ -15,22 +17,23 @@ from pypf.utility import get_terms
 # alias for st.session_state
 stss = st.session_state
 
+# data files ship inside the pypf package
+DATA_DIR = Path(pypf.__file__).parent / "data"
+
 @st.cache_data
 def get_cached_help_html():
     """Loads and caches the help content from disk."""
-    help_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pypf", "data", "help.html")
-    if os.path.exists(help_path):
-        with open(help_path, "r", encoding="utf-8", errors='replace') as f:
-            return f.read()
+    help_path = DATA_DIR / "help.html"
+    if help_path.exists():
+        return help_path.read_text(encoding="utf-8", errors="replace")
     return "<h3>Help content not found.</h3>"
 
 @st.cache_data
 def get_cached_sample_json():
     """Loads and caches the raw sample project JSON string."""
-    jf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pypf", "data", "sample_proj.json")
-    if os.path.exists(jf_path):
-        with open(jf_path, "r", encoding="utf-8") as f:
-            return f.read()
+    jf_path = DATA_DIR / "sample_proj.json"
+    if jf_path.exists():
+        return jf_path.read_text(encoding="utf-8")
     return None
 
 @st.cache_data

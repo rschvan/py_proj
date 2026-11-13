@@ -2,7 +2,7 @@
 import streamlit as st
 from pyvis.network import Network
 from pypf import PFnet
-from pypf.stutils import init_pf_session_state, tight_divider
+from stutils import init_pf_session_state, tight_divider
 from pypf.utility import split_long_term, sorted_keys
 import numpy as np
 import math
@@ -357,6 +357,8 @@ def create_visjs_html(fnet: PFnet, font_size=16) -> tuple[str, Network]:
 base_font = stss.get("text_size", 18)
 
 def new_net():
+    """Callback for the network selectbox: make the selected net the focus net
+    and bump layout_version so layout widgets reset for the new network."""
     new = stss.selected_net_name
     stss.col.focus_net = stss.col.pfnets[new]
     stss.layout_version += 1
@@ -366,6 +368,16 @@ if not stss.col.pfnets:
     st.stop()
 
 #---------------------------------------------------------------------------------------------------------sidebar
+# Sidebar contents:
+#   - Network selector: chooses the focus net (shown only when more than one net exists;
+#     with a single net it is selected automatically). Changing it calls new_net().
+#   - Layout Tools:
+#       * Algorithm selectbox: picks the layout method; changing it recomputes the layout.
+#       * flip x / flip y: mirror the node coordinates horizontally / vertically.
+#       * x <> y: swap the axes (with an x flip, i.e. a 90-degree turn).
+#       * redraw: recompute the layout (only for the iterative algorithms
+#         gravity, kamada_kawai, davidson_harel and spring).
+#       * Rotate slider: rotate the layout clockwise by 0-360 degrees.
 with st.sidebar:
     # nets
     pfnet_names = sorted_keys(dic=stss.col.pfnets, )

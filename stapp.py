@@ -8,8 +8,8 @@ import time
 
 from pypf.collection import Collection
 from pypf.pfnet import PFnet
-from pypf.stutils import (init_pf_session_state, tight_divider, add_proximity_files,
-                          get_selected_values, save_project, load_project,)
+from stutils import (init_pf_session_state, tight_divider, add_proximity_files,
+                     get_selected_values, save_project, load_project,)
 from pypf.utility import sorted_keys
 
 # alias for st.system_state
@@ -46,7 +46,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 def del_demo(col):
-    for demoprx in sample_col.proximities.keys():
+    for demoprx in sample_col.proximities.key1s():
         if demoprx in col.proximities:
             col.proximities.pop(demoprx)
     for demopf in sample_col.pfnets.keys():
