@@ -252,9 +252,12 @@ function createInstance(parentElement) {
     } else {
       inst.view.fontSize = data.fontSize || inst.view.fontSize;
     }
-    if (inst.view.maxRank == null || inst.view.maxRank > inst.maxRank) {
+    // the max-rank filter belongs to one network: start a different net with all links shown
+    const sameNet = (inst.view.net ?? data.view?.net) === data.netId;
+    if (!sameNet || inst.view.maxRank == null || inst.view.maxRank > inst.maxRank) {
       inst.view.maxRank = inst.maxRank;
     }
+    inst.view.net = data.netId;
 
     const fs = inst.view.fontSize;
     const scale = fs / 28.0;

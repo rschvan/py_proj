@@ -76,6 +76,7 @@ def network_view(net, *, layout_seq: int, font_size: int, can_redraw: bool,
         key=key,
         data={
             "token": token,
+            "netId": str(id(net)),
             "name": net.name,
             "nodes": nodes,
             "edges": edges,
