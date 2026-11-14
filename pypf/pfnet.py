@@ -177,6 +177,16 @@ class PFnet:
         self.layout_coords = self.coords.copy()  # as computed, before any user moves
         self.layout_request = method  # method asked for ("auto" etc.); layout_method is what ran
 
+    def set_coords(self, coords: np.ndarray, method: str = "saved") -> None:
+        """Uses given layout coordinates (n x 2, rows in term order) instead of computing them."""
+        coords = np.array(coords, dtype=float)
+        if coords.shape != (self.nnodes, 2):
+            raise ValueError(f"coords shape {coords.shape} does not match {self.nnodes} nodes")
+        self.coords = coords
+        self.layout_coords = coords.copy()
+        self.layout_method = method
+        self.layout_request = method
+
     def netprint(self, note=None):
         if note is None:
             note = self.name

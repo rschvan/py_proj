@@ -38,6 +38,17 @@ def redraw():
         stss.layout_seq += 1
 
 
+def save_layout():
+    """Callback for the Save Layout button: store the focus net's coords for its terms."""
+    net = stss.col.focus_net
+    if net is not None:
+        stss.col.save_layout(net)
+        if getattr(net, "layout_request", None) == "saved":
+            stss.col.apply_saved_layout(net)  # Reset now returns to the newly saved layout
+            stss.layout_seq += 1
+        st.toast(f"Layout saved for all networks with the terms of {net.name}", icon="💾")
+
+
 if not stss.col.pfnets:
     st.info("No networks yet. Add proximity data on the **Build Nets** page.")
     st.stop()
@@ -68,21 +79,35 @@ with st.sidebar:
 
     # each net remembers the algorithm chosen for it, so returning to this page
     # (or switching back to a net) keeps its layout instead of recomputing it
+    has_saved = stss.col.has_saved_layout(focus_net.termsid)
+    layout_options = (["saved"] if has_saved else []) + stss.layouts
     current = getattr(focus_net, "layout_request", "auto")
-    if current not in stss.layouts:
+    if current not in layout_options:
         current = "auto"
     layout_choice = st.selectbox(
         label="**Select Layout Algorithm**",
-        options=stss.layouts,
-        index=stss.layouts.index(current),
+        options=layout_options,
+        index=layout_options.index(current),
         filter_mode="prefix",
-        key=f"layout_selector_{stss.layout_version}"
+        key=f"layout_selector_{stss.layout_version}",
+        help="**saved** uses the layout saved with the button below for networks "
+             "with these terms.",
     )
     if layout_choice != current:
-        focus_net.get_layout(method=layout_choice)
+        if layout_choice == "saved":
+            stss.col.apply_saved_layout(focus_net)
+        else:
+            focus_net.get_layout(method=layout_choice)
         stss.layout_seq += 1
     st.caption("Use the toolbar above the network to orient, redraw, "
                "and adjust text. Drag nodes to move them.")
+
+    st.button("💾 Save Layout", on_click=save_layout, width="stretch",
+              help="Save the current node positions. Every network with the same terms "
+                   "can then use them by choosing **saved** above. Saved layouts are "
+                   "stored in the project file.")
+    if has_saved:
+        st.caption("A saved layout exists for these terms.")
 
 #-------------------------------------------------------------------------------------------  MAIN PANEL
 

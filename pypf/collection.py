@@ -22,6 +22,8 @@ class Collection:
         self.selected_prxs: list[str] = []  # proximity names
         self.selected_nets: list[str] = []  # network names
         self.focus_net: PFnet | None = None
+        # termsid -> (nterms x 2) layout coords, shared by every net with those terms
+        self.saved_coords: dict[str, np.ndarray] = {}
 
     def register_terms(self, terms: list[str] | tuple[str, ...]) -> str | None:
         """Registers a sequence of terms as an immutable tuple. Returns termsid."""
@@ -54,6 +56,23 @@ class Collection:
         orphaned = [tid for tid in self.terms if tid not in active]
         for tid in orphaned:
             del self.terms[tid]
+            self.saved_coords.pop(tid, None)
+
+    def save_layout(self, net: PFnet) -> None:
+        """Saves the net's current coords as the layout for all nets with its terms."""
+        if net.termsid and net.coords is not None:
+            self.saved_coords[net.termsid] = np.array(net.coords, dtype=float).copy()
+
+    def has_saved_layout(self, termsid: str) -> bool:
+        return termsid in self.saved_coords
+
+    def apply_saved_layout(self, net: PFnet) -> bool:
+        """Gives the net the saved layout for its terms. Returns False if there is none."""
+        coords = self.saved_coords.get(net.termsid)
+        if coords is None or coords.shape != (net.nnodes, 2):
+            return False
+        net.set_coords(coords, method="saved")
+        return True
 
     def add_proximity(self, prx: Proximity, add_pfnet=True) -> None:
         unique_name = get_unique_name(prx.name, self.proximities.keys())
@@ -271,7 +290,8 @@ class Collection:
         state = {
             "terms": {tid: list(terms) for tid, terms in self.terms.items()},
             "proximities": [],
-            "network_recipes": []
+            "network_recipes": [],
+            "saved_layouts": {tid: coords.tolist() for tid, coords in self.saved_coords.items()},
         }
 
         # 1. Proximities ordered by termsid and name
@@ -301,6 +321,7 @@ class Collection:
                 "q": "inf" if safe_inf_check(net.q) else net.q,
                 "r": "inf" if safe_inf_check(net.r) else net.r,
                 "parent_proximity": net.proximity.name if getattr(net, "proximity", None) else None,
+                "layout": getattr(net, "layout_request", "auto"),
             })
 
         return json.dumps(state, indent=4)
@@ -314,6 +335,10 @@ class Collection:
         if "terms" in data:
             for tid, terms_list in data["terms"].items():
                 self.terms[tid] = tuple(terms_list)
+
+        # Restore saved layouts (older project files have none)
+        for tid, coords in data.get("saved_layouts", {}).items():
+            self.saved_coords[tid] = np.array(coords, dtype=float)
 
         # 2. Restore Proximities
         prx_name_map = {}
@@ -352,7 +377,14 @@ class Collection:
             if parent_prx:
                 q = np.inf if r_data["q"] == "inf" else r_data["q"]
                 r = np.inf if r_data["r"] == "inf" else r_data["r"]
-                self.add_pfnet(PFnet(parent_prx, q=q, r=r, type=net_type))
+                net = PFnet(parent_prx, q=q, r=r, type=net_type)
+                # PFnet() computed an "auto" layout; redo it if another one was chosen
+                layout = r_data.get("layout", "auto")
+                if layout == "saved":
+                    self.apply_saved_layout(net)
+                elif layout and layout != "auto":
+                    net.get_layout(method=layout)
+                self.add_pfnet(net)
 
 if __name__ == '__main__':
     col = Collection()
