@@ -17,11 +17,10 @@ class PFnet:
     along with other optional parameters for controlling graph behavior. It supports multiple
     algorithms for computing minimum distances between n_nodes (Floyd's algorithm and Dijkstra's).
 """
-    def __init__(self, proximity:Proximity=None, q=np.inf, r=np.inf, type="pf"):
+    def __init__(self, proximity: Proximity, q=np.inf, r=np.inf, type="pf"):
         """
         Creates a PFnet object.
-                :param proximity: Object containing graph data, specifically a list of terms and a distance matrix.
-                            if None, user is prompted to select a proximity file.
+        :param proximity: Object containing graph data, specifically a list of terms and a distance matrix.
         :param q: Optional parameter to control the subset of n_nodes considered for minimum
                   distance computations. Defaults to `np.inf`.
         :param r: Optional parameter to control Minkowski distance calculation. Defaults to `np.inf`.
@@ -40,11 +39,11 @@ class PFnet:
         self.dismat = np.array([])  # distance matrix
         self.mindis = np.array([])  # minimum distances
         self.adjmat = np.array([])  # adjacency matrix with link weights
-        self.links:dict = {tuple: int}  # dictionary with key = (source node index, target node index) and value = rank
+        self.links: dict[tuple[int, int], int] = {}  # (source index, target index) -> rank
         self.isconnected = True
         self.isdirected = False  # true for directed graph
         self.name:str = "default"  # Initialize the name property
-        self.graph = nx.Graph() or nx.DiGraph()
+        self.graph: nx.Graph | nx.DiGraph = nx.Graph()  # replaced once links are known
         self.is_planar:bool
         self.layers = None  # nodes in each shell
         self.eccentricity:dict = {}
@@ -54,73 +53,69 @@ class PFnet:
         self.unique_weights:np.ndarray | None = None
         self.sources:list[str] = []
 
-        if proximity is None:
-            proximity = Proximity() # prompt user for a proximity file
-        if hasattr(proximity, 'terms') and hasattr(proximity, 'dismat'):
-            self.name = proximity.name
-            self.proximity = proximity
-            self.terms = proximity.terms
-            self.nnodes = len(self.terms)
-            self.dismat = np.array(proximity.dismat)
-            self.termsid = proximity.termsid
-            if self.termsid == "":
-                self.termsid = get_termsid(self.terms)
+        if not (hasattr(proximity, 'terms') and hasattr(proximity, 'dismat')):
+            raise TypeError("PFnet needs a Proximity (an object with terms and dismat)")
+        if type not in ("pf", "nn"):
+            raise ValueError(f"PFnet type must be 'pf' or 'nn', not {type!r}")
+        self.name = proximity.name
+        self.proximity = proximity
+        self.terms = proximity.terms
+        self.nnodes = len(self.terms)
+        self.dismat = np.array(proximity.dismat)
+        self.termsid = proximity.termsid
+        if self.termsid == "":
+            self.termsid = get_termsid(self.terms)
 
-            links = np.full((self.nnodes, self.nnodes), False, dtype=bool)
+        links = np.full((self.nnodes, self.nnodes), False, dtype=bool)
 
-            # noinspection PyUnreachableCode
-            match self.type:
-                case "pf":
-                    self.name = self.name + "_pf"
-                    if self.q < self.nnodes - 1:
-                        self.name = self.name + "_q" + str(self.q)
-                    if self.r != np.inf:
-                        self.name = self.name + "_r" + str(self.r)
-                    self.isdirected = not np.array_equal(self.dismat, self.dismat.T)
-                    self.mindis = self._getmindis(self.q, self.r, self.dismat)
-                    limit = 1.1 * self.proximity.max
-                    links = (self.dismat < limit) & (self.dismat == self.mindis)
-                    np.fill_diagonal(links, False)
-                    self.adjmat = np.copy(self.dismat)
-                    self.adjmat[~links] = 0
-                    self.nlinks = np.count_nonzero(self.adjmat)
-                    if not self.isdirected:
-                        self.nlinks = int(self.nlinks / 2)
-                case "nn": # nearest neighbor
-                    self.isdirected = True
-                    self.q = None
-                    self.r = None
-                    self.name = self.name + "_nn"
-                    dis = self.dismat.copy()
-                    # set diagonal to np.inf
-                    np.fill_diagonal(dis, np.inf)
-                    # get the minimum from each row
-                    min_neighbor_val = np.min(dis, axis=1)
-                    self.adjmat = np.copy(self.dismat)
-                    for i in range(self.nnodes):
-                        for j in range(self.nnodes):
-                            if (self.dismat[i,j] >= self.proximity.max or
-                                    self.dismat[i,j] != min_neighbor_val[i]):
-                                self.adjmat[i,j] = 0
-                            else:
-                                if i != j:
-                                    links[i,j] = True
-                    self.nlinks = np.count_nonzero(links)
-                case _:
-                    print("Error: PFnet type not valid")
+        # noinspection PyUnreachableCode
+        match self.type:
+            case "pf":
+                self.name = self.name + "_pf"
+                if self.q < self.nnodes - 1:
+                    self.name = self.name + "_q" + str(self.q)
+                if self.r != np.inf:
+                    self.name = self.name + "_r" + str(self.r)
+                self.isdirected = not np.array_equal(self.dismat, self.dismat.T)
+                self.mindis = self._getmindis(self.q, self.r, self.dismat)
+                limit = 1.1 * self.proximity.max
+                links = (self.dismat < limit) & (self.dismat == self.mindis)
+                np.fill_diagonal(links, False)
+                self.adjmat = np.copy(self.dismat)
+                self.adjmat[~links] = 0
+                self.nlinks = np.count_nonzero(self.adjmat)
+                if not self.isdirected:
+                    self.nlinks = int(self.nlinks / 2)
+            case "nn": # nearest neighbor
+                self.isdirected = True
+                self.q = None
+                self.r = None
+                self.name = self.name + "_nn"
+                dis = self.dismat.copy()
+                # set diagonal to np.inf
+                np.fill_diagonal(dis, np.inf)
+                # get the minimum from each row
+                min_neighbor_val = np.min(dis, axis=1)
+                self.adjmat = np.copy(self.dismat)
+                for i in range(self.nnodes):
+                    for j in range(self.nnodes):
+                        if (self.dismat[i,j] >= self.proximity.max or
+                                self.dismat[i,j] != min_neighbor_val[i]):
+                            self.adjmat[i,j] = 0
+                        else:
+                            if i != j:
+                                links[i,j] = True
+                self.nlinks = np.count_nonzero(links)
 
-            np.fill_diagonal(links, False)
-            self.adjmat = np.round(self.adjmat, 6)
-            self.adjmat[links & (self.adjmat == 0)] = 1.0e-20 # placeholder for 0 weight links
-            self.links, self.unique_weights = get_link_ranks(self.dismat, links, self.isdirected)
-            self.eccentricity = self.get_eccentricity()
-            self.graph = graph_from_adjmat(self.adjmat, self.terms)
-            self.graph.name = self.name
-            self.is_planar = nx.is_planar(self.graph)
-            self.get_layout() # default coords
-
-        else:
-            print("Error: proximity not valid")
+        np.fill_diagonal(links, False)
+        self.adjmat = np.round(self.adjmat, 6)
+        self.adjmat[links & (self.adjmat == 0)] = 1.0e-20 # placeholder for 0 weight links
+        self.links, self.unique_weights = get_link_ranks(self.dismat, links, self.isdirected)
+        self.eccentricity = self.get_eccentricity()
+        self.graph = graph_from_adjmat(self.adjmat, self.terms)
+        self.graph.name = self.name
+        self.is_planar = nx.is_planar(self.graph)
+        self.get_layout() # default coords
 
     def get_network_properties(self) -> dict:
         properties = {"node": self.terms}

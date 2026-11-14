@@ -135,7 +135,8 @@ def get_coords(network, method="auto") -> (np.ndarray, str):
 
     except Exception as e:
         print(f"Error computing layout '{method}': {e}")
-        coord = igraph_coords(ig_graph, algorithm="auto")
+        layout = None
+        coord, actual = igraph_coords(ig_graph, algorithm="auto")
 
     # Convert NetworkX dictionary layout to (N, 2) numpy array
     if coord is None and layout is not None:
@@ -145,7 +146,7 @@ def get_coords(network, method="auto") -> (np.ndarray, str):
 
     # Final fallback if coordinate generation failed
     if coord is None:
-        coord = igraph_coords(ig_graph, algorithm="auto")
+        coord, actual = igraph_coords(ig_graph, algorithm="auto")
 
     coord = canonical(coord)
     # Reverse x coords

@@ -153,14 +153,15 @@ class Collection:
     def average_proximities(self, ave_name=None, method="mean") -> Proximity | None:
         from pypf.utility import coherence
 
-        def replace_infinite_distances(dismat) -> np.ndarray:
-            cdismat = copy.deepcopy(dismat)
-            if np.isinf(cdismat).any():
-                inf_mask = np.isinf(cdismat)
-                cdismat[inf_mask] = prx.max*1.1
-            return cdismat
+        def finite_distances(prx: Proximity) -> np.ndarray:
+            """Copy of the distances with infinities replaced by 1.1 x that proximity's max."""
+            dismat = np.array(prx.dismat, dtype=float)
+            dismat[np.isinf(dismat)] = prx.max * 1.1
+            return dismat
 
-        selected = self.selected_prxs
+        if method not in ("mean", "median"):
+            raise ValueError(f"method must be 'mean' or 'median', not {method!r}")
+        selected = list(self.selected_prxs)
         num = len(selected)
         if num < 2:
             return None
@@ -178,20 +179,9 @@ class Collection:
             ave_name = ave_prx.name + "..." + proxes[num - 1].name
         ave_prx.name = f"{prefix}{num}_{ave_name}"
 
-        nterms = ave_prx.nterms
-        ave = np.zeros((nterms, nterms))
-        match method:
-            case "mean":
-                for prx in proxes:
-                    cdismat = copy.deepcopy(prx.dismat)
-                    cdismat = replace_infinite_distances(cdismat)
-                    ave_prx.max = max(ave_prx.max, prx.max)
-                    ave = ave + cdismat
-                ave = ave / num
-            case "median":
-                for i in range(nterms):
-                    for j in range(nterms):
-                        ave[i, j] = np.median([prx.dismat[i, j] for prx in proxes])
+        # both methods treat an infinite distance as 1.1 x the largest distance of its proximity
+        stack = np.stack([finite_distances(prx) for prx in proxes])
+        ave = stack.mean(axis=0) if method == "mean" else np.median(stack, axis=0)
 
         ave_prx.dismat = ave
         ave_prx.issymmetric = np.equal(ave, ave.T).all()
