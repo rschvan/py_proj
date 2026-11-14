@@ -350,8 +350,17 @@ class Collection:
 
         return json.dumps(state, indent=4)
 
+    @classmethod
+    def from_project_state(cls, json_data: str) -> "Collection":
+        """A new Collection holding just the project in json_data (see get_project_state)."""
+        col = cls()
+        col.load_project_state(json_data)
+        return col
+
     def load_project_state(self, json_data: str) -> None:
-        """Reconstructs the collection from JSON, replaying base and merge network recipes."""
+        """Adds the project in json_data to this collection, rebuilding its networks from
+        their recipes. Names already in use get a number added. To replace the collection
+        instead, use Collection.from_project_state."""
 
         data = json.loads(json_data)
 

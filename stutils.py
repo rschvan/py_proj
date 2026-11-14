@@ -143,6 +143,8 @@ def save_project(col: Collection, name: str = "pypf_project") -> None:
         stss.manage_data_version += 1
         st.rerun()
 
+LOAD_MODES = ["Replace current project", "Add to current project"]
+
 def load_project(col: Collection) -> None:
     uploaded_file = st.file_uploader(
         "**Browse for or drag and drop saved .json file**",
@@ -159,22 +161,38 @@ def load_project(col: Collection) -> None:
         return
 
     # File has been selected
+    mode = st.radio("**Load into**", LOAD_MODES, horizontal=True,
+                    key=f"load_mode_{stss.manage_data_version}",
+                    help="**Replace** starts fresh with only the project in the file "
+                         "(including removing the sample data). **Add** keeps what is "
+                         "loaded now; names already in use get a number added.")
 
     if st.button("🚀 Confirm and Load", type="primary", key="confirm_load_btn"):
         try:
             project_data = uploaded_file.read().decode("utf-8")
-            col.load_project_state(project_data)
+            if mode == LOAD_MODES[0]:
+                # load into a new collection first, so a bad file leaves the current one intact
+                stss.col = Collection.from_project_state(project_data)
+                stss.sample_visible = False   # the sample data is gone
+                stss.focus_net_name = None    # View Network shows the first network
+                stss.layout_seq += 1
+                done = "Project loaded"
+            else:
+                Collection.from_project_state(project_data)  # check it loads before adding
+                col.load_project_state(project_data)
+                done = "Project added"
 
             fname = os.path.basename(uploaded_file.name)
             stss.project_name = fname.split(".")[0]
             stss.proj_name_ver += 1
-            st.success("Project Added Successfully!")
+            st.success(f"{done} from {fname}")
 
             stss.manage_data_version += 1
             time.sleep(1)
             st.rerun()
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"{uploaded_file.name} could not be loaded; it does not look like a "
+                     f"PyPathfinder project file. Nothing was changed. (Details: {e})")
 
     if st.button("❌ Cancel", key="cancel_staged_load_btn"):
         stss.manage_data_version += 1 # Wipes the staged file key

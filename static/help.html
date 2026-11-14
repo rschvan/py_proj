@@ -339,7 +339,15 @@ link), rank 2 the next shortest, and so on. Links with equal distances share a r
 <p>Use <b>Save Project File</b> and <b>Load Project File</b> in <b>Manage Data Files</b> at the top of
 Build Nets. Saving downloads a .json file named from the <b>Project Name</b> in the sidebar; your
 browser may let you choose another name or folder. Loading asks you to choose a project file and then
-confirm or cancel. A loaded project is <b>added</b> to what is already in the app.</p>
+confirm or cancel. Before confirming, choose how to load it:</p>
+<ul>
+    <li><b>Replace current project</b>: start fresh with only the project in the file. Everything
+        loaded now, including the sample data, is removed, so save your current work first if you
+        want to keep it. If the file cannot be read, nothing is changed.</li>
+    <li><b>Add to current project</b>: keep what is loaded now and add the file's proximities,
+        networks, and saved layouts. Names that are already in use get a number added
+        (for example <code>bio_2</code>).</li>
+</ul>
 
 <div class="note">The app loses its data when left idle for a while, so save your project
 regularly. You can only recover what you last saved.</div>

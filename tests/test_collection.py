@@ -159,3 +159,21 @@ def test_saved_layouts_are_rounded(col):
     np.testing.assert_array_equal(saved, np.round(saved, 4))
     for row in json.loads(col.get_project_state())["saved_layouts"][psy.termsid]:
         assert all(len(f"{v:.10g}".split(".")[-1]) <= 4 for v in row)
+
+
+def test_from_project_state_replaces(col, sample_json):
+    fresh = Collection.from_project_state(col.get_project_state())
+    assert set(fresh.pfnets) == set(col.pfnets) and set(fresh.proximities) == set(col.proximities)
+    other = Collection.from_project_state(sample_json)
+    assert "psy" in other.proximities and "psy_2" not in other.proximities
+
+
+def test_load_project_state_adds(col):
+    state = col.get_project_state()
+    col.load_project_state(state)
+    assert {"psy", "bio", "psy_2", "bio_2"} <= set(col.proximities)
+
+
+def test_bad_project_file_raises():
+    with pytest.raises(ValueError):  # json.JSONDecodeError is a ValueError
+        Collection.from_project_state("not json")
