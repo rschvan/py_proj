@@ -145,52 +145,32 @@ if stss.get("upload_errors"):
 def toggle_intro():
     stss.intro_visible = not stss.intro_visible
 
-with st.expander("**Introductory Information -- click to hide/reveal**",
+with st.expander("**Getting Started** (click to hide or show)",
                  on_change=toggle_intro, expanded=stss.intro_visible, ):
-    #st.write("**Click to access YouTube videos about Pathfinder Nets and the app**")
-    st.link_button("Click to open PFNets YouTube Channel", "https://www.youtube.com/@PFNets")
-
-    # Intro
-    st.write('''**Introduction**  
-PyPathfinder is a tool for creating, exploring, and visualizing Pathfinder networks. 
-The app contains three pages, **Build Nets** (this page), **View Network**, 
-and **Help**. You can navigate to a page by clicking the page name in the sidebar.
-
-The **Build Nets** page is where you add Proximity data and Derive Networks.  The minimum 
-Pathfinder Network (q and r equal infinity) is generated when you load proximity data.
-You can choose to add either spreadsheet Proximity files or Legacy text Proximity files.
-(Help page gives details). You can also view Proximity Correlations and Network Similarities
-by checking the boxes in the sidebar. Compatible Proximity Data sets can be averaged, and different
-types of networks can be derived. Pathfinder networks require q and r values to be specified. The default
-values of infinity yield the network with the minimum number of links. It will be a minimum spanning
-tree (MST) if the network is connected and there is a unique MST. Ties in link distances may lead to 
-cycles in the minimum network.  
-
-The **Proximity and Network Lists** allow you to select Proximities or Networks to perform various operations. 
-You select items by clicking the check box left of the Name column, and possible operations are invoked by 
-clicking the buttons below the lists. You control the type of network generated with the controls in the sidebar. 
-Permissible action buttons are enabled when appropriate proximities or networks are selected by clicking the 
-selection boxes left of the Name column.
-
-The **View Network** page allows you to try different layouts and view a network in various ways. The Layout Tools 
-allow you to use different algorithms to generate node positions, and the other widgets allow you to adjust the 
-positions.  The **redraw** button will generate a new layout which will usually be different because a random 
-layout is used as a starting point.  You can drag nodes to improve the layout, and you can change the font size
-with the buttons in the display. Checking the **enabled** checkbox below the display will engage an active layout 
-engine which will further adjust the nodes. Dragging nodes with it engaged will influence the adjustments, but the
-engine will continue to adjust the nodes until a stable point is reached. Disenabling the engine will allow you
-to move only individual nodes.
-
-Sample data is available when you start the app. Use these sample Proximities and Networks to explore 
-the app's functionality.  Remove these resources by clicking the **Clear Demo** button.
-
-Load your own proximity data using the **Manage Data Files** section.  This section also allows you to 
-save the state of a project to a json file on your computer and later reload it.
-
-Go to the **Help** page for more information including required formats for Proximity files.
-
-This Introductory Information can be hidden or revealed by clicking the header.  
-    ''')
+    intro = ("**PyPathfinder** builds and displays Pathfinder networks from proximity data: "
+             "distances or relatedness values between every pair of a set of terms.")
+    if stss.sample_visible:
+        intro += (" Sample data is loaded so you can explore; click **Clear Demo** in the "
+                  "sidebar to remove it.")
+    st.markdown(intro)
+    st.markdown(
+        "1. **Add data**: in **Manage Data Files**, choose **Add Proximity Data Files**. "
+        "The minimum Pathfinder network (q = r = ∞) is derived for each file.\n"
+        "2. **Work with the lists**: check the boxes left of the Name column to select items. "
+        "The buttons below each list let you derive networks with other q and r values, "
+        "average proximities, merge networks, and show details.\n"
+        "3. **View a network**: select one and click **Display Network**. On **View Network**, "
+        "try layouts, use the toolbar to orient and adjust it, and click **Save Layout** to keep it.\n"
+        "4. **Save your project** in **Manage Data Files**."
+    )
+    st.warning("The app loses its data when idle for a while. "
+               "Save your project before taking a break.", icon="⚠️")
+    help_link, video_link = st.columns(2)
+    with help_link:
+        st.page_link(help_page, label="Help page: full details",
+                     icon="❓")
+    with video_link:
+        st.link_button("PFNets YouTube channel", "https://www.youtube.com/@PFNets", icon="▶️")
 
 
 # sample sources
