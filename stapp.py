@@ -46,7 +46,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 def del_demo(col):
-    for demoprx in sample_col.proximities.key1s():
+    for demoprx in sample_col.proximities.keys():
         if demoprx in col.proximities:
             col.proximities.pop(demoprx)
     for demopf in sample_col.pfnets.keys():
