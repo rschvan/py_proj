@@ -156,18 +156,3 @@ def get_coords(network, method="auto") -> (np.ndarray, str):
     #network.coords = coord --  make assignment in network
 
     return coord, actual
-
-if __name__ == "__main__":
-    import os
-    from pypf.pfnet import PFnet
-    from pypf.proximity import Proximity
-
-    data_set = "bio"
-    lomethod = "auto"
-    pfile = os.path.join("data", data_set + ".prx.xlsx")
-    ap = Proximity(pfile)
-    an = PFnet(ap, type="pf")
-    xy, used = get_coords(network=an, method=lomethod)
-    print(f"data: {data_set}, method: {used}")
-    print("Coordinates shape:", xy.shape)
-    print(an.coords[:3])

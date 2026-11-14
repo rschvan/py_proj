@@ -1,6 +1,5 @@
 # pypf/pfnet.py
 import numpy as np
-import os
 from pypf.proximity import Proximity
 from pypf.utility import (floyd, dijkstra, graph_from_adjmat, get_lower,
                           get_off_diagonal, get_termsid, get_link_ranks,
@@ -314,24 +313,3 @@ class PFnet:
             'min mean links': min_mean_links,
             'median': median
         }
-
-def get_test_pf(name:str="psy") -> PFnet:
-    from pypf.proximity import Proximity
-    filepath = os.path.join("data", name + ".prx.xlsx")
-    prx = Proximity(filepath)
-    pf = PFnet(prx)
-    return pf
-
-if __name__ == '__main__':
-    import pandas as pd
-    ap = Proximity("data/cities.prx.xlsx")
-    an = PFnet(ap, type="nn",)
-    an.netprint()
-
-    # nljst = an.get_json_node_link_string()
-    # print(nljst)
-    # print(an.get_info())
-    # tab = pd.DataFrame(an.get_network_properties())
-    # print(tab)
-
-

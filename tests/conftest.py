@@ -6,7 +6,7 @@ import pytest
 import pypf
 from pypf.proximity import Proximity
 
-DATA = Path(pypf.__file__).parent / "data"
+DATA = pypf.sample_path()
 
 
 def load(name: str, ext: str = "xlsx") -> Proximity:

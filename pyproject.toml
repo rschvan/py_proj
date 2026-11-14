@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pypf"
+version = "0.1.0"
+description = "A package for Pathfinder Network creation"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Roger Schvaneveldt", email = "schvan@yahoo.com" }]
+# What the pypf package itself imports. The Streamlit app's extras are under [app].
+dependencies = [
+    "numpy>=2.0.0",
+    "pandas>=2.0.0",
+    "networkx>=3.0,<3.7",
+    "igraph>=0.11.0",
+    "scipy>=1.10.0",
+    "openpyxl>=3.1.5",   # reading .xlsx proximity files
+]
+
+[project.optional-dependencies]
+# pip install -e ".[app]" for the PyPathfinder Streamlit app (stapp.py)
+app = [
+    "streamlit>=1.64.0",
+    "pyvis>=0.3.1",      # supplies the vis-network library used by netview/
+]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools]
+packages = ["pypf", "pypf.data"]
+
+[tool.setuptools.package-data]
+"pypf.data" = ["*"]   # sample proximity files, sample_proj.json, samples.csv

@@ -288,17 +288,3 @@ def legacy_txt_files(prx_file:str, raw_lines:list[str]) :
     pdict['dismat'] = np.round(prx, 6)
 
     return pdict
-
-if __name__ == '__main__':
-    from pypf.utility import get_terms
-    # p = os.path.join("C:\\","Users","schva","Prog","datasets","prxtest",)
-    path = os.path.join("C\\","easy")
-    file = "t_liv002007.prx.txt"
-    file_path = os.path.join(path, file)
-    with open(file_path) as f:
-        flines = f.readlines()
-    prxdict = legacy_txt_files(prx_file=file, raw_lines=flines)
-    print(prxdict)
-    print(prxdict['file'])
-    print(prxdict['isdirected'])
-    print(prxdict['shape'])

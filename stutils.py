@@ -16,7 +16,7 @@ from pypf.readers import read_spreadsheet
 stss = st.session_state
 
 # data files ship inside the pypf package
-DATA_DIR = Path(pypf.__file__).parent / "data"
+DATA_DIR = pypf.sample_path()
 
 @st.cache_data
 def get_cached_help_html():

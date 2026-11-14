@@ -612,24 +612,3 @@ def sorted_keys(dic: dict, attrs: tuple | list = ("termsid", "name")) -> list:
         dic.keys(),
         key=lambda k: tuple(str(getattr(dic[k], attr, "")) for attr in attrs)
     )
-
-if __name__ == '__main__':
-    from pypf.proximity import Proximity
-    from pypf.collection import Collection
-    tcol = Collection()
-    psyprx = Proximity(os.path.join("data", "psy.prx.xlsx"))
-    tcol.add_proximity(psyprx, add_pfnet=True)
-    bioprx = Proximity(os.path.join("data", "bio.prx.xlsx"))
-    tcol.add_proximity(bioprx, add_pfnet=True)
-    dismat = psyprx.dismat
-    links = tcol.pfnets["psy_pf"].adjmat
-    links = links.astype(bool)
-    # unique_distances, link_rank = compute_link_ranks(dismat, links)
-    # print(unique_distances)
-    # print(link_rank)
-    u_d, linklist = get_link_ranks(dismat, links, False)
-    print("List format")
-    print(u_d)
-    print(linklist)
-
-
