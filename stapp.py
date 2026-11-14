@@ -27,8 +27,8 @@ st.set_page_config(layout="wide", page_title="PyPathfinder", page_icon="🏠")
 
 home_dir = os.path.dirname(os.path.abspath(__file__))
 home_page = st.Page(page=os.path.join(home_dir,"stapp.py"), title="Build Nets", icon="🏠")
-help_page = st.Page(page=os.path.join(home_dir,"pages","help.py"), title="Help", icon="❓")
-view_page = st.Page(page=os.path.join(home_dir,"pages","view_net.py"), title="View Network", icon="🌐")
+help_page = st.Page(page=os.path.join(home_dir,"app_pages","help.py"), title="Help", icon="❓")
+view_page = st.Page(page=os.path.join(home_dir,"app_pages","view_net.py"), title="View Network", icon="🌐")
 pages = [home_page, view_page, help_page]
 page_selected = st.navigation(pages=pages, position="sidebar")
 

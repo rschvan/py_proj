@@ -1,0 +1,601 @@
+<style>
+    /* Every rule is scoped to .help-wrap: st.html puts this into the app page itself. */
+    .help-wrap {
+        --help-accent: #4a90d9;
+        --help-rule: rgba(128, 128, 128, 0.3);
+        --help-tint: rgba(128, 128, 128, 0.1);
+        line-height: 1.6;
+        color: inherit;              /* follows Streamlit's light or dark theme */
+        max-width: 900px;
+    }
+    .help-wrap [id] { scroll-margin-top: 80px; }   /* keep headings clear of the top bar */
+    .help-wrap h2 {
+        margin-top: 2.2em;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--help-accent);
+    }
+    .help-wrap h3 { margin-top: 1.4em; }
+    .help-wrap a {
+        color: inherit;
+        text-decoration: underline;
+        text-decoration-color: var(--help-accent);
+        text-underline-offset: 2px;
+    }
+    .help-wrap code,
+    .help-wrap pre {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 0.92em;
+        background: var(--help-tint);
+        border-radius: 4px;
+    }
+    .help-wrap code { padding: 1px 4px; }
+    .help-wrap pre {
+        padding: 8px 12px;
+        overflow-x: auto;
+        line-height: 1.45;
+    }
+    .help-wrap table {
+        border-collapse: collapse;
+        margin: 10px 0 16px;
+        font-size: 0.95em;
+    }
+    .help-wrap th,
+    .help-wrap td {
+        border: 1px solid var(--help-rule);
+        padding: 4px 10px;
+        text-align: left;
+        vertical-align: top;
+    }
+    .help-wrap thead th { background: var(--help-tint); }
+    .help-wrap table.data-table { font-family: ui-monospace, Consolas, monospace; }
+    .help-wrap table.data-table td { text-align: center; }
+    .help-wrap .note {
+        padding: 8px 14px;
+        margin: 12px 0;
+        border-left: 4px solid var(--help-accent);
+        background: var(--help-tint);
+        border-radius: 0 4px 4px 0;
+    }
+    .help-wrap ol li,
+    .help-wrap ul li { margin-bottom: 4px; }
+</style>
+
+<div class="help-wrap">
+
+<!-- ===================================================================== GETTING STARTED -->
+<div id="start">
+<h2>Getting Started</h2>
+<p>PyPathfinder creates, analyzes, and displays Pathfinder Networks from proximity data:
+distances, dissimilarities, or relatedness values between every pair of a set of terms. The app has
+three pages, listed in the sidebar: <b>Build Nets</b>, <b>View Network</b>, and <b>Help</b>.</p>
+
+<p>Sample proximities and networks are loaded when the app starts, so you can try everything
+before using your own data. A typical session goes like this:</p>
+<ol>
+    <li><b>Add data.</b> On <b>Build Nets</b>, open <b>Manage Data Files</b> and choose
+        <b>Add Proximity Data Files</b>. The minimum Pathfinder network (q&nbsp;=&nbsp;r&nbsp;=&nbsp;&infin;)
+        is derived for each file automatically.</li>
+    <li><b>Derive more networks</b> if you want them: select proximities in the Proximity List and use
+        <b>Derive Networks</b> to choose q and r, or a Nearest Neighbor network.</li>
+    <li><b>Look at a network.</b> Select one network in the Network List and click <b>Display Network</b>.</li>
+    <li><b>Adjust the layout</b> on <b>View Network</b>: try layout algorithms, flip or rotate the
+        picture, and drag nodes. Click <b>Save Layout</b> to keep a layout you like.</li>
+    <li><b>Save the project</b> from <b>Manage Data Files</b> so you can reload your work later.</li>
+</ol>
+
+<div class="note"><b>Save your work.</b> The app loses its data when it is left idle for a while
+(the server goes to sleep). Save your project before a break and load it again when you return.
+See <a href="#projects" target="_self">Saving &amp; Loading Projects</a>.</div>
+
+<p>Click <b>Clear Demo</b> in the Build Nets sidebar to remove the sample data. The
+<b>Introductory Information</b> panel on Build Nets can be hidden by clicking its header.</p>
+</div>
+
+<!-- ===================================================================== BUILD NETS -->
+<div id="build">
+<h2>Build Nets Page</h2>
+
+<h3 id="adding">Adding proximity data</h3>
+<p>In <b>Manage Data Files</b>, choose <b>Add Proximity Data Files</b>, pick the file type
+(<b>Spreadsheet</b> or <b>Legacy Text</b>), and browse for or drag in one or more files. The part of
+a file name before the first period becomes the proximity's name; if that name is already used, a
+number is added to make it unique. Files that cannot be read are listed in an error message. The
+file layouts are described in <a href="#format" target="_self">Spreadsheet Data Format</a> and
+<a href="#legacy" target="_self">Legacy Text Data Format</a>.</p>
+
+<p><b>Force Proximity Symmetric</b>: when this is on, an asymmetric proximity is made symmetric as it
+is loaded by using the smaller of the two distances for each pair (d<sub>ij</sub> and d<sub>ji</sub>).
+This gives undirected networks. The proximity's name gets <code>_fs</code> added.</p>
+
+<h3 id="lists">Proximity and Network Lists</h3>
+<p>Select items by checking the boxes to the left of the Name column; checking the box at the top
+selects or deselects every item. The buttons under each list become active when the selection
+suits them.</p>
+
+<p>Columns of the <b>Proximity List</b>:</p>
+<table>
+    <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+    <tbody>
+        <tr><td>name</td><td>Proximity name</td></tr>
+        <tr><td>nterms</td><td>Number of terms (nodes)</td></tr>
+        <tr><td>symmetric?</td><td>Whether d<sub>ij</sub> = d<sub>ji</sub> for every pair</td></tr>
+        <tr><td>coherence</td><td>Internal consistency of the distances (see <a href="#measures" target="_self">Measures</a>)</td></tr>
+        <tr><td>mean, sd, min, max</td><td>Statistics of the finite off-diagonal distances</td></tr>
+        <tr><td>termsid</td><td>An identifier for the list of terms. Proximities and networks with the same
+            termsid have the same terms in the same order, so they can be averaged, correlated, merged,
+            or share a saved layout.</td></tr>
+    </tbody>
+</table>
+
+<p>Columns of the <b>Network List</b>: name, nnodes, nlinks, connected?, planar? (can be drawn with no
+crossing links), directed?, type (<code>pf</code> Pathfinder, <code>nn</code> Nearest Neighbor,
+<code>mg</code> merged), and the q and r used.</p>
+
+<h3 id="derive">Deriving networks</h3>
+<p>Select one or more proximities, open <b>Derive Networks</b>, choose the network type, and click
+<b>Derive Now</b>.</p>
+<ul>
+    <li><b>Pathfinder</b> networks keep a link between two terms only when no other path between them
+        is shorter. Two parameters control what counts as a path and how its length is measured:
+        <ul>
+            <li><b>q</b> is the most links a path may have when searching for a shorter path. The
+                default, &infin;, examines all paths (the longest possible has n&minus;1 links for n nodes).
+                With q&nbsp;=&nbsp;2, only two-link paths are considered. Smaller q keeps more links.</li>
+            <li><b>r</b> is the Minkowski exponent used to combine the link distances along a path.
+                With r&nbsp;=&nbsp;&infin; a path's length is its longest link; with r&nbsp;=&nbsp;1 it is
+                the sum of the link distances; with r&nbsp;=&nbsp;2 it is the Euclidean combination.
+                Larger r keeps fewer links.</li>
+        </ul>
+        q&nbsp;=&nbsp;r&nbsp;=&nbsp;&infin; gives the network with the fewest links. Its links are in
+        every Pathfinder network of the same data. If the network is connected and there are no ties in
+        the distances, it is the minimum spanning tree; ties can add cycles. See the
+        <a href="https://en.wikipedia.org/wiki/Pathfinder_network" target="_blank">Wikipedia page</a> for
+        more detail.<br>
+        Names show the parameters: <code>bio_pf</code>, <code>bio_pf_q2</code>, <code>bio_pf_q2_r2</code>.</li>
+    <li><b>Nearest Neighbor</b> networks link each term to its nearest neighbor (to every term tied for
+        nearest). They are directed, from each term to its nearest neighbor. Names end in
+        <code>_nn</code>.</li>
+</ul>
+
+<h3 id="average">Averaging proximities</h3>
+<p>Select two or more proximities with the same terms and open <b>Average Proximities</b>. Each cell of
+the new distance matrix is the <b>mean</b> or <b>median</b> of the same cell in the selected
+proximities. For the mean, an infinite distance is replaced by 1.1 times the largest finite
+distance of its proximity. You can give the average a name; otherwise it is named from the first and
+last proximities averaged. Average names start with <code>!x&#772;</code> (mean) or <code>!mdn</code>
+(median) followed by the number of proximities averaged.</p>
+
+<h3 id="matrix">Display Matrix</h3>
+<p>With exactly one proximity selected, <b>Display Matrix</b> shows its terms and distance matrix.</p>
+
+<h3 id="netinfo">Network Properties and Link List</h3>
+<p>With exactly one network selected:</p>
+<ul>
+    <li><b>Network Properties</b> shows the radius and diameter and, for each node, its degree,
+        eccentricity, and whether it is a center or median node. These measures are defined in
+        <a href="#measures" target="_self">Measures</a>.</li>
+    <li><b>Network Link List</b> lists the links: <code>si</code> and <code>ti</code> are the source
+        and target node numbers (starting at 0), followed by the source and target terms and the
+        link's weight (its distance). For merged networks, the weight is a code showing which networks
+        contain the link (see below).</li>
+</ul>
+
+<h3 id="merge">Merging networks</h3>
+<p>Select two or more networks with the same terms, open the <b>Merge</b> panel under the Network List,
+optionally type a name, and click <b>Merge Now</b>. The merged network contains every link found in any
+of the selected networks. Merged names start with <code>~~mg</code> and the number of networks merged.</p>
+<p>The weight of a merged link is a binary code. The networks are numbered i&nbsp;=&nbsp;0,&nbsp;1,&nbsp;2&nbsp;&hellip;
+in the order they appear in the Network List, and a link's weight is increased by 2<sup>i</sup> when network i
+contains it. Reading the weight in binary from right to left, a 1 in position i means network i has
+the link. The Link List of a merged network shows this code (<code>nets</code>) and how many networks
+contain each link (<code>count</code>).</p>
+<p>Merged networks are not saved in project files; merge them again after loading a project.</p>
+
+<h3 id="compare">Comparison tables</h3>
+<p>Check the boxes under <b>Comparison Tables</b> in the sidebar to show:</p>
+<ul>
+    <li><b>Proximity Correlations</b>: the correlation between the distances of each pair of
+        proximities.</li>
+    <li><b>Network Similarities</b>: the proportion of shared links for each pair of networks.</li>
+</ul>
+<p>Both are computed only for pairs with the same terms; other pairs show <i>None</i>.</p>
+
+<h3 id="tables">Downloading tables and deleting items</h3>
+<p>Any table can be downloaded as a .csv file: hover over the table and click the download icon in the
+toolbar at its top right. To delete proximities or networks, select them and use the delete button under
+the list, then click <b>Confirm</b>.</p>
+</div>
+
+<!-- ===================================================================== VIEW NETWORK -->
+<div id="view">
+<h2>View Network Page</h2>
+<p>The page shows one network. Choose it with <b>Select Network</b> in the sidebar (or with
+<b>Display Network</b> on Build Nets), and choose how its nodes are placed with
+<b>Select Layout Algorithm</b>. The other tools are in the toolbar above the network.</p>
+
+<p>In the display, drag a node to move it, drag the background to move the whole picture, and scroll
+to zoom. Hover over a node to see its full name.</p>
+
+<h3 id="toolbar">Toolbar</h3>
+<table>
+    <thead><tr><th>Group</th><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+        <tr><td rowspan="4">Orient</td><td>&#8646;</td><td>Flip left-to-right</td></tr>
+        <tr><td>&#8645;</td><td>Flip top-to-bottom</td></tr>
+        <tr><td>&#8635;90&deg;</td><td>Rotate 90&deg; clockwise</td></tr>
+        <tr><td>Rotate</td><td>Drag the slider to rotate the picture; release it to keep the rotation.
+            The slider then returns to 0&deg; ready for the next turn.</td></tr>
+        <tr><td rowspan="4">Layout</td><td>Redraw</td><td>Computes the layout again from a new random
+            start. Shown only for layouts that use a random start (gravity, kamada_kawai, spring).</td></tr>
+        <tr><td>Physics</td><td>Turns on a layout engine that keeps adjusting the nodes (see below).</td></tr>
+        <tr><td>Fit</td><td>Zooms so the whole network is visible.</td></tr>
+        <tr><td>Reset</td><td>Undoes all moves, flips, and rotations since the layout was computed or chosen.</td></tr>
+        <tr><td rowspan="4">Text</td><td>A&minus; / A+</td><td>Smaller or larger labels</td></tr>
+        <tr><td>Ranks</td><td>Shows each link's rank (see <a href="#measures" target="_self">Measures</a>).</td></tr>
+        <tr><td>Max rank</td><td>Hides links with a higher rank, so you can see which links appear first
+            as the distance limit grows. It returns to showing all links when you select another network.</td></tr>
+        <tr><td></td><td>PNG</td><td>Saves the current picture as a .png image.</td></tr>
+    </tbody>
+</table>
+
+<p>Changes you make in the display, including dragged nodes, are kept when you go to another page and
+come back.</p>
+
+<h3 id="physics">Using Physics</h3>
+<p>With <b>Physics</b> on, the engine moves the nodes until they settle. If you drag nodes while it is
+on, you can influence the layout, and you can help remove crossed links, but the engine still decides
+where nodes settle. Holding a node in a new position often keeps the engine looking for a solution
+with the node there. Turn Physics off to make the display still again; then dragged nodes stay where
+you put them.</p>
+
+<h3 id="layouts">Layout algorithms</h3>
+<p>Layouts vary a lot in quality. It is usually worth trying several, using <b>Redraw</b> until a
+reasonable layout appears, and then dragging nodes to finish it.</p>
+<table>
+    <thead><tr><th>Algorithm</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td>saved</td><td>The layout saved with <b>Save Layout</b> for these terms (listed only when one exists).</td></tr>
+        <tr><td>auto</td><td>Chooses for you: a tree layout for trees, kamada_kawai for up to 100 nodes,
+            and a force-directed layout for larger networks. The header above the display shows which
+            one was used.</td></tr>
+        <tr><td>gravity</td><td>Force-directed layout with strong gravity, which pulls nodes toward the
+            middle and gives compact pictures.</td></tr>
+        <tr><td>kamada_kawai</td><td>Places nodes so that distances on the page match the number of links
+            between them. A good general choice.</td></tr>
+        <tr><td>tree</td><td>A top-down tree rooted at the center node of each connected part.
+            Works best for networks with few cycles.</td></tr>
+        <tr><td>radial_tree</td><td>The same tree laid out in circles around the center node.</td></tr>
+        <tr><td>mds_distance</td><td>Multidimensional scaling of the proximity distances, so positions
+            reflect all the distances, not just the links. Useful when all distances are meaningful,
+            as with the geographic <code>cities</code> and <code>statecaps</code> data (statecaps
+            distances are miles between state capitals).</td></tr>
+        <tr><td>mds_graph</td><td>Multidimensional scaling of the number of links between nodes.</td></tr>
+        <tr><td>spring</td><td>A classic force-directed (spring) layout.</td></tr>
+        <tr><td>spiral</td><td>Nodes placed along a spiral.</td></tr>
+        <tr><td>planar</td><td>A layout with no crossing links when the network is planar; otherwise
+            the same as kamada_kawai. For example, the <code>statecaps_pf_q2_r2</code> sample network is
+            planar.</td></tr>
+        <tr><td>sugiyama</td><td>A layered layout that suits directed networks.</td></tr>
+    </tbody>
+</table>
+<p>Each network remembers the algorithm chosen for it.</p>
+
+<h3 id="saved">Saving a layout</h3>
+<p>Click <b>Save Layout</b> in the sidebar to keep the current node positions. The layout is saved
+for the network's <b>terms</b>, not just for the network, so every network with the same terms
+can use it by choosing <b>saved</b> in Select Layout Algorithm. This makes it easy to compare
+networks derived from the same terms (different q and r, different proximities, averages, or merges)
+with the nodes in the same places. Saving again replaces the saved layout. Saved layouts are stored
+in project files.</p>
+</div>
+
+<!-- ===================================================================== MEASURES -->
+<div id="measures">
+<h2>Measures</h2>
+
+<h3 id="coherence">Coherence</h3>
+<p>Coherence is a correlational measure of the internal consistency of a proximity's distances. It is
+based on the idea that terms that are near one another should have similar distances to the other terms.
+For each pair of terms, the profiles of their distances to the other terms are correlated (an indirect
+measure of relatedness), and coherence is the correlation between these indirect values and the direct
+distances (sign reversed, so higher means more consistent). With data from human ratings, coherence may
+reflect knowledge of the terms, as found in studies of expertise and learning. Randomly generated
+ratings give coherence near zero.</p>
+
+<h3 id="correlation">Proximity correlation</h3>
+<p>The correlation between the distances of two proximities with the same terms, using the lower
+half of the matrices when both are symmetric and all off-diagonal cells otherwise.</p>
+
+<h3 id="similarity">Network similarity</h3>
+<p>The number of links found in both networks divided by the number of different links found in either
+(intersection over union). It is 1 for identical networks and 0 for networks with no links in common.</p>
+
+<h3 id="ranks">Link rank</h3>
+<p>The links of a network are ranked by their distance: rank 1 is the shortest distance (the strongest
+link), rank 2 the next shortest, and so on. Links with equal distances share a rank.</p>
+
+<h3 id="properties">Network properties</h3>
+<p>These count links between nodes and ignore link direction.</p>
+<table>
+    <thead><tr><th>Measure</th><th>Meaning</th></tr></thead>
+    <tbody>
+        <tr><td>degree</td><td>Number of links at a node. Directed networks also show indegree (links in)
+            and outdegree (links out). <b>max degree</b> marks the nodes with the highest degree.</td></tr>
+        <tr><td>eccentricity</td><td>The most links needed to reach any other node.</td></tr>
+        <tr><td>radius / diameter</td><td>The smallest and largest eccentricity in the network.</td></tr>
+        <tr><td>center</td><td>Nodes whose eccentricity equals the radius: nodes closest to all others in
+            the worst case.</td></tr>
+        <tr><td>mean link dist</td><td>Average number of links from a node to the other nodes
+            (connected networks only).</td></tr>
+        <tr><td>median</td><td>Nodes with the smallest mean link distance: closest to all others on
+            average.</td></tr>
+    </tbody>
+</table>
+</div>
+
+<!-- ===================================================================== PROJECTS -->
+<div id="projects">
+<h2>Saving &amp; Loading Projects</h2>
+<p>Use <b>Save Project File</b> and <b>Load Project File</b> in <b>Manage Data Files</b> at the top of
+Build Nets. Saving downloads a .json file named from the <b>Project Name</b> in the sidebar; your
+browser may let you choose another name or folder. Loading asks you to choose a project file and then
+confirm or cancel. A loaded project is <b>added</b> to what is already in the app.</p>
+
+<div class="note">The app loses its data when left idle for a while, so save your project
+regularly. You can only recover what you last saved.</div>
+
+<table>
+    <thead><tr><th>Saved in the project file</th><th>Not saved</th></tr></thead>
+    <tbody>
+        <tr>
+            <td>
+                <ul>
+                    <li>Proximities (terms and distances)</li>
+                    <li>How to rebuild each network: its type, q, r, and proximity</li>
+                    <li>The layout algorithm chosen for each network</li>
+                    <li>Saved layouts (from <b>Save Layout</b>)</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>Merged networks: merge them again after loading</li>
+                    <li>Networks whose proximity was deleted</li>
+                    <li>Node positions you have not saved with <b>Save Layout</b>. Layouts that start
+                        at random (gravity, kamada_kawai, spring) will come out differently.</li>
+                    <li>Text size and rank display settings</li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<!-- ===================================================================== SPREADSHEET FORMAT -->
+<div id="format">
+<h2>Spreadsheet Data Format (.xlsx or .csv)</h2>
+<p>Spreadsheet files are easier to create and simpler than legacy text files, so use this format for
+new data. With <i>n</i> terms, the spreadsheet has <i>n+1</i> rows and <i>n+1</i> columns. The first row
+contains the terms (node names) starting in column 2, and the first column contains the same terms
+starting in row 2. The rest is the matrix of distances (or dissimilarities) for the term on the row and
+the term on the column. A sheet without the header row (<i>n</i> rows and <i>n+1</i> columns, terms in
+the first column only) is also accepted. The part of the file name before the first period is the name
+of the proximity.</p>
+<p>Symmetric matrices (where each row equals the corresponding column) give undirected networks;
+asymmetric matrices give directed networks. The diagonal is treated as zero distance (the distance of
+an item to itself). Anything other than a number in an off-diagonal cell (a blank, "nan", "inf", text,
+and so on) is treated as an infinite distance, which means that pair can never be linked.</p>
+<p>Values must be distances or dissimilarities: smaller means closer. If your data measure similarity
+(like correlation or cosine), convert them with d&nbsp;=&nbsp;1&nbsp;&minus;&nbsp;s. Similarity or
+relatedness ratings can be converted with d&nbsp;=&nbsp;min(s)&nbsp;+&nbsp;max(s)&nbsp;&minus;&nbsp;s.</p>
+<p>Here is the <b>bank6.prx.xlsx</b> sample in the correct format:</p>
+<table class="data-table">
+    <thead>
+        <tr><th></th><th>account</th><th>bank</th><th>flood</th><th>money</th><th>river</th><th>save</th></tr>
+    </thead>
+    <tbody>
+        <tr><th>account</th><td>0</td><td>3</td><td>32</td><td>26</td><td>32</td><td>32</td></tr>
+        <tr><th>bank</th><td>3</td><td>0</td><td>27</td><td>21</td><td>14</td><td>30</td></tr>
+        <tr><th>flood</th><td>32</td><td>27</td><td>0</td><td>31</td><td>23</td><td>29</td></tr>
+        <tr><th>money</th><td>26</td><td>21</td><td>31</td><td>0</td><td>31</td><td>23</td></tr>
+        <tr><th>river</th><td>32</td><td>14</td><td>23</td><td>31</td><td>0</td><td>31</td></tr>
+        <tr><th>save</th><td>32</td><td>30</td><td>29</td><td>23</td><td>31</td><td>0</td></tr>
+    </tbody>
+</table>
+</div>
+
+<!-- ===================================================================== LEGACY FORMAT -->
+<div id="legacy">
+<h2>Legacy Text Data Format (.txt)</h2>
+<p>The legacy text format was used by earlier Pathfinder software and by various methods for creating
+proximity data, so PyPathfinder can load these files. It supports some options the spreadsheet format
+does not: <b>sparse data</b>, where only a few pairs have finite distances (the <code>list</code>
+format gives just those pairs), and <b>distances computed from vectors</b> of coordinates, features,
+or attributes, one vector per term.</p>
+
+<h3 id="legacy-terms">Data and terms files</h3>
+<p>With legacy files, the proximity data and the terms are in separate text files, with one term on each
+line of the terms file. Load the data file and its terms file together. Terms files can be named in two
+ways:</p>
+<ul>
+    <li><b>terms.txt</b> is used for every data file loaded with it, for a set of data files with the
+        same terms.</li>
+    <li>A terms file for one data file is named after it with <b>.trm</b> added: for
+        <code>data.txt</code> or <code>data.prx.txt</code>, the terms file is
+        <code>data.trm.txt</code>. Recall that the proximity name is the part before the first period.</li>
+</ul>
+<p>A data-specific terms file (.trm.txt) takes priority over terms.txt.</p>
+
+<h3 id="legacy-data">Data file layout</h3>
+<p>The data may be similarities, dissimilarities, probabilities, distances, coordinates, or features.
+With dissimilarities or distances, smaller numbers mean closer (more similar, more related). The opposite
+is true of similarities, probabilities, or relatedness: larger numbers mean closer. With distance measures,
+the distance between an entity and itself (the diagonal of the matrix) is usually 0. All entries must be
+positive or zero; negative numbers are not allowed. Values outside the minimum&ndash;maximum range (see
+below) will never produce links. A strictly formatted text file is required. Here is a small example:</p>
+<pre>data
+similarity
+5 nodes
+comment
+10 minimum value
+90 maximum value
+lower triangle
+32
+40 49
+32 38 53
+73 63 77 18</pre>
+
+<p>The lines must be in this order (/ separates alternatives):</p>
+<table>
+    <thead><tr><th>Line</th><th>Contents</th></tr></thead>
+    <tbody>
+        <tr><td>1</td><td>The word <code>data</code> in some form ("data", "DATA", "Data") identifies the file type.</td></tr>
+        <tr><td>2</td><td>Type of data: <code>similarity</code> / <code>sim</code> /
+            <code>probability</code> / <code>prob</code> / <code>dissimilarity</code> / <code>dis</code> /
+            <code>distance</code>. With similarity data, larger values mean greater similarity; with distance
+            data, smaller values mean closer.</td></tr>
+        <tr><td>3</td><td>Number of nodes (terms), an integer. The word "nodes" is optional.</td></tr>
+        <tr><td>4</td><td>Comment: a short description of the data. The line is required but not used.</td></tr>
+        <tr><td>5</td><td>Minimum data value, a positive number. Words are optional.</td></tr>
+        <tr><td>6</td><td>Maximum data value, a positive number. Words are optional.</td></tr>
+        <tr><td>7</td><td>Order of the data values: <code>matrix</code> / <code>upper</code> /
+            <code>lower</code> / <code>list</code> / <code>coord</code> / <code>featur</code> /
+            <code>attrib</code></td></tr>
+        <tr><td>8 on</td><td>The data</td></tr>
+    </tbody>
+</table>
+<p>For lines 3, 5, and 6, only the first number on the line is used; any following text just labels it.</p>
+<p>The minimum and maximum are cutoffs: two nodes whose value is outside the minimum&ndash;maximum range
+can never be linked in any network. Missing data can be handled by using values outside the range, or by
+using the <code>list</code> format.</p>
+
+<h3 id="legacy-shapes">Matrix, upper, lower, and list</h3>
+<p>Line 7 says how the values that follow are arranged: a full matrix, an upper triangle, a lower
+triangle, a list, or vectors. The upper and lower (half-matrix) forms leave out the diagonal. The lines
+of data do not have to have these shapes, but the values must be in the same order as if they did,
+reading across each line in turn. These four examples give the same distance matrix:</p>
+<table>
+    <thead><tr><th>matrix</th><th>lower</th><th>upper</th><th>list</th></tr></thead>
+    <tbody><tr>
+        <td><pre>0 1 3 2 3
+1 0 1 4 6
+3 1 0 5 5
+2 4 5 0 4
+3 6 5 4 0</pre></td>
+        <td><pre>1
+3 1
+2 4 5
+3 6 5 4</pre></td>
+        <td><pre>1 3 2 3
+1 4 6
+5 5
+4</pre></td>
+        <td><pre>10 pairs
+symmetric
+2 1 1
+3 1 3
+3 2 1
+4 1 2
+4 2 4
+4 3 5
+5 1 3
+5 2 6
+5 3 5
+5 4 4</pre></td>
+    </tr></tbody>
+</table>
+<p>With n nodes, a matrix must contain n&nbsp;&times;&nbsp;n values, and an upper or lower triangle
+n(n&minus;1)/2 values. Asymmetric data must be given as a matrix, or as a list marked
+<code>nonsymmetric</code> or <code>asymmetric</code>; symmetric data can use any of the four forms.</p>
+<p>With the <code>list</code> form, the line after "list" gives the number of pairs, and the next line
+says whether the pairs are <code>symmetric</code> or <code>nonsymmetric</code>. Each pair is then three
+numbers: the source term number, the destination term number, and the proximity value. Term numbers
+start at 1 (not at 0 as in Python). Pairs not in the list are never linked.</p>
+
+<h3 id="legacy-vectors">Coordinates, features, vectors, or attributes</h3>
+<p>When the data are vectors, one for each node, the lines from line 7 on are:</p>
+<table>
+    <thead><tr><th>Line</th><th>Contents</th></tr></thead>
+    <tbody>
+        <tr><td>7</td><td><code>coord</code> / <code>feature</code> / <code>attrib</code>: the data are
+            vectors of numbers, one vector for each node.</td></tr>
+        <tr><td>8</td><td>The number of dimensions, attributes, or features in each vector (an integer,
+            optionally followed by a label).</td></tr>
+        <tr><td>9</td><td>How distances are computed: <code>euclidean</code> / <code>city block</code> /
+            <code>dominance</code> / <code>hamming</code> / <code>cosine</code>, optionally followed by
+            <code>standardize</code>.</td></tr>
+        <tr><td>10 on</td><td>The vector for node 1, then node 2, and so on.</td></tr>
+    </tbody>
+</table>
+<p>Here is a small example for 5 nodes in 2 dimensions:</p>
+<pre>data
+distance
+5 nodes
+Euclidean Distances
+0 minimum data value
+16 maximum data value
+coord:
+2 dimensions
+Euclidean Distance
+9 1
+8 4
+2 6
+5 4
+1 8</pre>
+<p>Each of the 5 nodes has a value on each of two dimensions, like points in 2-dimensional space. The
+number of nodes comes from line 3, and the number of dimensions or features from line 8; there can be
+any number of dimensions. With coordinates, the data often come from the spatial layout of items. With
+features or attributes, the data may be ratings of each item on several Likert-type scales, so the scales
+can be thought of as features. Features can also mark the presence or absence of features with 1s and 0s.</p>
+<p>Line 9 decides how distances are computed for every pair of nodes:</p>
+<ul>
+    <li><b>Euclidean</b>: the straight-line distance between the nodes in multidimensional space.</li>
+    <li><b>City Block</b>: the sum of the differences between the nodes on each dimension or feature.
+        This is usually the most appropriate method for Likert-type rating data.</li>
+    <li><b>Dominance</b>: the largest difference between the nodes on any dimension or feature.</li>
+    <li><b>Hamming</b>: the number of features on which the nodes differ.</li>
+    <li><b>Cosine</b>: based on the cosine of the angle between the vectors, which ranges from 1 to
+        &minus;1. Because cosine measures similarity, the distance is 1&nbsp;&minus;&nbsp;cosine, which ranges
+        from 0 (vectors pointing the same way) to 2 (vectors pointing in opposite directions).</li>
+</ul>
+<p>With <b>standardize</b> on line 9, each vector is scaled to length 1 before distances are computed.
+This is often appropriate when the vectors vary greatly in size. For example, with vectors from Latent
+Semantic Analysis (LSA), Euclidean distances between standardized vectors give a measure very similar
+to the cosine usually used in LSA work.</p>
+<p>A complete example using the City Block method:</p>
+<pre>data
+distances
+5 nodes (5 vectors, one for each node)
+City Block Distances
+1 minimum data value
+6 maximum data value
+coord:
+4 dimensions
+City Block Metric
+2 1 3 2
+1 5 1 4
+3 1 3 5
+2 4 1 2
+3 6 5 4</pre>
+<p>The distance between nodes 1 and 2 (rows 1 and 2) is
+|2&minus;1| + |1&minus;5| + |3&minus;1| + |2&minus;4| = 9, where |a&minus;b| is the absolute value of
+the difference. The distance between nodes 2 and 4 is
+|1&minus;2| + |5&minus;4| + |1&minus;1| + |4&minus;2| = 4. Distances are computed this way for all pairs.</p>
+<p>The vector data must have a value on each dimension or feature for every node. Values are separated
+by one or more spaces or line breaks.</p>
+</div>
+
+<!-- ===================================================================== RESOURCES -->
+<div id="resources">
+<h2>Other Resources</h2>
+<ul>
+    <li><a href="https://en.wikipedia.org/wiki/Pathfinder_network" target="_blank">Wikipedia: Pathfinder
+        network</a>: an overview of the Pathfinder method with examples of its uses.</li>
+    <li><a href="app/static/Schvaneveldt_Durso_Dearholt_1989.pdf" target="_blank">Pathfinder paper
+        (Schvaneveldt, Durso &amp; Dearholt, 1989)</a>: a detailed discussion of the method and several
+        applications.</li>
+    <li><a href="https://www.youtube.com/@PFNets" target="_blank">PFNets YouTube channel</a>: videos about
+        Pathfinder and using the PyPathfinder app.</li>
+</ul>
+</div>
+
+</div>

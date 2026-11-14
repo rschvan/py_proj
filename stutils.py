@@ -23,7 +23,8 @@ DATA_DIR = Path(pypf.__file__).parent / "data"
 @st.cache_data
 def get_cached_help_html():
     """Loads and caches the help content from disk."""
-    help_path = DATA_DIR / "help.html"
+    # app content, kept with the app (static/ is also served at app/static/help.html)
+    help_path = Path(__file__).parent / "static" / "help.html"
     if help_path.exists():
         return help_path.read_text(encoding="utf-8", errors="replace")
     return "<h3>Help content not found.</h3>"
@@ -243,7 +244,6 @@ def init_pf_session_state():
     stss.example_file_format = get_example_file_format()
     stss.col = copy.deepcopy(stss.sample_col)          # this session's own copy
     stss.col.focus_net = stss.col.pfnets["bio_pf"]
-    stss.help_html = get_cached_help_html()
     stss.layouts = ["auto",
                     "gravity",
                     "kamada_kawai",

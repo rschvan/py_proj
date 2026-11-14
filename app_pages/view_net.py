@@ -1,4 +1,4 @@
-# pages/view_net.py
+# app_pages/view_net.py
 import numpy as np
 import streamlit as st
 
