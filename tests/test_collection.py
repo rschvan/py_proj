@@ -84,12 +84,12 @@ def test_project_round_trip(col):
     col.add_pfnet(__import__("pypf.pfnet", fromlist=["PFnet"]).PFnet(col.proximities["bio"], q=2))
     psy = col.pfnets["psy_pf"]
     psy.coords = psy.coords * 0.5
-    col.save_layout(psy)
-    col.apply_saved_layout(psy)
+    col.save_layout(psy)  # also switches psy_pf to "saved"
     col.pfnets["bio_pf_q2"].get_layout(method="spiral")
 
     state = col.get_project_state()
     data = json.loads(state)
+    assert list(data)[0] == "saved_layouts"
     assert set(data["saved_layouts"]) == {psy.termsid}
 
     restored = Collection()
@@ -140,3 +140,12 @@ def test_no_ui_state_in_collection():
     c = Collection()
     for attr in ("selected_prxs", "selected_nets", "focus_net"):
         assert not hasattr(c, attr)
+
+
+def test_save_layout_switches_that_net_to_saved(col):
+    psy, bio = col.pfnets["psy_pf"], col.pfnets["bio_pf"]
+    psy.coords = psy.coords * 0.5
+    col.save_layout(psy)
+    assert psy.layout_request == "saved"
+    np.testing.assert_allclose(psy.layout_coords, psy.coords)  # Reset returns here
+    assert bio.layout_request != "saved"                         # same terms, not switched

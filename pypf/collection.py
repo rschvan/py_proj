@@ -54,9 +54,12 @@ class Collection:
             self.saved_coords.pop(tid, None)
 
     def save_layout(self, net: PFnet) -> None:
-        """Saves the net's current coords as the layout for all nets with its terms."""
+        """Saves the net's current coords as the layout for all nets with its terms, and
+        switches this net to the "saved" layout, so a project file reloads it that way.
+        Other nets with the same terms keep their own layout until "saved" is chosen."""
         if net.termsid and net.coords is not None:
             self.saved_coords[net.termsid] = np.array(net.coords, dtype=float).copy()
+            self.apply_saved_layout(net)
 
     def has_saved_layout(self, termsid: str) -> bool:
         return termsid in self.saved_coords
@@ -303,10 +306,11 @@ class Collection:
         self.prune_orphaned_terms()
 
         state = {
+            # first, so it is easy to find; keyed by the termsids under "terms"
+            "saved_layouts": {tid: coords.tolist() for tid, coords in self.saved_coords.items()},
             "terms": {tid: list(terms) for tid, terms in self.terms.items()},
             "proximities": [],
             "network_recipes": [],
-            "saved_layouts": {tid: coords.tolist() for tid, coords in self.saved_coords.items()},
         }
 
         # 1. Proximities ordered by termsid and name

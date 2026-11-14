@@ -38,13 +38,13 @@ def redraw():
 
 
 def save_layout():
-    """Callback for the Save Layout button: store the focus net's coords for its terms."""
+    """Callback for the Save Layout button: store the focus net's coords for its terms and
+    switch this net to the "saved" layout."""
     net = get_focus_net()
     if net is not None:
-        stss.col.save_layout(net)
-        if getattr(net, "layout_request", None) == "saved":
-            stss.col.apply_saved_layout(net)  # Reset now returns to the newly saved layout
-            stss.layout_seq += 1
+        stss.col.save_layout(net)  # also sets net.layout_request = "saved"
+        stss.layout_version += 1   # new selector widget, so it shows "saved"
+        stss.layout_seq += 1       # view's Reset now returns to the saved positions
         st.toast(f"Layout saved for all networks with the terms of {net.name}", icon="💾")
 
 
