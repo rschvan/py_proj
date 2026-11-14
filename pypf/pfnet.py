@@ -105,9 +105,9 @@ class PFnet:
             case "pf":
                 self.name = self.name + "_pf"
                 if self.q < self.nnodes - 1:
-                    self.name = self.name + "_q" + str(self.q)
+                    self.name = self.name + f"_q{self.q:g}"
                 if self.r != np.inf:
-                    self.name = self.name + "_r" + str(self.r)
+                    self.name = self.name + f"_r{self.r:g}"  # 1.0 -> "r1", 1.5 -> "r1.5"
                 self.isdirected = not np.array_equal(self.dismat, self.dismat.T)
                 self.mindis = self._getmindis(self.q, self.r, self.dismat)
                 limit = 1.1 * self.proximity.max

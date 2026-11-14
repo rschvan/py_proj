@@ -121,3 +121,9 @@ def test_network_properties_flags():
 def test_link_list_weights_are_numbers():
     links = PFnet(load("bank6")).get_link_list()
     assert all(isinstance(w, float) for w in links["weight"])
+
+
+def test_names_use_short_numbers():
+    prx = load("bio")
+    assert PFnet(prx, q=2, r=1.0).name == "bio_pf_q2_r1"
+    assert PFnet(prx, r=1.5).name == "bio_pf_r1.5"
