@@ -127,9 +127,24 @@ suits them.</p>
     </tbody>
 </table>
 
-<p>Columns of the <b>Network List</b>: name, nnodes, nlinks, connected?, planar? (can be drawn with no
-crossing links), directed?, type (<code>pf</code> Pathfinder, <code>nn</code> Nearest Neighbor,
-<code>mg</code> merged), and the q and r used.</p>
+<p>Columns of the <b>Network List</b>:</p>
+<table>
+    <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+    <tbody>
+        <tr><td>name</td><td>Network name, showing how it was made: <code>_pf</code> Pathfinder with its
+            q and r (<code>bio_pf_q2_r1</code>), <code>_nn</code> Nearest Neighbor, and
+            <code>~~mg</code> merged</td></tr>
+        <tr><td>nnodes, nlinks</td><td>Number of nodes and links</td></tr>
+        <tr><td>connected?</td><td>Whether every node can be reached from every other</td></tr>
+        <tr><td>planar?</td><td>Whether the network can be drawn with no crossing links</td></tr>
+        <tr><td>directed?</td><td>Whether links have a direction: from asymmetric data, and always for
+            Nearest Neighbor networks</td></tr>
+        <tr><td>type</td><td><code>pf</code> Pathfinder, <code>nn</code> Nearest Neighbor,
+            <code>mg</code> merged</td></tr>
+        <tr><td>q, r</td><td>The parameters used to derive a Pathfinder network; blank for Nearest
+            Neighbor and merged networks</td></tr>
+    </tbody>
+</table>
 
 <h3 id="derive">Deriving networks</h3>
 <p>Select one or more proximities, open <b>Derive Networks</b>, choose the network type, and click
