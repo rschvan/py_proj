@@ -10,3 +10,6 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 /.claude/
+
+# demo recordings (large; regenerate with demo/record_demo.py)
+demo/output/
