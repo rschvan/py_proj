@@ -7,6 +7,39 @@ from pypf.utility import (floyd, dijkstra, graph_from_adjmat, get_lower,
                           )
 import networkx as nx
 
+_INFINITE_WORDS = ("", "inf", "infinity", "none", "∞")
+
+
+def parse_q(text) -> float:
+    """Reads a q value typed by a user: a whole number of at least 1, or infinity.
+    Blank, "inf" or anything unreadable means infinity; values below 1 become 1."""
+    text = str(text).strip().lower()
+    if text in _INFINITE_WORDS:
+        return np.inf
+    try:
+        value = float(text)
+    except ValueError:
+        return np.inf
+    if np.isinf(value) or np.isnan(value):
+        return np.inf
+    return max(1, int(value))
+
+
+def parse_r(text) -> float:
+    """Reads an r value typed by a user: a number of at least 1, or infinity.
+    Blank, "inf" or anything unreadable means infinity; values below 1 become 1."""
+    text = str(text).strip().lower()
+    if text in _INFINITE_WORDS:
+        return np.inf
+    try:
+        value = float(text)
+    except ValueError:
+        return np.inf
+    if np.isnan(value):
+        return np.inf
+    return max(1.0, value)
+
+
 class PFnet:
     """
     PFnet class is used for creating and managing Proximity File Networks, which represent

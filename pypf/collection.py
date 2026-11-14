@@ -1,12 +1,10 @@
 # pypf/collection.py
 import copy
 import json
-import os
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-from pypf import pfnet
 from pypf.proximity import Proximity
 from pypf.pfnet import PFnet
 from pypf.utility import (get_termsid, sorted_keys, get_unique_name,
@@ -19,9 +17,6 @@ class Collection:
         self.terms: dict[str, tuple[str, ...]] = {}  # termsid -> ('term1', 'term2', ...)
         self.proximities: dict[str, Proximity] = {}
         self.pfnets: dict[str, PFnet] = {}
-        self.selected_prxs: list[str] = []  # proximity names
-        self.selected_nets: list[str] = []  # network names
-        self.focus_net: PFnet | None = None
         # termsid -> (nterms x 2) layout coords, shared by every net with those terms
         self.saved_coords: dict[str, np.ndarray] = {}
 
@@ -87,10 +82,30 @@ class Collection:
             pfn = PFnet(proximity=prx)
             self.add_pfnet(pfn)
 
-    def delete_proximity(self) -> None:
-        for prx_name in self.selected_prxs:
-            self.proximities.pop(prx_name, None)
-        self.selected_prxs = []
+    def add_files(self, files: dict[str, bytes], kind: str = "spreadsheet",
+                  force_symmetric: bool = False) -> tuple[list[str], list[str]]:
+        """Reads proximity files and adds them, each with its minimum Pathfinder network.
+
+        files: file name -> contents. kind: "spreadsheet" (.xlsx/.xls/.csv) or "legacy"
+            (text data files plus their terms files; see pypf.readers.read_legacy_files).
+        force_symmetric: make asymmetric proximities symmetric (min of dij and dji).
+        Returns (names of the proximities added, an error message for each file that failed).
+        """
+        from pypf.readers import read_files
+
+        proximities, errors = read_files(files, kind=kind)
+        added = []
+        for prx in proximities:
+            if force_symmetric:
+                prx = prx.symmetrized()
+            self.add_proximity(prx)
+            added.append(prx.name)
+        return added, errors
+
+    def delete_proximities(self, names) -> None:
+        """Deletes the named proximities. Networks derived from them are kept."""
+        for name in names:
+            self.proximities.pop(name, None)
         self.prune_orphaned_terms()
 
     def add_pfnet(self, pf: PFnet) -> None:
@@ -100,11 +115,30 @@ class Collection:
             pf.name = pf.name + "_dup"
         self.pfnets[pf.name] = pf
 
-    def delete_pfnet(self) -> None:
-        for net_name in self.selected_nets:
-            self.pfnets.pop(net_name, None)
-        self.selected_nets = []
+    def delete_pfnets(self, names) -> None:
+        """Deletes the named networks."""
+        for name in names:
+            self.pfnets.pop(name, None)
         self.prune_orphaned_terms()
+
+    def _same_terms_problem(self, items: dict, names, action: str, min_count: int = 2) -> str | None:
+        names = list(names)
+        if len(names) < min_count:
+            return f"Select {min_count} or more items with the same terms to {action}."
+        missing = [n for n in names if n not in items]
+        if missing:
+            return f"Not found: {', '.join(missing)}"
+        if len({items[n].termsid for n in names}) > 1:
+            return f"All items must have the same terms to {action}."
+        return None
+
+    def average_problem(self, names) -> str | None:
+        """Why the named proximities cannot be averaged, or None if they can."""
+        return self._same_terms_problem(self.proximities, names, "average")
+
+    def merge_problem(self, names) -> str | None:
+        """Why the named networks cannot be merged, or None if they can."""
+        return self._same_terms_problem(self.pfnets, names, "merge")
 
     def get_proximity(self, name: str) -> Proximity | None:
         return self.proximities.get(name)
@@ -150,7 +184,9 @@ class Collection:
             return pd.DataFrame(cors, columns=prxs, index=prxs)
         return None
 
-    def average_proximities(self, ave_name=None, method="mean") -> Proximity | None:
+    def average_proximities(self, names, ave_name=None, method="mean") -> Proximity:
+        """Returns a new proximity averaging the named ones (it is not added to the collection).
+        Raises ValueError if they cannot be averaged."""
         from pypf.utility import coherence
 
         def finite_distances(prx: Proximity) -> np.ndarray:
@@ -161,10 +197,11 @@ class Collection:
 
         if method not in ("mean", "median"):
             raise ValueError(f"method must be 'mean' or 'median', not {method!r}")
-        selected = list(self.selected_prxs)
+        selected = list(names)
+        problem = self.average_problem(selected)
+        if problem:
+            raise ValueError(problem)
         num = len(selected)
-        if num < 2:
-            return None
 
         proxes = [self.proximities[name] for name in selected]
         first_prx = proxes[0]
@@ -212,30 +249,19 @@ class Collection:
             return pd.DataFrame(simmat, index=netlist, columns=netlist)
         return None
 
-    def network_link_list(self) -> pd.DataFrame | None:
-        if self.selected_nets:
-            pf_name = self.selected_nets[0]
-            pf = self.pfnets[pf_name]
-            link_list = list(pf.graph.edges())
-            return pd.DataFrame(link_list, columns=["from", "to"])
-        return None
-
-    def merge_networks(self, mrg_name="") -> PFnet | None:
+    def merge_networks(self, names, mrg_name="") -> PFnet:
+        """Merges the named networks into a new network, adds it, and returns it.
+        Raises ValueError if they cannot be merged."""
         from pypf.utility import graph_from_adjmat
 
-        net_names = self.selected_nets.copy()
+        net_names = list(names)
+        problem = self.merge_problem(net_names)
+        if problem:
+            raise ValueError(problem)
         n_nets = len(net_names)
-        if n_nets < 2:
-            return None
 
         first_net = self.pfnets[net_names[0]]
-        first_tid = getattr(first_net, "termsid", None) or get_termsid(list(first_net.terms))
-
-        for name in net_names[1:]:
-            net = self.pfnets[name]
-            net_tid = getattr(net, "termsid", None) or get_termsid(list(net.terms))
-            if net_tid != first_tid:
-                return None
+        first_tid = first_net.termsid
 
         merged_net = copy.deepcopy(first_net)
         if not mrg_name:
@@ -264,9 +290,8 @@ class Collection:
         terms_seq = self.terms.get(first_tid, getattr(merged_net, "terms", ()))
         merged_net.graph = graph_from_adjmat(adj, list(terms_seq))
         merged_net.graph.name = merged_net.name
-        merged_net.get_eccentricity()
+        merged_net.eccentricity = merged_net.get_eccentricity()
         merged_net.is_planar = nx.is_planar(merged_net.graph)
-        self.selected_nets = []
         links = merged_net.adjmat.astype(bool)
         merged_net.links, unique_distances = compute_merged_net_ranks(merged_net.adjmat, links, merged_net.isdirected )
         merged_net.unique_weights = unique_distances
@@ -375,13 +400,3 @@ class Collection:
                 elif layout and layout != "auto":
                     net.get_layout(method=layout)
                 self.add_pfnet(net)
-
-if __name__ == '__main__':
-    col = Collection()
-    pfile = os.path.join("data", "psy.prx.xlsx")
-    prx = Proximity(pfile)
-    col.add_proximity(prx)
-    net2 = PFnet(proximity=prx, q = 2)
-    col.add_proximity(net2)
-    nets = sorted_keys(dic=col.pfnets)
-    print(col)

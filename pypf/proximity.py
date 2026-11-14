@@ -1,27 +1,35 @@
 #   pypf/proximity.py
-from types import NoneType
+import os
+
+import numpy as np
 
 from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid, sig_figs_flat
-import pandas as pd
-import numpy as np
-import os  #   To work with file paths
+
+
+class ProximityError(ValueError):
+    """Raised when data cannot make a valid Proximity. The message says why."""
+
 
 class Proximity:
     """
-    Represents a proximity object with items and their pairwise distances.
-    Assumes the data file is either:
-    1.  A square matrix where the first row is a header (terms), and the first column (from the second row onwards) contains the same terms.
-    2.  A matrix with one more column than rows, where the first column contains the terms, and the following columns form the square distance matrix (no header row).
+    Represents a proximity object with items (terms) and their pairwise distances.
+
+    Build one from a file with Proximity(filepath) (or the readers in pypf.readers), or from
+    data with Proximity(terms=..., dismat=..., name=...). Invalid data raises ProximityError.
+    The spreadsheet layouts accepted are described in pypf.readers.table_to_matrix.
     """
     def __init__(self, filepath=None, terms=None, dismat=None, name=None):
         """
-        creates a Proximity object.
+        Creates a Proximity object.
 
         Args:
-            filepath (str, optional): Path to a spreadsheet file (.xlsx or .csv) with terms and distances. If provided, loads data from the file and extracts a name. If None, triggers a file dialog. Defaults to None.
-            terms (list, optional): A list of item names (used if data is not loaded from a file). Defaults to None.
-            dismat (numpy.ndarray, optional): A square matrix of pairwise distances (used if data is not loaded from a file). Defaults to None.
-            name (str, optional): A name for the proximity object. If None, uses the filename (if available) or the first term in the list. Defaults to None.
+            filepath: Path (or file-like object with a .name) of a spreadsheet (.xlsx, .xls or
+                .csv) with terms and distances. Its name, up to the first period, names the
+                proximity. Used only when dismat is None.
+            terms: Item names, when not reading a file.
+            dismat: Square matrix of pairwise distances, when not reading a file.
+            name: Name for the proximity (overrides the file name).
+        With no arguments, an empty Proximity is returned.
         """
         self.terms = []
         self.termsid = ""
@@ -38,79 +46,65 @@ class Proximity:
         self.issymmetric = False
         self.sources: list[str] = []
 
-        if dismat is None:  # must read a file
-            if filepath is None: # return default collection
+        if dismat is None:
+            if filepath is None:  # empty Proximity
                 return
-            self.filepath = filepath
-            if hasattr(filepath, 'name'):
-                self.filename = filepath.name
-            else:
-                self.filename = os.path.basename(filepath)
-            self.name, _ = os.path.splitext(self.filename) # returns filename and ext
-            parts = self.name.split(".")
-            self.name = parts[0] if len(parts) > 1 else self.name
-            try:
-                df = self._read_data_file(filepath)
-                df = df.dropna(how='all', axis=0)
-                df = df.dropna(how='all', axis=1)
-                nr, nc = df.shape
-                if nr == nc: # has terms on the first row
-                    terms = df.iloc[1:,0].tolist()
-                    dismat = df.iloc[1:,1:].apply(pd.to_numeric, errors='coerce', downcast='float') # dismat from [1:,1:]
-                elif nr == nc - 1:
-                    terms = df.iloc[:,0].tolist()
-                    dismat = df.iloc[:,1:].apply(pd.to_numeric, errors='coerce', downcast='float') # dismat from [:,1:]
-            except Exception as e:
-                print(f"Error reading file: {e}")
-                return
-        else: # create proximity from inputs
-            dismat = np.asarray(dismat, dtype=float)
-            nr, nc = dismat.shape
-            if terms is None:
-                print(f"Error expected terms: )")
-                return
-            if nr != nc:
-                print(f"Variable inputs are not valid: ")
-                return
-        self.terms = terms
-        self.nterms = len(self.terms)
-        self.termsid = get_termsid(self.terms)
+            from pypf.readers import proximity_name, read_table, table_to_matrix
+            self.filename = filepath.name if hasattr(filepath, "name") else os.path.basename(filepath)
+            self.name = proximity_name(self.filename)
+            terms, dismat = table_to_matrix(read_table(filepath, self.filename), self.filename)
+        elif terms is None:
+            raise ProximityError("terms are needed with a distance matrix")
 
+        dismat = np.array(dismat, dtype=float)
+        if dismat.ndim != 2 or dismat.shape[0] != dismat.shape[1]:
+            raise ProximityError(f"the distance matrix must be square, not {dismat.shape}")
+        terms = list(terms)  # kept exactly as given: termsid (used in project files) depends on them
+        if dismat.shape[0] != len(terms):
+            raise ProximityError(f"{len(terms)} terms but a {dismat.shape[0]} x {dismat.shape[1]} "
+                                 "distance matrix")
+        if len(terms) < 2:
+            raise ProximityError("at least 2 terms are needed")
+        duplicates = sorted({t for t in terms if terms.count(t) > 1})
+        if duplicates:
+            raise ProximityError(f"terms must be unique; repeated: {', '.join(duplicates)}")
+
+        self.terms = terms
+        self.nterms = len(terms)
+        self.termsid = get_termsid(self.terms)
         if name is not None:
             self.name = name
-        self.dismat = np.copy(dismat)
-        if self.dismat.shape != (self.nterms, self.nterms):
-            print(f"error: terms and distance matrix are not congruent")
-            return
-        np.fill_diagonal(self.dismat, 0.0)
-        self.dismat[np.isnan(self.dismat)] = np.inf
-        self.issymmetric = np.array_equal(self.dismat, self.dismat.T)
-        if self.dismat.size > 0:
-            self.calculate_stats()
-            self.coh = coherence(self.dismat, self.max)
 
-    def _read_data_file(self, filepath):
-        """Reads the data file (xlsx or csv) into a Pandas DataFrame."""
-        name = filepath.name if hasattr(filepath, 'name') else filepath
-        if name.endswith(('.xlsx', '.xls')):
-            return pd.read_excel(filepath, header=None, engine='openpyxl')
-        else:
-            return pd.read_csv(filepath, header=None)
+        np.fill_diagonal(dismat, 0.0)
+        dismat[np.isnan(dismat)] = np.inf
+        off_diagonal = ~np.eye(self.nterms, dtype=bool)
+        if not np.isfinite(dismat[off_diagonal]).any():
+            raise ProximityError("there are no finite distances between different terms")
+        self.dismat = dismat
+        self.issymmetric = np.array_equal(self.dismat, self.dismat.T)
+        self.calculate_stats()
+        self.coh = coherence(self.dismat, self.max)
+
+    def symmetrized(self) -> "Proximity":
+        """A symmetric copy using the smaller of dij and dji for each pair, named with "_fs".
+        Returns self if the distances are already symmetric."""
+        if self.issymmetric:
+            return self
+        prx = Proximity(terms=list(self.terms), dismat=np.minimum(self.dismat, self.dismat.T),
+                        name=f"{self.name}_fs")
+        prx.filename, prx.filepath, prx.sources = self.filename, self.filepath, list(self.sources)
+        return prx
 
     def calculate_stats(self):
         """
         Calculates descriptive statistics for the off-diagonal distances, excluding infinity and NaN.
         """
-        datapoints = []
-        n = self.dismat.shape[0]
         if self.issymmetric:
             datapoints = get_lower(self.dismat)
         else:
             datapoints = get_off_diagonal(self.dismat)
-        datapoints.flatten()
-        datapoints = datapoints.astype(float)
-        datapoints = datapoints[~np.isinf(datapoints)]
-        datapoints = datapoints[~np.isnan(datapoints)]
+        datapoints = datapoints.astype(float).flatten()
+        datapoints = datapoints[np.isfinite(datapoints)]
         self.mean = np.mean(datapoints)
         self.sd = np.std(datapoints) if len(datapoints) > 1 else np.nan
         self.min = np.min(datapoints)
@@ -130,14 +124,13 @@ class Proximity:
         return info
 
     def prxprint(self, note=None):
-        from pypf.proximity import Proximity  #   Import Proximity here
         if note is None:
             note = self.name
         print("\nProximity:", note)
         print(f"filename: {self.filename}")
         print(f"filepath: {self.filepath}")
         print(f"name: {self.name}")
-        print(f"nterms: {self.nterms}")  #   Changed from nterms to n
+        print(f"nterms: {self.nterms}")
         print(f"terms[0]: {self.terms[0]}")
         print(f"termsid: {self.termsid}")
         print(f"dismat[0,1]: {self.dismat[0,1]}")
@@ -147,9 +140,3 @@ class Proximity:
         print(f"min: {self.min:.6g}")
         print(f"max: {self.max:.6g}")
         print(f"coh: {self.coh}")
-
-if __name__ == "__main__":
-    f = "data\psyinf.prx.xlsx"
-    p = Proximity(f)
-    p.prxprint()
-    print(p.get_info())

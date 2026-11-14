@@ -1,18 +1,15 @@
 # stutils.py: streamlit helpers for the app (project root, kept out of the pypf package)
+import copy
+import os
 import time
-import streamlit as st
 from pathlib import Path
-from typing import Literal
+
+import numpy as np
+import pandas as pd
+import streamlit as st
+
 import pypf
 from pypf.collection import Collection
-from pypf.proximity import Proximity
-from pypf.legacy_files import legacy_txt_files
-import pandas as pd
-import numpy as np
-import os
-import tempfile
-import copy
-from pypf.utility import get_terms
 
 # alias for st.session_state
 stss = st.session_state
@@ -65,6 +62,10 @@ def get_sample_collection() -> Collection:
     col.load_project_state(get_cached_sample_json())
     return col
 
+def get_focus_net():
+    """The network shown on the View Network page, or None if it no longer exists."""
+    return stss.col.pfnets.get(stss.get("focus_net_name"))
+
 def get_idx(val, opt_list):
     try:
         return opt_list.index(val)
@@ -89,13 +90,6 @@ def get_selected_values(df, event, column: str = "name") -> list:
         row_indices.add(cell[0])
     col = df[column]
     return [col.iat[i] for i in row_indices if 0 <= i < len(df)]
-
-def make_symmetric_if_force(prx:Proximity) -> Proximity:
-    if stss.force_symmetric and not prx.issymmetric:
-        prx.dismat = np.minimum(prx.dismat, prx.dismat.T)
-        prx.name += "_fs"
-        prx.issymmetric = True
-    return prx
 
 def save_project(col: Collection, name: str = "pypf_project") -> None:
     # Lazy download evaluation
@@ -150,89 +144,38 @@ def load_project(col: Collection) -> None:
         stss.manage_data_version += 1 # Wipes the staged file key
         st.rerun()
 
-def _is_valid_prx(prx: Proximity) -> bool:
-    """Proximity() reports read problems by printing, so check what it produced."""
-    return prx.nterms >= 2 and prx.dismat.shape == (prx.nterms, prx.nterms)
+FILE_TYPES = {"Spreadsheet": "spreadsheet", "Legacy Text": "legacy"}
 
 def add_proximity_files(col: Collection) -> None:
-    errors = []
-    stss.perm_file_type = st.radio("**Proximity Data File Type**", ["Spreadsheet", "Legacy Text"],
-                                   index=get_idx(stss.perm_file_type, ["Spreadsheet", "Legacy Text"]),
+    """Upload widgets for proximity files; the reading and adding is done by col.add_files."""
+    stss.perm_file_type = st.radio("**Proximity Data File Type**", list(FILE_TYPES),
+                                   index=get_idx(stss.perm_file_type, list(FILE_TYPES)),
                                    key="prx_file_type", )
+    force_symmetric = st.toggle("Force Proximity Symmetric", value=False,
+                                help="When enabled, uses minimum of dij and dji if asymmetric",
+                                key=f"force_symmetric_{stss.manage_data_version}", )
+    if stss.perm_file_type == "Spreadsheet":
+        uploaded = st.file_uploader(
+            "**Browse for or Drag and Drop Proximity Spreadsheets (.xlsx or .csv)**",
+            type=["xlsx", "csv"], accept_multiple_files=True,
+            help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
+            key=f"ss_files{stss.file_version}", )
+    else:
+        uploaded = st.file_uploader(
+            "**Browse for or Drag and Drop Legacy Proximity and Terms Text Files (.txt)**",
+            type=["txt"], accept_multiple_files=True,
+            help="Upload data files together with their terms files (.trm.txt or terms.txt).",
+            key=f"leg_files_key{stss.file_version}", )
 
-    stss.force_symmetric = st.toggle("Force Proximity Symmetric", value=False,
-                                    help="When enabled, uses minimum of dij and dji if asymmetric",
-                                     key=f"force_symmetric_{stss.manage_data_version}", )
-    # Proximity File loaders
-    match stss.perm_file_type:
-        case "Spreadsheet":
-            # st.write("**Add Proximity Spreadsheet Files**")
-            ss_files = st.file_uploader("**Browse for or Drag and Drop Proximity Spreadsheets (.xlsx or .csv)**", type=["xlsx", "csv"],
-                                        key=f"ss_files{stss.file_version}", accept_multiple_files=True,
-                                        help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
-                                        )
-            if len(ss_files) > 0:
-                # Sort the uploaded files alphabetically by their filename before processing
-                sorted_ss_files = sorted(ss_files, key=lambda f: f.name)
-                for ss_file in sorted_ss_files:
-                    if ss_file is not None:
-                        try:
-                            new_prx = Proximity(filepath=ss_file)
-                            if not _is_valid_prx(new_prx):
-                                errors.append(f"{ss_file.name}: not a valid proximity spreadsheet "
-                                              "(see Help for the required format)")
-                                continue
-                            new_prx = make_symmetric_if_force(new_prx)
-                            col.add_proximity(new_prx)
-                        except Exception:
-                            errors.append(f"{ss_file.name}: not a valid proximity spreadsheet "
-                                          "(see Help for the required format)")
-                stss.upload_errors = errors
-                stss.file_version += 1
-                stss.manage_data_version += 1
-                st.rerun()
+    if uploaded:
+        files = {f.name: f.getvalue() for f in uploaded}
+        _, errors = col.add_files(files, kind=FILE_TYPES[stss.perm_file_type],
+                                  force_symmetric=force_symmetric)
+        stss.upload_errors = errors
+        stss.file_version += 1
+        stss.manage_data_version += 1
+        st.rerun()
 
-        case "Legacy Text":
-            # st.subheader("Add Legacy Proximity and Terms Text Files")
-            leg_files = st.file_uploader("**Browse for or Drag and Drop Legacy Proximity and Terms Text Files (.txt)**", type=["txt"],
-                                         accept_multiple_files=True,
-                                         help="Upload one or more files (.txt) to add to the app.",
-                                         key=f"leg_files_key{stss.file_version}", )
-            if len(leg_files) > 0:
-                with tempfile.TemporaryDirectory() as leg_dir:
-                    #os.makedirs(leg_dir, exist_ok=True)
-                    for leg_file in leg_files:
-                        if leg_file is not None:
-                            file = os.path.join(leg_dir, os.path.basename(leg_file.name))
-                            with open(file, "wb") as f:
-                                f.write(leg_file.getbuffer())
-                    all_leg_files = sorted(os.listdir(leg_dir))
-                    for leg_file in all_leg_files:
-                        # terms files are read by get_terms() below, not as data
-                        if leg_file.lower().endswith(".trm.txt") or leg_file.lower() == "terms.txt":
-                            continue
-                        fname = os.path.join(leg_dir, leg_file)
-                        try:
-                            with open(fname, errors="replace") as f:
-                                raw_lines = f.readlines()
-                            pdict = legacy_txt_files(prx_file=fname, raw_lines=raw_lines)
-                            if pdict["error"]:  # error occurred on this file
-                                errors.append(f"{leg_file}: {pdict['error']}")
-                                continue
-                            pdict["terms"] = get_terms(name=pdict["name"], n=pdict["nnodes"], fdir=leg_dir)
-                            new_prx = Proximity(terms=pdict["terms"], dismat=pdict["dismat"], name=pdict["name"])
-                            if not _is_valid_prx(new_prx):
-                                errors.append(f"{leg_file}: not a valid proximity file")
-                                continue
-                            new_prx = make_symmetric_if_force(new_prx)
-                            col.add_proximity(new_prx)
-                        except Exception as e:
-                            errors.append(f"{leg_file}: {e}")
-                    # the with-block deletes leg_dir and its files on exit
-                    stss.upload_errors = errors
-                    stss.file_version += 1
-                    stss.manage_data_version += 1
-                    st.rerun()
     if st.button("❌ Cancel Add Proximity", ):
         stss.manage_data_version += 1
         st.rerun()
@@ -243,7 +186,7 @@ def init_pf_session_state():
     stss.sample_sources = get_sample_sources()
     stss.example_file_format = get_example_file_format()
     stss.col = copy.deepcopy(stss.sample_col)          # this session's own copy
-    stss.col.focus_net = stss.col.pfnets["bio_pf"]
+    stss.focus_net_name = "bio_pf"                       # network shown on View Network
     stss.layouts = ["auto",
                     "gravity",
                     "kamada_kawai",

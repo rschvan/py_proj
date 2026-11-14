@@ -45,14 +45,14 @@ def network_view(net, *, layout_seq: int, font_size: int, can_redraw: bool,
     st.session_state[_TOKEN_KEY] = token
 
     def _apply_coords():
+        # Runs at the start of the next rerun. `net` is the network this view was drawn for;
+        # positions reported for an earlier net or layout carry an old token and are ignored.
         msg = (st.session_state.get(key) or {}).get("coords") or {}
-        current = st.session_state.get("col").focus_net if "col" in st.session_state else None
-        # ignore positions reported for a net or layout that is no longer shown
-        if current is None or msg.get("token") != st.session_state.get(_TOKEN_KEY):
+        if msg.get("token") != st.session_state.get(_TOKEN_KEY):
             return
         xy = np.asarray(msg.get("xy", []), dtype=float)
-        if xy.shape == (current.nnodes, 2):
-            current.coords = xy / _SCALE
+        if xy.shape == (net.nnodes, 2):
+            net.coords = xy / _SCALE
 
     base = getattr(net, "layout_coords", None)
     if base is None:

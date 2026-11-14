@@ -34,8 +34,7 @@ def test_correlations_and_similarity(col):
 
 
 def test_average_mean(col):
-    col.selected_prxs = ["psy", "bio"]
-    ave = col.average_proximities(method="mean")
+    ave = col.average_proximities(["psy", "bio"], method="mean")
     assert ave.name.endswith("2_psy...bio")
     assert ave.mean == pytest.approx(57.54, abs=1e-3)
     assert ave.sources == ["psy", "bio"]
@@ -45,23 +44,21 @@ def test_average_median_replaces_infinities():
     c = Collection()
     for name in ["psy", "psyinf"]:
         c.add_proximity(load(name))
-    c.selected_prxs = ["psy", "psyinf"]
-    med = c.average_proximities(method="median")
+    med = c.average_proximities(["psy", "psyinf"], method="median")
     assert not np.isinf(med.dismat).any()
-    c.selected_prxs = ["psy", "psyinf"]
-    mean = c.average_proximities(method="mean")
+    mean = c.average_proximities(["psy", "psyinf"], method="mean")
     # with two proximities the median is the mean
     np.testing.assert_allclose(med.dismat, mean.dismat)
 
 
 def test_average_needs_two(col):
-    col.selected_prxs = ["psy"]
-    assert col.average_proximities() is None
+    assert col.average_problem(["psy"])
+    with pytest.raises(ValueError):
+        col.average_proximities(["psy"])
 
 
 def test_merge(col):
-    col.selected_nets = ["psy_pf", "bio_pf"]
-    merged = col.merge_networks()
+    merged = col.merge_networks(["psy_pf", "bio_pf"])
     assert merged.name == "~~mg2_psy_pf|bio_pf"
     assert merged.type == "mg" and merged.nlinks == 37
     assert sorted(np.unique(merged.adjmat).tolist()) == [0, 1, 2, 3]
@@ -70,10 +67,8 @@ def test_merge(col):
 
 def test_delete_prunes_terms_and_saved_layouts(col):
     col.save_layout(col.pfnets["psy_pf"])
-    col.selected_prxs = ["psy", "bio"]
-    col.delete_proximity()
-    col.selected_nets = ["psy_pf", "bio_pf"]
-    col.delete_pfnet()
+    col.delete_proximities(["psy", "bio"])
+    col.delete_pfnets(["psy_pf", "bio_pf"])
     assert not col.terms and not col.saved_coords
 
 
@@ -107,8 +102,7 @@ def test_project_round_trip(col):
 
 
 def test_merged_nets_not_saved(col):
-    col.selected_nets = ["psy_pf", "bio_pf"]
-    col.merge_networks()
+    col.merge_networks(["psy_pf", "bio_pf"])
     names = [r["name"] for r in json.loads(col.get_project_state())["network_recipes"]]
     assert not any(n.startswith("~~mg") for n in names)
 
@@ -117,3 +111,32 @@ def test_sample_project_loads(sample_json):
     c = Collection()
     c.load_project_state(sample_json)
     assert "bio_pf" in c.pfnets and len(c.pfnets) == 9
+
+
+def test_merge_and_average_problems(col):
+    col.add_proximity(load("cities"))
+    assert col.merge_problem(["psy_pf", "bio_pf"]) is None
+    assert "same terms" in col.merge_problem(["psy_pf", "cities_pf"])
+    assert "Not found" in col.merge_problem(["psy_pf", "nope"])
+    assert col.average_problem(["psy", "bio"]) is None
+    assert "same terms" in col.average_problem(["psy", "cities"])
+    with pytest.raises(ValueError):
+        col.merge_networks(["psy_pf", "cities_pf"])
+
+
+def test_merged_net_has_its_own_eccentricity(col):
+    merged = col.merge_networks(["psy_pf", "bio_pf"])
+    assert merged.eccentricity == merged.get_eccentricity()
+    assert merged.eccentricity != col.pfnets["psy_pf"].eccentricity
+
+
+def test_deleting_proximity_keeps_its_networks(col):
+    col.delete_proximities(["psy"])
+    assert "psy" not in col.proximities and "psy_pf" in col.pfnets
+    assert len(col.terms) == 1  # still used by the networks
+
+
+def test_no_ui_state_in_collection():
+    c = Collection()
+    for attr in ("selected_prxs", "selected_nets", "focus_net"):
+        assert not hasattr(c, attr)

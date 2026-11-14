@@ -4,7 +4,7 @@ import streamlit as st
 
 from netview import network_view
 from pypf.utility import sorted_keys
-from stutils import init_pf_session_state, tight_divider
+from stutils import init_pf_session_state, tight_divider, get_focus_net
 
 # alias for st.session_state
 stss = st.session_state
@@ -24,15 +24,14 @@ REDRAWABLE = ["gravity", "kamada_kawai", "davidson_harel", "spring"]
 def new_net():
     """Callback for the network selectbox: make the selected net the focus net
     and bump layout_version so layout widgets reset for the new network."""
-    new = stss.selected_net_name
-    stss.col.focus_net = stss.col.pfnets[new]
+    stss.focus_net_name = stss.selected_net_name
     stss.layout_version += 1
     stss.layout_seq += 1
 
 
 def redraw():
     """Callback for the Redraw button in the network view."""
-    net = stss.col.focus_net
+    net = get_focus_net()
     if net is not None:
         net.get_layout(method=getattr(net, "layout_request", "auto"))
         stss.layout_seq += 1
@@ -40,7 +39,7 @@ def redraw():
 
 def save_layout():
     """Callback for the Save Layout button: store the focus net's coords for its terms."""
-    net = stss.col.focus_net
+    net = get_focus_net()
     if net is not None:
         stss.col.save_layout(net)
         if getattr(net, "layout_request", None) == "saved":
@@ -62,11 +61,11 @@ if not stss.col.pfnets:
 with st.sidebar:
     pfnet_names = sorted_keys(dic=stss.col.pfnets, )
     nnets = len(pfnet_names)
-    if stss.col.focus_net is None or stss.col.focus_net.name not in stss.col.pfnets:
-        stss.col.focus_net = stss.col.pfnets[pfnet_names[0]]
+    if get_focus_net() is None:  # first visit, or the shown net was deleted
+        stss.focus_net_name = pfnet_names[0]
         stss.layout_seq += 1
     if nnets > 1:
-        index = pfnet_names.index(stss.col.focus_net.name)
+        index = pfnet_names.index(stss.focus_net_name)
         st.selectbox(label="**Select Network** (searchable)",
                      options=pfnet_names,
                      index=index,
@@ -75,7 +74,7 @@ with st.sidebar:
                      on_change=new_net,
                      )
     tight_divider()
-    focus_net = stss.col.focus_net
+    focus_net = get_focus_net()
 
     # each net remembers the algorithm chosen for it, so returning to this page
     # (or switching back to a net) keeps its layout instead of recomputing it
