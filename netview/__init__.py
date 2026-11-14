@@ -8,7 +8,6 @@ import numpy as np
 import pyvis
 import streamlit as st
 
-from pypf.utility import split_long_term
 
 _HERE = Path(__file__).parent
 # vis-network ships inside pyvis; its UMD bundle sets globalThis.vis, so it can be
@@ -27,6 +26,23 @@ _COMPONENT = st.components.v2.component(
 )
 
 _TOKEN_KEY = "_netview_token"  # session_state: token of the net currently shown
+
+
+def split_long_term(term) -> str:
+    """Node label: terms of 15+ characters are broken onto two lines at the separator
+    nearest the middle, or hyphenated in the middle if over 20 characters with none."""
+    term = str(term)
+    n = len(term)
+    if n < 15:
+        return term
+    seps = [i for i, ch in enumerate(term) if ch in " _-.,"]
+    if seps:
+        cut = min(seps, key=lambda i: abs(i - n / 2))
+        return term[:cut] + "\n" + term[cut + 1:]
+    if n > 20:
+        mid = round(n / 2)
+        return term[:mid] + "-\n" + term[mid:]
+    return term
 
 
 def _to_canvas(coords: np.ndarray) -> list[list[float]]:

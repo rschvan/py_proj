@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 
-from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid, sig_figs_flat
+from pypf.utility import coherence, get_off_diagonal, get_lower, get_termsid
 
 
 class ProximityError(ValueError):
@@ -110,18 +110,19 @@ class Proximity:
         self.min = np.min(datapoints)
         self.max = np.max(datapoints)
 
-    def get_info(self):
-        info = {}
-        info["name"] = self.name
-        info["nterms"] = self.nterms
-        info["symmetric?"] = self.issymmetric
-        info["coherence"] = self.coh
-        info["mean"] = sig_figs_flat(x=self.mean, n=3)
-        info["sd"] = sig_figs_flat(x=self.sd, n=3)
-        info["min"] = sig_figs_flat(x=self.min, n=3)
-        info["max"] = sig_figs_flat(x=self.max, n=3)
-        info["termsid"] = self.termsid
-        return info
+    def get_info(self) -> dict:
+        """Summary values (unrounded; round them for display)."""
+        return {
+            "name": self.name,
+            "nterms": self.nterms,
+            "symmetric?": bool(self.issymmetric),
+            "coherence": self.coh,
+            "mean": float(self.mean),
+            "sd": float(self.sd),
+            "min": float(self.min),
+            "max": float(self.max),
+            "termsid": self.termsid,
+        }
 
     def prxprint(self, note=None):
         if note is None:

@@ -10,6 +10,7 @@ import streamlit as st
 
 import pypf
 from pypf.collection import Collection
+from pypf.readers import read_spreadsheet
 
 # alias for st.session_state
 stss = st.session_state
@@ -36,23 +37,15 @@ def get_cached_sample_json():
 
 @st.cache_data
 def get_sample_sources():
-    files = ["bank6", "bio", "psy", "bank", "cities", "statecaps"]
-    srcs = ["coocurrences in Longman's dictionary",
-            "relatedness ratings by biology grad students",
-            "relatedness ratings by psychology 101 students",
-            "coocurrences in Longman's dictionary",
-            "distances (km) between cities in the US",
-            "distances (miles) between state capitals in the US"]
-    return pd.DataFrame(data={"file": files, "source": srcs})
+    """Descriptions of the sample data sets (pypf/data/samples.csv)."""
+    return pd.read_csv(DATA_DIR / "samples.csv")
 
 @st.cache_data
 def get_example_file_format():
-    tb6 = ["account", "bank", "flood", "money", "river", "save"]
-    bank6 = pd.DataFrame(np.array([[0, 3, 32, 26, 32, 32], [3, 0, 27, 21, 14, 30],
-                                   [32, 27, 0, 31, 23, 29], [26, 21, 31, 0, 31, 23],
-                                   [32, 14, 23, 31, 0, 31], [32, 30, 29, 23, 31, 0]]),
-                         index=tb6, columns=tb6)
-    return bank6
+    """The bank6 sample as a table, to show the spreadsheet layout."""
+    prx = read_spreadsheet("bank6.prx.xlsx", (DATA_DIR / "bank6.prx.xlsx").read_bytes())
+    dis = prx.dismat.astype(int) if np.all(prx.dismat == prx.dismat.round()) else prx.dismat
+    return pd.DataFrame(dis, index=list(prx.terms), columns=list(prx.terms))
 
 @st.cache_resource(show_spinner="Loading sample data…")
 def get_sample_collection() -> Collection:
@@ -61,6 +54,49 @@ def get_sample_collection() -> Collection:
     col = Collection()
     col.load_project_state(get_cached_sample_json())
     return col
+
+# ----------------------------------------------------------------- table formatting
+# pypf returns unrounded numbers and flags; these helpers shape them for display.
+
+def sig_figs(x, n: int = 3):
+    """x rounded to n significant figures (whole numbers without .0); non-finite x unchanged."""
+    if x is None or not np.isfinite(x) or x == 0:
+        return x
+    mag = int(np.floor(np.log10(abs(x))))
+    if mag > n - 1:
+        return int(round(x))
+    rounded = round(x, n - 1 - mag)
+    return int(rounded) if rounded == int(rounded) else rounded
+
+def _param_text(v) -> str:
+    """q or r for display: "inf", a whole number without .0, or blank (nn and merged nets)."""
+    if v is None or pd.isna(v):
+        return ""
+    if np.isinf(v):
+        return "inf"
+    return f"{v:g}"
+
+def proximity_table(col: Collection) -> pd.DataFrame | None:
+    df = col.get_proximity_info()
+    if df is not None:
+        for c in ("mean", "sd", "min", "max"):
+            df[c] = df[c].map(sig_figs)
+    return df
+
+def network_table(col: Collection) -> pd.DataFrame | None:
+    df = col.get_pfnet_info()
+    if df is not None:
+        for c in ("q", "r"):
+            df[c] = df[c].map(_param_text)
+    return df
+
+def properties_table(net) -> pd.DataFrame:
+    """Network properties with the flag columns showing the node's name (blank if not)."""
+    df = pd.DataFrame(net.get_network_properties())
+    for c in ("max degree", "center", "median"):
+        if c in df:
+            df[c] = [node if flag else "" for node, flag in zip(df["node"], df[c])]
+    return df
 
 def get_focus_net():
     """The network shown on the View Network page, or None if it no longer exists."""

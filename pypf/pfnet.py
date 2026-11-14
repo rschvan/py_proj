@@ -151,7 +151,10 @@ class PFnet:
         self.get_layout() # default coords
 
     def get_network_properties(self) -> dict:
-        properties = {"node": self.terms}
+        """Per-node properties as columns (lists in term order). "max degree", "center" and
+        "median" are True for the nodes that have that property. "mean link dist" and
+        "median" are present only for connected networks."""
+        properties = {"node": list(self.terms)}
         links = self.adjmat > 0
         links = links.astype(int)
         indegree = np.sum(links, axis=0)
@@ -165,15 +168,13 @@ class PFnet:
             properties["degree"] = indegree.tolist()
             degree = indegree.tolist()
         max_degree = max(degree)
-        properties["max degree"] = [term if degree[i] == max_degree else "" for i, term in enumerate(self.terms)]
+        properties["max degree"] = [bool(d == max_degree) for d in degree]
         ecc = self.eccentricity
         properties["eccentricity"] = ecc["ecc"]
-        center_indices = ecc["center"]
-        properties["center"] = [term if i in center_indices else "" for i, term in enumerate(self.terms)]
+        properties["center"] = [i in ecc["center"] for i in range(self.nnodes)]
         if self.isconnected:
             properties["mean link dist"] = ecc["mean link dist"]
-            properties["median"] = [term if ecc["mean link dist"][i] == ecc["min mean links"]
-                                    else "" for i, term in enumerate(self.terms)]
+            properties["median"] = [bool(m == ecc["min mean links"]) for m in ecc["mean link dist"]]
         return properties
 
     def _getmindis(self, q, r, dis) -> np.ndarray:
@@ -192,9 +193,9 @@ class PFnet:
         info["planar?"] = self.is_planar
         info["directed?"] = self.isdirected
         info["type"] = self.type
-        info["q"] = f"{self.q:.0f}" if self.q else None
-        info["r"] = f"{self.r:g}" if self.r else None
-        return info # a dictionary
+        info["q"] = self.q  # number (np.inf for infinity), or None for nn and merged nets
+        info["r"] = self.r
+        return info
 
     def get_layout(self, method="auto") -> None:
         """
@@ -261,7 +262,7 @@ class PFnet:
                 properties["ti"].append(j)
                 properties["source"].append(self.terms[i])
                 properties["target"].append(self.terms[j])
-                properties["weight"].append(f"{weight:.7g}")
+                properties["weight"].append(int(weight) if self.type == "mg" else float(weight))
                 if self.type == "mg":
                     binw = f"{int(weight):b}"
                     properties["nets"].append(binw)

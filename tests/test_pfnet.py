@@ -99,3 +99,25 @@ def test_set_coords():
     assert net.layout_request == "saved"
     with pytest.raises(ValueError):
         net.set_coords(np.zeros((5, 2)))
+
+
+def test_info_returns_numbers():
+    pf, nn = PFnet(load("bio"), q=2), PFnet(load("bio"), type="nn")
+    assert pf.get_info()["q"] == 2 and pf.get_info()["r"] == INF
+    assert nn.get_info()["q"] is None and nn.get_info()["r"] is None
+    prx_info = load("bio").get_info()
+    assert prx_info["mean"] == pytest.approx(67.0067, abs=1e-4)  # unrounded
+
+
+def test_network_properties_flags():
+    net = PFnet(load("psy"))
+    props = net.get_network_properties()
+    for col in ("max degree", "center", "median"):
+        assert all(isinstance(v, bool) for v in props[col]) and any(props[col])
+    center = [n for n, c in zip(props["node"], props["center"]) if c]
+    assert center == [net.terms[i] for i in net.eccentricity["center"]]
+
+
+def test_link_list_weights_are_numbers():
+    links = PFnet(load("bank6")).get_link_list()
+    assert all(isinstance(w, float) for w in links["weight"])

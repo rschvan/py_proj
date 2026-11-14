@@ -598,27 +598,6 @@ def sanitize_for_json(obj):
         return obj.tolist()
     return obj
 
-def sig_figs_flat(x, n):
-    if x == 0:
-        return 0
-
-    # Calculate the power of 10 for the first significant digit
-    mag = math.floor(math.log10(abs(x)))
-    if mag > n-1:
-        return int(round(x,0))
-
-    # Calculate how many decimal places to keep
-    decimals = n - 1 - mag
-
-    # Rounding to a negative number rounds to the left of the decimal
-    rounded = round(x, decimals)
-
-    # Convert to int if it's a whole number to get rid of the .0
-    if rounded == int(rounded):
-        return int(rounded)
-
-    return rounded
-
 def sorted_keys(dic: dict, attrs: tuple | list = ("termsid", "name")) -> list:
     """
     Sorts dictionary keys by value attributes.
@@ -633,32 +612,6 @@ def sorted_keys(dic: dict, attrs: tuple | list = ("termsid", "name")) -> list:
         dic.keys(),
         key=lambda k: tuple(str(getattr(dic[k], attr, "")) for attr in attrs)
     )
-
-def split_long_term(term:str)->str:
-    n = len(term)
-    if n < 15:
-        return term
-    sep = [' ','_','-', '.',',']
-    mid = n/2
-    loc = []
-    for i in range(n):
-        if term[i] in sep:
-            loc.append(i)
-    if loc:
-        mind = n + 1
-        minp = loc[0]
-        for pos in loc:
-            dis = abs(pos-mid)
-            if dis < mind:
-                mind = dis
-                minp = pos
-        return term[0:minp] + '\n' + term[minp+1:n]
-    else:
-        if n > 20:
-            mid = round(n/2)
-            return term[0:mid] + '-\n' + term[mid:n]
-        else:
-            return term
 
 if __name__ == '__main__':
     from pypf.proximity import Proximity

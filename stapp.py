@@ -7,7 +7,8 @@ import time
 
 from pypf.pfnet import PFnet, parse_q, parse_r
 from stutils import (init_pf_session_state, tight_divider, add_proximity_files,
-                     get_selected_values, save_project, load_project, get_focus_net)
+                     get_selected_values, save_project, load_project, get_focus_net,
+                     proximity_table, network_table, properties_table)
 from pypf.utility import sorted_keys
 
 # alias for st.system_state
@@ -155,7 +156,7 @@ if not prx_names:
     st.info("No Proximity files added.")
 else:
     st.write("Click in the box left of Name column to select:")
-    prx_df = col.get_proximity_info()
+    prx_df = proximity_table(col)
     prxs_event = st.dataframe(
         prx_df,
         width='content',
@@ -295,7 +296,7 @@ if not pfnet_names:
     st.info("No networks created.")
 else:
     st.write("Clicking at the top of the boxes selects or deselects all:")
-    pfnet_df = col.get_pfnet_info()
+    pfnet_df = network_table(col)
     nets_event = st.dataframe(
         pfnet_df,
         width='content',
@@ -401,7 +402,7 @@ if len(col.pfnets) > 0 and show_props:
     st.write(
         f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
     st.write(f"")
-    tab = pd.DataFrame(net.get_network_properties())
+    tab = properties_table(net)
     st.dataframe(data=tab, width="content", hide_index=True, height='content')
     stss.net_version += 1
 
