@@ -1,0 +1,7 @@
+﻿,account,bank,flood,money,river,save
+account,0,3,32,26,32,32
+bank,3,0,27,21,14,30
+flood,32,27,0,31,23,29
+money,26,21,31,0,31,23
+river,32,14,23,31,0,31
+save,32,30,29,23,31,0
