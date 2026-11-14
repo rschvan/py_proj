@@ -260,7 +260,7 @@ def init_pf_session_state():
                     #"circle",
                     ]
     stss.layout = "auto"
-    stss.rotation = 0
+    stss.layout_seq = 0   # bumped when Python computes a new layout for the view
     stss.count = 0
     stss.q_param = np.inf
     stss.r_param = np.inf

@@ -1,0 +1,37 @@
+<div class="nv-root">
+  <div class="nv-toolbar" role="toolbar" aria-label="Network view tools">
+    <div class="nv-group" aria-label="Orientation">
+      <span class="nv-label">Orient</span>
+      <button type="button" class="nv-btn" data-act="flipx" title="Flip horizontally">&#8646;</button>
+      <button type="button" class="nv-btn" data-act="flipy" title="Flip vertically">&#8645;</button>
+      <button type="button" class="nv-btn" data-act="rot90" title="Rotate 90&deg; clockwise">&#8635;90&deg;</button>
+      <label class="nv-slider" title="Drag to rotate; release to keep">
+        Rotate
+        <input type="range" class="nv-rotate" min="-180" max="180" step="1" value="0" />
+        <span class="nv-rotate-val">0&deg;</span>
+      </label>
+    </div>
+    <div class="nv-group" aria-label="Layout">
+      <span class="nv-label">Layout</span>
+      <button type="button" class="nv-btn" data-act="redraw" title="Recompute the layout from a new random start">Redraw</button>
+      <button type="button" class="nv-btn nv-toggle" data-act="physics" aria-pressed="false" title="Let the layout engine keep adjusting nodes">Physics</button>
+      <button type="button" class="nv-btn" data-act="fit" title="Fit network to view">Fit</button>
+      <button type="button" class="nv-btn" data-act="reset" title="Undo all moves since the layout was computed">Reset</button>
+    </div>
+    <div class="nv-group" aria-label="Labels">
+      <span class="nv-label">Text</span>
+      <button type="button" class="nv-btn" data-act="fontdec" title="Smaller text">A&minus;</button>
+      <button type="button" class="nv-btn" data-act="fontinc" title="Larger text">A+</button>
+      <button type="button" class="nv-btn nv-toggle" data-act="ranks" aria-pressed="false" title="Show link ranks">Ranks</button>
+      <label class="nv-slider" title="Hide links with a higher rank">
+        Max rank
+        <input type="range" class="nv-maxrank" min="1" max="1" step="1" value="1" />
+        <span class="nv-maxrank-val">1</span>
+      </label>
+    </div>
+    <div class="nv-group nv-end">
+      <button type="button" class="nv-btn" data-act="png" title="Save the view as a PNG image">&#10515; PNG</button>
+    </div>
+  </div>
+  <div class="nv-canvas"></div>
+</div>

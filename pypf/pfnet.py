@@ -174,6 +174,8 @@ class PFnet:
         """
         from pypf.layouts import get_coords
         self.coords, self.layout_method = get_coords(network=self, method=method)
+        self.layout_coords = self.coords.copy()  # as computed, before any user moves
+        self.layout_request = method  # method asked for ("auto" etc.); layout_method is what ran
 
     def netprint(self, note=None):
         if note is None:
