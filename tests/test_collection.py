@@ -149,3 +149,13 @@ def test_save_layout_switches_that_net_to_saved(col):
     assert psy.layout_request == "saved"
     np.testing.assert_allclose(psy.layout_coords, psy.coords)  # Reset returns here
     assert bio.layout_request != "saved"                         # same terms, not switched
+
+
+def test_saved_layouts_are_rounded(col):
+    psy = col.pfnets["psy_pf"]
+    psy.coords = psy.coords / 3.0  # plenty of decimals
+    col.save_layout(psy)
+    saved = col.saved_coords[psy.termsid]
+    np.testing.assert_array_equal(saved, np.round(saved, 4))
+    for row in json.loads(col.get_project_state())["saved_layouts"][psy.termsid]:
+        assert all(len(f"{v:.10g}".split(".")[-1]) <= 4 for v in row)

@@ -10,6 +10,10 @@ from pypf.pfnet import PFnet
 from pypf.utility import (get_termsid, sorted_keys, get_unique_name,
                           get_link_ranks, compute_merged_net_ranks)
 
+# Saved layout coords (canonical range about -1..1) keep 4 decimal places:
+# far finer than a pixel, and it keeps project files small.
+COORD_DECIMALS = 4
+
 
 class Collection:
 
@@ -58,7 +62,7 @@ class Collection:
         switches this net to the "saved" layout, so a project file reloads it that way.
         Other nets with the same terms keep their own layout until "saved" is chosen."""
         if net.termsid and net.coords is not None:
-            self.saved_coords[net.termsid] = np.array(net.coords, dtype=float).copy()
+            self.saved_coords[net.termsid] = np.round(np.array(net.coords, dtype=float), COORD_DECIMALS)
             self.apply_saved_layout(net)
 
     def has_saved_layout(self, termsid: str) -> bool:
@@ -307,7 +311,8 @@ class Collection:
 
         state = {
             # first, so it is easy to find; keyed by the termsids under "terms"
-            "saved_layouts": {tid: coords.tolist() for tid, coords in self.saved_coords.items()},
+            "saved_layouts": {tid: np.round(coords, COORD_DECIMALS).tolist()
+                              for tid, coords in self.saved_coords.items()},
             "terms": {tid: list(terms) for tid, terms in self.terms.items()},
             "proximities": [],
             "network_recipes": [],

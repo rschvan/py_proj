@@ -52,7 +52,7 @@ def network_view(net, *, layout_seq: int, font_size: int, can_redraw: bool,
             return
         xy = np.asarray(msg.get("xy", []), dtype=float)
         if xy.shape == (net.nnodes, 2):
-            net.coords = xy / _SCALE
+            net.coords = np.round(xy / _SCALE, 4)  # sub-pixel detail is noise
 
     base = getattr(net, "layout_coords", None)
     if base is None:
