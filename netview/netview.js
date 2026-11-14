@@ -340,12 +340,29 @@ function createInstance(parentElement) {
   return inst;
 }
 
+function scrollPageToTop(parentElement) {
+  // Streamlit keeps the scroll position when switching pages (e.g. Display Network at the
+  // bottom of Build Nets), which can hide the header and toolbar. Scroll the nearest
+  // scrolling ancestor of the component back to the top.
+  let el = parentElement.host || parentElement;
+  while (el && el !== document.body) {
+    const style = getComputedStyle(el);
+    if (/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight) {
+      el.scrollTo({ top: 0, behavior: "instant" });
+      return;
+    }
+    el = el.parentElement || (el.getRootNode && el.getRootNode().host);
+  }
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
 export default function (component) {
   const { data, parentElement, setStateValue, setTriggerValue } = component;
   let inst = instances.get(parentElement);
   if (!inst) {
     inst = createInstance(parentElement);
     instances.set(parentElement, inst);
+    scrollPageToTop(parentElement); // only when the view first appears, not on reruns
   }
   inst.api = { setStateValue, setTriggerValue };
   inst.update(data || {});
