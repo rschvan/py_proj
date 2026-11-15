@@ -118,6 +118,52 @@ def tight_divider(space_px=2, color="green", thickness=2):
         unsafe_allow_html=True
     )
 
+REVEAL_KEY = "pf_reveal"  # prefix for st.container keys whose contents should be scrolled into view
+
+_REVEAL_JS = """
+<script>
+(() => {
+  if (window.__pfReveal) return;
+  window.__pfReveal = true;
+  const TOP = 70, BOTTOM = 16;  // keep clear of the app header and the window edge
+  function scroller(el) {
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      const s = getComputedStyle(p).overflowY;
+      if ((s === "auto" || s === "scroll") && p.scrollHeight > p.clientHeight) return p;
+    }
+    return document.scrollingElement;
+  }
+  // Scroll just enough to show the bottom of el, without pushing its top out of sight.
+  function reveal(el) {
+    const r = el.getBoundingClientRect();
+    const dy = Math.min(r.bottom - window.innerHeight + BOTTOM, r.top - TOP);
+    if (dy > 0) scroller(el).scrollBy({top: dy, behavior: "smooth"});
+  }
+  const later = (el, ms) => setTimeout(() => reveal(el), ms);
+  // Expanders open in the browser, with no rerun.
+  document.addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (d.tagName === "DETAILS" && d.open) later(d.closest('[data-testid="stExpander"]') || d, 350);
+  }, true);
+  // Results shown after a button click arrive in a keyed container.
+  const sel = '[class*="st-key-""" + REVEAL_KEY + """"]';
+  new MutationObserver((muts) => {
+    for (const m of muts) for (const n of m.addedNodes) {
+      if (!(n instanceof Element)) continue;
+      const el = n.matches(sel) ? n : n.querySelector(sel);
+      if (el) { later(el, 400); return; }
+    }
+  }).observe(document.body, {childList: true, subtree: true});
+})();
+</script>
+"""
+
+
+def keep_panels_in_view():
+    """Scroll opened expanders and newly shown REVEAL_KEY containers into view."""
+    st.html(_REVEAL_JS, unsafe_allow_javascript=True)
+
+
 def get_selected_values(df, event, column: str = "name") -> list:
     # gets the values in column for selected rows and/or rows of selected cells
     sel = event.selection

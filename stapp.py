@@ -8,7 +8,8 @@ import time
 from pypf.pfnet import PFnet, parse_q, parse_r
 from stutils import (init_pf_session_state, tight_divider, add_proximity_files,
                      get_selected_values, save_project, load_project, get_focus_net,
-                     proximity_table, network_table, properties_table)
+                     proximity_table, network_table, properties_table,
+                     keep_panels_in_view, REVEAL_KEY)
 from pypf.utility import sorted_keys
 
 # alias for st.system_state
@@ -36,6 +37,7 @@ if page_selected != home_page:
     st.stop()
 
 st.title("PyPathfinder")
+keep_panels_in_view()
 
 # --- Sidebar for Global Actions ---
 
@@ -271,15 +273,13 @@ else:
 
 #---------------------------------------------------------------------------------------------------prx details
     if len(sel_prxs) == 1 and display_matrix:
-        prx = col.proximities[sel_prxs[0]]
-        st.subheader(f"Distance Matrix for {prx.name}")
-        if hasattr(prx,"sources") and len(prx.sources) > 0:
-            st.write(f"Sources: {prx.sources}")
-        #create dataframe with terms and dismat
-        dismat = prx.dismat
-        terms = prx.terms
-        df = pd.DataFrame(dismat, index=terms, columns=terms)
-        st.dataframe(df, width='content', height='content')
+        with st.container(key=f"{REVEAL_KEY}_matrix"):
+            prx = col.proximities[sel_prxs[0]]
+            st.subheader(f"Distance Matrix for {prx.name}")
+            if hasattr(prx, "sources") and len(prx.sources) > 0:
+                st.write(f"Sources: {prx.sources}")
+            df = pd.DataFrame(prx.dismat, index=prx.terms, columns=prx.terms)
+            st.dataframe(df, width='content', height='content')
         # stss.prx_version += 1
 
 if len(col.proximities) > 1 and show_corrs:
@@ -376,34 +376,35 @@ else:
 
 #------------------------------------------------------------------------------------------------net details
 if len(col.pfnets) > 0 and show_link_list:
-    net = col.pfnets[sel_nets[0]]
-    st.write("**Link List**")
-    st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links -- net.isdirected={net.isdirected}")
-    if net.type == "mg":
-        st.write(f"Sources: {net.sources}")
-        for i, source in enumerate(net.sources):
-            b = f"{int(2**i):b}"
-            st.write(f"{b} {source}")
-        st.write("""**weight** is a binary code using bits shown above   
-            **nets** shows which nets using bits shown above  
-            **count** shows the number of nets that contain the link
-            """)
-    llist = net.get_link_list()
-    st.dataframe(data=llist, width="content", hide_index=False, height='content')
+    with st.container(key=f"{REVEAL_KEY}_links"):
+        net = col.pfnets[sel_nets[0]]
+        st.write("**Link List**")
+        st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links -- net.isdirected={net.isdirected}")
+        if net.type == "mg":
+            st.write(f"Sources: {net.sources}")
+            for i, source in enumerate(net.sources):
+                b = f"{int(2**i):b}"
+                st.write(f"{b} {source}")
+            st.write("""**weight** is a binary code using bits shown above
+                **nets** shows which nets using bits shown above
+                **count** shows the number of nets that contain the link
+                """)
+        llist = net.get_link_list()
+        st.dataframe(data=llist, width="content", hide_index=False, height='content')
     stss.net_version += 1
 
 if len(col.pfnets) > 0 and show_props:
-    st.write("**Network Properties**")
-    net = col.pfnets[sel_nets[0]]
-    if net.type == "mg":
-        st.write(f"Sources: {net.sources}")
-    ecc = net.eccentricity
-    st.write(f"{net.name}")
-    st.write(
-        f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
-    st.write(f"")
-    tab = properties_table(net)
-    st.dataframe(data=tab, width="content", hide_index=True, height='content')
+    with st.container(key=f"{REVEAL_KEY}_props"):
+        st.write("**Network Properties**")
+        net = col.pfnets[sel_nets[0]]
+        if net.type == "mg":
+            st.write(f"Sources: {net.sources}")
+        ecc = net.eccentricity
+        st.write(f"{net.name}")
+        st.write(
+            f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
+        tab = properties_table(net)
+        st.dataframe(data=tab, width="content", hide_index=True, height='content')
     stss.net_version += 1
 
 if show_netsim and len(col.pfnets) > 1:
