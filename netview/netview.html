@@ -22,12 +22,15 @@
       <span class="nv-label">Text</span>
       <button type="button" class="nv-btn" data-act="fontdec" title="Smaller text">A&minus;</button>
       <button type="button" class="nv-btn" data-act="fontinc" title="Larger text">A+</button>
-      <button type="button" class="nv-btn nv-toggle" data-act="ranks" aria-pressed="false" title="Show link ranks">Ranks</button>
-      <label class="nv-slider" title="Hide links with a higher rank">
+      <button type="button" class="nv-btn nv-toggle" data-act="weights" aria-pressed="false" title="Show link weights (distances; for merged networks, which networks have the link)">Weights</button>
+      <span class="nv-slider" title="Hide links with a higher rank">
         Max rank
-        <input type="range" class="nv-maxrank" min="1" max="1" step="1" value="1" />
+        <button type="button" class="nv-btn nv-step" data-act="rankdown" title="One rank lower">&lsaquo;</button>
+        <input type="range" class="nv-maxrank" min="1" max="1" step="1" value="1" aria-label="Max rank" />
+        <button type="button" class="nv-btn nv-step" data-act="rankup" title="One rank higher">&rsaquo;</button>
         <span class="nv-maxrank-val">1</span>
-      </label>
+      </span>
+      <span class="nv-linkcount" title="Links shown out of all links"></span>
     </div>
     <div class="nv-group nv-end">
       <button type="button" class="nv-btn" data-act="png" title="Save the view as a PNG image">&#10515; PNG</button>

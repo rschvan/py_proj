@@ -263,7 +263,7 @@ class PFnet:
                 properties["target"].append(self.terms[j])
                 properties["weight"].append(int(weight) if self.type == "mg" else float(weight))
                 if self.type == "mg":
-                    binw = f"{int(weight):b}"
+                    binw = f"{int(weight):0{len(self.sources)}b}"  # one digit per network
                     properties["nets"].append(binw)
                     properties["count"].append(binw.count("1"))
         return properties

@@ -45,6 +45,15 @@ def split_long_term(term) -> str:
     return term
 
 
+def weight_label(net, weight) -> str:
+    """A link's weight as an edge label: its distance to 4 significant figures, or for a
+    merged network the binary code of the networks that have the link, one digit per
+    network (the rightmost digit is the first network)."""
+    if net.type == "mg":
+        return f"{int(weight):0{len(net.sources)}b}"
+    return f"{float(weight):.4g}"
+
+
 def _to_canvas(coords: np.ndarray) -> list[list[float]]:
     return (np.asarray(coords, dtype=float) * _SCALE).round(3).tolist()
 
@@ -77,7 +86,8 @@ def network_view(net, *, layout_seq: int, font_size: int, can_redraw: bool,
         {"id": i, "label": split_long_term(term), "title": f"Node: {term}", "x": x, "y": y}
         for i, (term, (x, y)) in enumerate(zip(net.terms, _to_canvas(net.coords)))
     ]
-    edges = [{"from": int(i), "to": int(j), "rank": int(rank)}
+    edges = [{"from": int(i), "to": int(j), "rank": int(rank),
+              "weight": weight_label(net, net.adjmat[i, j])}
              for (i, j), rank in net.links.items()]
     # Streamlit drops a component's own state when its page is left, so the text/label
     # settings are copied to a plain session key that survives page switches.

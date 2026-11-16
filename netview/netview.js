@@ -1,10 +1,10 @@
 // netview.js: Streamlit CCv2 front end for the PyPathfinder network view.
 // vis-network's UMD bundle is prepended by netview/__init__.py and defines globalThis.vis.
 //
-// Python -> JS (data):  token, nodes [{id,label,title,x,y}], edges [{from,to,rank}],
-//                       base [[x,y],...], directed, maxRank, canRedraw, view {fontSize, ranks, maxRank}
+// Python -> JS (data):  token, nodes [{id,label,title,x,y}], edges [{from,to,rank,weight}],
+//                       base [[x,y],...], directed, maxRank, canRedraw, view {fontSize, weights, maxRank}
 // JS -> Python:         state  "coords" {token, xy:[[x,y],...]}   after any change to positions
-//                       state  "view"   {fontSize, ranks, maxRank}  text/label settings
+//                       state  "view"   {fontSize, weights, maxRank}  text/label settings
 //                       trigger "redraw" (timestamp)               recompute the layout in Python
 
 const instances = new WeakMap();
@@ -32,7 +32,7 @@ function createInstance(parentElement) {
     base: [],
     maxRank: 1,
     directed: false,
-    view: { fontSize: 16, ranks: false, maxRank: null },
+    view: { fontSize: 16, weights: false, maxRank: null },
     physics: false,
     rotateStart: null, // positions captured when a rotate drag begins
     api: {}, // latest setStateValue / setTriggerValue
@@ -116,23 +116,28 @@ function createInstance(parentElement) {
 
   inst.applyEdgeLabels = () => {
     const maxAllowed = inst.view.maxRank ?? inst.maxRank;
+    const all = inst.edges.get();
     inst.edges.update(
-      inst.edges.get().map((e) => ({
+      all.map((e) => ({
         id: e.id,
-        label: inst.view.ranks ? String(e.rank) : " ",
+        label: inst.view.weights ? e.weight : " ",
         hidden: e.rank > maxAllowed,
       }))
     );
+    const shown = all.filter((e) => e.rank <= maxAllowed).length;
+    q(".nv-linkcount").textContent = `${shown} of ${all.length} links`;
   };
 
   inst.syncControls = () => {
-    q('[data-act="ranks"]').setAttribute("aria-pressed", String(inst.view.ranks));
+    q('[data-act="weights"]').setAttribute("aria-pressed", String(inst.view.weights));
     q('[data-act="physics"]').setAttribute("aria-pressed", String(inst.physics));
     const slider = q(".nv-maxrank");
     slider.max = String(inst.maxRank);
     slider.value = String(inst.view.maxRank ?? inst.maxRank);
     q(".nv-maxrank-val").textContent = slider.value;
     slider.disabled = inst.maxRank <= 1;
+    q('[data-act="rankdown"]').disabled = Number(slider.value) <= 1;
+    q('[data-act="rankup"]').disabled = Number(slider.value) >= inst.maxRank;
   };
 
   // --------------------------------------------------------------- physics
@@ -178,12 +183,14 @@ function createInstance(parentElement) {
       inst.applyFont();
       inst.commitView();
     },
-    ranks: () => {
-      inst.view.ranks = !inst.view.ranks;
+    weights: () => {
+      inst.view.weights = !inst.view.weights;
       inst.applyEdgeLabels();
       inst.syncControls();
       inst.commitView();
     },
+    rankdown: () => inst.stepRank(-1),
+    rankup: () => inst.stepRank(1),
     png: () => inst.savePng(),
   };
 
@@ -216,8 +223,19 @@ function createInstance(parentElement) {
     inst.view.maxRank = Number(rankSlider.value);
     q(".nv-maxrank-val").textContent = rankSlider.value;
     inst.applyEdgeLabels();
+    inst.syncControls();  // enables or disables the step buttons
   };
   rankSlider.onchange = () => inst.commitView();
+
+  inst.stepRank = (delta) => {
+    const now = inst.view.maxRank ?? inst.maxRank;
+    const next = Math.min(inst.maxRank, Math.max(1, now + delta));
+    if (next === now) return;
+    inst.view.maxRank = next;
+    inst.applyEdgeLabels();
+    inst.syncControls();
+    inst.commitView();
+  };
 
   // ------------------------------------------------------------ PNG export
   inst.savePng = () => {
@@ -247,7 +265,7 @@ function createInstance(parentElement) {
 
     if (data.view) {
       inst.view.fontSize = data.view.fontSize ?? inst.view.fontSize;
-      inst.view.ranks = !!data.view.ranks;
+      inst.view.weights = !!data.view.weights;
       inst.view.maxRank = data.view.maxRank ?? null;
     } else {
       inst.view.fontSize = data.fontSize || inst.view.fontSize;
@@ -281,6 +299,7 @@ function createInstance(parentElement) {
         from: e.from,
         to: e.to,
         rank: e.rank,
+        weight: e.weight,
         label: " ",
         width: 1.5 * scale,
         color: "blue",

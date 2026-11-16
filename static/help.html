@@ -203,7 +203,9 @@ of the selected networks. Merged names start with <code>~~mg</code> and the numb
 in the order they appear in the Network List, and a link's weight is increased by 2<sup>i</sup> when network i
 contains it. Reading the weight in binary from right to left, a 1 in position i means network i has
 the link. The Link List of a merged network shows this code (<code>nets</code>) and how many networks
-contain each link (<code>count</code>).</p>
+contain each link (<code>count</code>). On View Network, <b>Weights</b> shows the same code on each link.
+Both show one digit per network, so merging three networks gives codes such as <code>011</code>
+(in networks 0 and 1).</p>
 <p>A merged network can't be merged again, because its link codes would be lost.
 Merge the original networks together instead.</p>
 <p>Merged networks are not saved in project files; merge them again after loading a project.</p>
@@ -254,9 +256,12 @@ to zoom. Hover over a node to see its full name.</p>
         <tr><td>Fit</td><td>Zooms so the whole network is visible.</td></tr>
         <tr><td>Reset</td><td>Undoes all moves, flips, and rotations since the layout was computed or chosen.</td></tr>
         <tr><td rowspan="3">Text</td><td>A&minus; / A+</td><td>Smaller or larger labels</td></tr>
-        <tr><td>Ranks</td><td>Shows each link's rank (see <a href="#measures" target="_self">Measures</a>).</td></tr>
-        <tr><td>Max rank</td><td>Hides links with a higher rank, so you can see which links appear first
-            as the distance limit grows. It returns to showing all links when you select another network.</td></tr>
+        <tr><td>Weights</td><td>Shows each link's weight: its distance, or for a merged network the binary
+            code of the networks that have the link (see <a href="#merge" target="_self">Merging networks</a>).</td></tr>
+        <tr><td>Max rank</td><td>Hides links with a higher <a href="#ranks" target="_self">rank</a>, so you can see which links appear first
+            as the distance limit grows. The &lsaquo; and &rsaquo; buttons (or the arrow keys, after
+            clicking the slider) move it one rank at a time. The count beside it shows how many links are visible.
+            It returns to showing all links when you select another network.</td></tr>
         <tr><td>Image</td><td>PNG</td><td>Saves the current picture as a .png image.</td></tr>
     </tbody>
 </table>
@@ -335,7 +340,8 @@ half of the matrices when both are symmetric and all off-diagonal cells otherwis
 
 <h3 id="ranks">Link rank</h3>
 <p>The links of a network are ranked by their distance: rank 1 is the shortest distance (the strongest
-link), rank 2 the next shortest, and so on. Links with equal distances share a rank.</p>
+link), rank 2 the next shortest, and so on. Links with equal distances share a rank.
+For a merged network, rank 1 is the links found in the most networks, rank 2 the next most, and so on.</p>
 
 <h3 id="properties">Network properties</h3>
 <p>These count links between nodes and ignore link direction.</p>
@@ -392,7 +398,7 @@ regularly. You can only recover what you last saved.</div>
                     <li>Merged networks: merge them again after loading</li>
                     <li>Node positions you have not saved with <b>Save Layout</b>. Layouts that start
                         at random (gravity, kamada_kawai, spring) will come out differently.</li>
-                    <li>Text size and rank display settings</li>
+                    <li>Text size, weight labels and the Max rank setting</li>
                 </ul>
             </td>
         </tr>

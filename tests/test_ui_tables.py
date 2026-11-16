@@ -35,3 +35,19 @@ def test_sample_tables():
     assert list(stutils.get_sample_sources()["file"])[:3] == ["bank6", "bio", "psy"]
     ex = stutils.get_example_file_format()
     assert ex.loc["bank", "river"] == 14 and ex.shape == (6, 6)
+
+
+def test_weight_labels():
+    netview = pytest.importorskip("netview")
+    col = Collection()
+    for name in ["psy", "bio"]:
+        col.add_proximity(load(name))
+    bio = col.pfnets["bio_pf"]
+    (i, j) = next(iter(bio.links))
+    assert netview.weight_label(bio, bio.adjmat[i, j]) == f"{bio.dismat[i, j]:.4g}"
+    assert netview.weight_label(bio, 2070.86) == "2071"
+
+    merged = col.merge_networks(["psy_pf", "bio_pf"])
+    labels = {netview.weight_label(merged, merged.adjmat[i, j]) for i, j in merged.links}
+    assert labels <= {"01", "10", "11"} and len(labels) > 1
+    assert set(merged.get_link_list()["nets"]) == labels  # Link List uses the same code

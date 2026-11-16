@@ -140,13 +140,13 @@ def labels(d):
     d.pause(1)
     d.click(d.toolbar("fontinc"))
     d.pause(1.5)
-    d.click(d.toolbar("ranks"))
+    d.click(d.toolbar("weights"))
     d.pause(3)
     d.drag_slider(".nv-maxrank", fraction=0.25)
     d.pause(4)
     d.drag_slider(".nv-maxrank", fraction=1.0)
     d.pause(1)
-    d.click(d.toolbar("ranks"))
+    d.click(d.toolbar("weights"))
     d.click(d.toolbar("fontdec"))
     d.click(d.toolbar("fontdec"))
 
@@ -302,7 +302,7 @@ correlated, but their networks share only part of their links.
 To look at a network, select it and click Display Network. The View Network page shows
 the network with a toolbar above it. The Orient tools flip and rotate the picture. The
 Layout tools redraw the layout, run a physics engine, fit the network to the view, and
-reset your changes. The Text tools change the label size and show link ranks. The PNG
+reset your changes. The Text tools change the label size and show link weights. The PNG
 button saves the picture as an image. You can also drag individual nodes, drag the
 background to move the picture, and scroll to zoom.
 """, view_network),
@@ -314,11 +314,11 @@ by ninety degrees. The rotate slider turns the picture smoothly to any angle; re
 it to keep the rotation. Reset returns to the layout as it was computed.
 """, orient),
 
-    Scene("Labels and link ranks", """
-The A buttons make the labels larger or smaller. Ranks shows each link's rank, where
-rank one is the shortest distance, the strongest link. The Max rank slider hides links
-with higher ranks, so you can watch the network build up from its strongest links as
-you move the slider back to the right.
+    Scene("Labels, weights and ranks", """
+The A buttons make the labels larger or smaller. Weights shows each link's distance.
+Links are also ranked, where rank one is the shortest distance, the strongest link.
+The Max rank slider hides links with higher ranks, so you can watch the network build
+up from its strongest links as you move the slider back to the right.
 """, labels),
 
     Scene("Layout algorithms", """
