@@ -1,9 +1,52 @@
 # stapp.py: streamlit interface
 import os
+import sys
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+
+
+@st.cache_resource
+def _module_mtimes() -> dict:
+    """File times of the project modules as last seen; kept for the life of the server."""
+    return {}
+
+
+def _drop_stale_modules() -> None:
+    """Make the imports below load the current code of any project module whose file changed.
+
+    Streamlit reloads changed modules only for sessions that are open when the files change.
+    When the code is updated on a server with no open sessions (Streamlit Cloud after a push),
+    new sessions would run this new script with the old pypf, stutils, etc. still in memory.
+    """
+    root = Path(__file__).resolve().parent
+    seen = _module_mtimes()
+    project = {}
+    for name, mod in list(sys.modules.items()):
+        file = getattr(mod, "__file__", None)
+        if name == "__main__" or not file or "site-packages" in file:
+            continue
+        path = Path(file).resolve()
+        if root in path.parents and path.parts[len(root.parts)] not in ("venv", ".venv"):
+            project[name] = path
+    stale = False
+    for name, path in project.items():
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = None
+        stale |= seen.get(name, mtime) != mtime
+        seen[name] = mtime
+    if stale:
+        for name in project:
+            sys.modules.pop(name, None)
+        seen.clear()
+
+
+_drop_stale_modules()
 
 from pypf.pfnet import PFnet, parse_q, parse_r
 from stutils import (init_pf_session_state, tight_divider, add_proximity_files,

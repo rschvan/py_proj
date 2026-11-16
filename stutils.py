@@ -47,10 +47,23 @@ def get_example_file_format():
     dis = prx.dismat.astype(int) if np.all(prx.dismat == prx.dismat.round()) else prx.dismat
     return pd.DataFrame(dis, index=list(prx.terms), columns=list(prx.terms))
 
-@st.cache_resource(show_spinner="Loading sample data…")
-def get_sample_collection() -> Collection:
+def pypf_code_id() -> str:
+    """A fingerprint of the pypf source files; it changes whenever pypf's code changes."""
+    import hashlib
+    h = hashlib.sha1()
+    for path in sorted(Path(pypf.__file__).parent.glob("*.py")):
+        h.update(path.read_bytes())
+    return h.hexdigest()
+
+
+@st.cache_resource(show_spinner="Loading sample data…", max_entries=1)
+def get_sample_collection(code_id: str) -> Collection:
     """Builds the sample Collection once per server process.
-    Shared by all sessions: never modify it, always deepcopy it."""
+    Shared by all sessions: never modify it, always deepcopy it.
+
+    code_id (from pypf_code_id) is part of the cache key. Streamlit keeps cached objects
+    when the code is updated in place (as Streamlit Cloud does after a push), and a
+    Collection built by the old code lacks any new methods; the new code_id rebuilds it."""
     col = Collection()
     col.load_project_state(get_cached_sample_json())
     return col
@@ -282,7 +295,7 @@ def add_proximity_files(col: Collection) -> None:
 
 def init_pf_session_state():
     stss.home_dir = os.path.dirname(os.path.abspath(__file__))
-    stss.sample_col = get_sample_collection()          # shared, read-only
+    stss.sample_col = get_sample_collection(pypf_code_id())  # shared, read-only
     stss.sample_sources = get_sample_sources()
     stss.example_file_format = get_example_file_format()
     stss.col = copy.deepcopy(stss.sample_col)          # this session's own copy
