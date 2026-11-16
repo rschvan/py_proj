@@ -209,7 +209,8 @@ Both show one digit per network, so merging three networks gives codes such as <
 (in networks 0 and 1).</p>
 <p>A merged network can't be merged again, because its link codes would be lost.
 Merge the original networks together instead.</p>
-<p>Merged networks are not saved in project files; merge them again after loading a project.</p>
+<p>Project files save which networks each merge was made from, and the merge is rebuilt when the
+project is loaded.</p>
 
 <h3 id="compare">Comparison tables</h3>
 <p>Check the boxes under <b>Comparison Tables</b> in the sidebar to show:</p>
@@ -390,13 +391,13 @@ regularly. You can only recover what you last saved.</div>
                 <ul>
                     <li>Proximities (terms and distances), and which proximities each average came from</li>
                     <li>How to rebuild each network: its type, q, r, and proximity</li>
+                    <li>Merged networks: which networks each was merged from</li>
                     <li>The layout algorithm chosen for each network</li>
                     <li>Saved layouts (from <b>Save Layout</b>)</li>
                 </ul>
             </td>
             <td>
                 <ul>
-                    <li>Merged networks: merge them again after loading</li>
                     <li>Node positions you have not saved with <b>Save Layout</b>. Layouts that start
                         at random (gravity, kamada_kawai, spring) will come out differently.</li>
                     <li>Text size, weight labels and the Max rank setting</li>

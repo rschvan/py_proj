@@ -101,10 +101,33 @@ def test_project_round_trip(col):
     np.testing.assert_allclose(restored.pfnets["psy_pf"].coords, psy.coords)
 
 
-def test_merged_nets_not_saved(col):
-    col.merge_networks(["psy_pf", "bio_pf"])
-    names = [r["name"] for r in json.loads(col.get_project_state())["network_recipes"]]
-    assert not any(n.startswith("~~mg") for n in names)
+def test_merged_nets_are_saved_and_rebuilt(col):
+    merged = col.merge_networks(["psy_pf", "bio_pf"], mrg_name="m")
+    merged.get_layout(method="spiral")
+    state = col.get_project_state()
+    recipe = next(r for r in json.loads(state)["network_recipes"] if r["type"] == "mg")
+    assert recipe == {"name": "~~mg2_m", "type": "mg", "sources": ["psy_pf", "bio_pf"],
+                      "layout": "spiral"}
+
+    restored = Collection.from_project_state(state).pfnets["~~mg2_m"]
+    assert restored.sources == ["psy_pf", "bio_pf"] and restored.layout_request == "spiral"
+    np.testing.assert_array_equal(restored.adjmat, merged.adjmat)
+    assert restored.links == merged.links
+
+
+def test_merges_follow_renamed_networks_when_added(col):
+    col.merge_networks(["psy_pf", "bio_pf"], mrg_name="m")
+    col.load_project_state(col.get_project_state())  # adding again renames everything
+    copies = [n for n in col.pfnets.values() if n.type == "mg" and n.name != "~~mg2_m"]
+    assert len(copies) == 1
+    assert all(s in col.pfnets and s not in ("psy_pf", "bio_pf") for s in copies[0].sources)
+
+
+def test_old_merge_recipes_without_sources_are_skipped(col):
+    state = json.loads(col.get_project_state())
+    state["network_recipes"].append({"name": "~~mg2_old", "type": "mg", "q": None, "r": None,
+                                     "parent_proximity": None})
+    assert "~~mg2_old" not in Collection.from_project_state(json.dumps(state)).pfnets
 
 
 def test_sample_project_loads(sample_json):

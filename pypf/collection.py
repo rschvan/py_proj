@@ -291,8 +291,10 @@ class Collection:
             return pd.DataFrame(simmat, index=netlist, columns=netlist)
         return None
 
-    def merge_networks(self, names, mrg_name="") -> PFnet:
+    def merge_networks(self, names, mrg_name="", full_name: str | None = None) -> PFnet:
         """Merges the named networks into a new network, adds it, and returns it.
+        It is named "~~mg<count>_<mrg_name>" (mrg_name defaults to the names joined by "|"),
+        or full_name if given (used when a project rebuilds a saved merge).
         Raises ValueError if they cannot be merged."""
         from pypf.utility import graph_from_adjmat
 
@@ -309,7 +311,7 @@ class Collection:
         if not mrg_name:
             mrg_name = "|".join(net_names)
 
-        merged_net.name = f"~~mg{n_nets}_{mrg_name}"
+        merged_net.name = full_name or f"~~mg{n_nets}_{mrg_name}"
         merged_net.graph.name = merged_net.name
         merged_net.type = "mg"
         merged_net.proximity = None
@@ -370,10 +372,16 @@ class Collection:
             return isinstance(v, (int, float)) and np.isinf(v)
 
         # 2. Network recipes ordered by termsid and name.
-        #    Merged networks are not saved; users re-create them after loading.
+        #    A merged network is saved as the names of the networks it merged.
         for name in sorted_keys(self.pfnets):
             net = self.pfnets[name]
             if net.type == "mg":
+                state["network_recipes"].append({
+                    "name": net.name,
+                    "type": "mg",
+                    "sources": list(net.sources),
+                    "layout": getattr(net, "layout_request", "auto"),
+                })
                 continue
             state["network_recipes"].append({
                 "name": net.name,
@@ -443,10 +451,13 @@ class Collection:
             prx.sources = [prx_name_map[s] for s in prx.sources if s in prx_name_map]
 
         # 3. Restore Networks from Recipes
+        net_name_map = {}
+        merges = []
         for r_data in data.get("network_recipes", []):
             net_type = r_data.get("type")
             if net_type == "mg":
-                continue  # older project files may contain merges; they are not restored
+                merges.append(r_data)  # rebuilt below, once the networks they use exist
+                continue
             # Skip networks whose proximity was deleted before saving
             prx_name = prx_name_map.get(r_data.get("parent_proximity"))
             parent_prx = self.get_proximity(prx_name) if prx_name else None
@@ -461,3 +472,18 @@ class Collection:
                 elif layout and layout != "auto":
                     net.get_layout(method=layout)
                 self.add_pfnet(net)
+                net_name_map[r_data["name"]] = net.name
+
+        # 4. Rebuild merged networks. Older project files have merge recipes without
+        #    sources; those, and merges whose networks are missing, are skipped.
+        for r_data in merges:
+            sources = [net_name_map.get(s) for s in r_data.get("sources", [])]
+            if len(sources) < 2 or None in sources or self.merge_problem(sources):
+                continue
+            net = self.merge_networks(sources, full_name=r_data["name"])
+            # the merge starts with the layout of its first network; redo it if another was chosen
+            layout = r_data.get("layout", "auto")
+            if layout == "saved":
+                self.apply_saved_layout(net)
+            elif layout and layout != getattr(net, "layout_request", "auto"):
+                net.get_layout(method=layout)
