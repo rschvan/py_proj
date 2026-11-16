@@ -1,7 +1,6 @@
 # stutils.py: streamlit helpers for the app (project root, kept out of the pypf package)
 import copy
 import os
-import time
 from pathlib import Path
 
 import numpy as np
@@ -186,47 +185,41 @@ def get_selected_values(df, event, column: str = "name") -> list:
     col = df[column]
     return [col.iat[i] for i in row_indices if 0 <= i < len(df)]
 
-def save_project(col: Collection, name: str = "pypf_project") -> None:
-    # Lazy download evaluation
+def save_project_button(col: Collection, name: str = "pypf_project") -> None:
+    """Sidebar button that downloads the project as <name>.json."""
     st.download_button(
-        label=f"**📥 Save project {name} in .json file**",
-        data=col.get_project_state,  # Callable deferred until click
+        label="💾 Save Project",
+        data=col.get_project_state,  # called only when clicked
         file_name=f"{name}.json",
         mime="application/json",
-        use_container_width=False, )
-    st.caption("Merged networks are not saved; merge them again after loading.")
-    stss.manage_data_version += 1
+        on_click="ignore",  # no rerun needed
+        width="stretch",
+        help=f"Download the project as {name}.json, to load again later.",
+    )
 
-    # Scoped cancellation gate
-    if st.button("**❌ Cancel Save**", ):
-        stss.manage_data_version += 1
-        st.rerun()
 
 LOAD_MODES = ["Replace current project", "Add to current project"]
 
-def load_project(col: Collection) -> None:
+
+@st.dialog("Load Project", width="medium")
+def load_project_dialog() -> None:
+    """Choose a saved project file and replace the current project with it or add it."""
+    col = stss.col
     uploaded_file = st.file_uploader(
-        "**Browse for or drag and drop saved .json file**",
+        "**Browse for or drag and drop a saved project (.json)**",
         type="json",
         key=f"main_project_loader_{stss.manage_data_version}",
-        width=300,
     )
-
-    # No file selected yet (waiting on user or cancelled in OS dialog)
     if uploaded_file is None:
-        if st.button("❌ Cancel Load", key=f"abort_empty_load_{stss.manage_data_version}"):
-            stss.manage_data_version += 1 # Resets the uploader widget key
-            st.rerun()
         return
 
-    # File has been selected
     mode = st.radio("**Load into**", LOAD_MODES, horizontal=True,
                     key=f"load_mode_{stss.manage_data_version}",
                     help="**Replace** starts fresh with only the project in the file "
                          "(including removing the sample data). **Add** keeps what is "
                          "loaded now; names already in use get a number added.")
 
-    if st.button("🚀 Confirm and Load", type="primary", key="confirm_load_btn"):
+    if st.button("📂 Load", type="primary", key="confirm_load_btn"):
         try:
             project_data = uploaded_file.read().decode("utf-8")
             if mode == LOAD_MODES[0]:
@@ -235,63 +228,57 @@ def load_project(col: Collection) -> None:
                 stss.sample_visible = False   # the sample data is gone
                 stss.focus_net_name = None    # View Network shows the first network
                 stss.layout_seq += 1
-                done = "Project loaded"
             else:
                 Collection.from_project_state(project_data)  # check it loads before adding
                 col.load_project_state(project_data)
-                done = "Project added"
 
             fname = os.path.basename(uploaded_file.name)
             stss.project_name = fname.split(".")[0]
             stss.proj_name_ver += 1
-            st.success(f"{done} from {fname}")
-
             stss.manage_data_version += 1
-            time.sleep(1)
-            st.rerun()
+            st.rerun()  # closes the dialog
         except Exception as e:
             st.error(f"{uploaded_file.name} could not be loaded; it does not look like a "
                      f"PyPathfinder project file. Nothing was changed. (Details: {e})")
 
-    if st.button("❌ Cancel", key="cancel_staged_load_btn"):
-        stss.manage_data_version += 1 # Wipes the staged file key
-        st.rerun()
 
 FILE_TYPES = {"Spreadsheet": "spreadsheet", "Legacy Text": "legacy"}
 
-def add_proximity_files(col: Collection) -> None:
-    """Upload widgets for proximity files; the reading and adding is done by col.add_files."""
+
+@st.dialog("Add Data Files", width="medium")
+def add_files_dialog() -> None:
+    """Upload proximity files; the reading and adding is done by col.add_files."""
     stss.perm_file_type = st.radio("**Proximity Data File Type**", list(FILE_TYPES),
                                    index=get_idx(stss.perm_file_type, list(FILE_TYPES)),
-                                   key="prx_file_type", )
+                                   key="prx_file_type", horizontal=True)
     force_symmetric = st.toggle("Force Proximity Symmetric", value=False,
                                 help="When enabled, uses minimum of dij and dji if asymmetric",
                                 key=f"force_symmetric_{stss.manage_data_version}", )
     if stss.perm_file_type == "Spreadsheet":
         uploaded = st.file_uploader(
-            "**Browse for or Drag and Drop Proximity Spreadsheets (.xlsx or .csv)**",
+            "**Browse for or drag and drop proximity spreadsheets (.xlsx or .csv)**",
             type=["xlsx", "csv"], accept_multiple_files=True,
             help="Upload one or more Proximity files (.xlsx or .csv) to add to the app.",
             key=f"ss_files{stss.file_version}", )
+        with st.expander("Spreadsheet layout example (bank6)"):
+            st.caption("Terms in the first row and column, distances or dissimilarities in the matrix.")
+            st.dataframe(stss.example_file_format, width="content", hide_index=False)
     else:
         uploaded = st.file_uploader(
-            "**Browse for or Drag and Drop Legacy Proximity and Terms Text Files (.txt)**",
+            "**Browse for or drag and drop legacy proximity and terms text files (.txt)**",
             type=["txt"], accept_multiple_files=True,
             help="Upload data files together with their terms files (.trm.txt or terms.txt).",
             key=f"leg_files_key{stss.file_version}", )
 
     if uploaded:
         files = {f.name: f.getvalue() for f in uploaded}
-        _, errors = col.add_files(files, kind=FILE_TYPES[stss.perm_file_type],
-                                  force_symmetric=force_symmetric)
-        stss.upload_errors = errors
+        _, errors = stss.col.add_files(files, kind=FILE_TYPES[stss.perm_file_type],
+                                       force_symmetric=force_symmetric)
+        stss.upload_errors = errors   # shown on the page after the dialog closes
         stss.file_version += 1
         stss.manage_data_version += 1
-        st.rerun()
+        st.rerun()  # closes the dialog
 
-    if st.button("❌ Cancel Add Proximity", ):
-        stss.manage_data_version += 1
-        st.rerun()
 
 def init_pf_session_state():
     stss.home_dir = os.path.dirname(os.path.abspath(__file__))
@@ -324,7 +311,6 @@ def init_pf_session_state():
     stss.sample_visible = True
     stss.perm_file_type = "Spreadsheet"
     stss.perm_net_type = "Pathfinder"
-    stss.data_option = "None"
     stss.project_name = "pypf_project"
     stss.proj_name_ver = 0
     stss.prx_version = 0

@@ -97,16 +97,19 @@ def merge(d):
 
 
 def compare(d):
-    d.click(d.text("Proximity Correlations", sidebar=True))
+    d.scroll_to_text("Show Proximity Correlations")
+    d.click(d.text("Show Proximity Correlations"))
     d.pause(1)
     d.scroll_to_heading("Proximity Correlations")
     d.pause(5)
-    d.click(d.text("Network Similarities", sidebar=True))
+    d.scroll_to_text("Show Network Similarities")
+    d.click(d.text("Show Network Similarities"))
     d.pause(1)
     d.scroll_to_heading("Network Similarity")
     d.pause(5)
-    d.click(d.text("Proximity Correlations", sidebar=True))
-    d.click(d.text("Network Similarities", sidebar=True))
+    d.click(d.text("Show Network Similarities"))
+    d.scroll_to_text("Show Proximity Correlations")
+    d.click(d.text("Show Proximity Correlations"))
 
 
 def view_network(d):
@@ -190,13 +193,13 @@ def saved_layout(d):
 def projects(d):
     d.go_page("Build Nets")
     d.page_top()
-    d.click(d.text("Save Project File"))
+    d.point_at(d.button("💾 Save Project"))
     d.pause(4)
-    d.click(d.button("❌ Cancel Save"))
+    d.click(d.button("📂 Load Project…"))
+    d.pause(5)
+    d.page.keyboard.press("Escape")  # close the Load Project window
     d.pause(1)
-    d.click(d.text("Load Project File"))
-    d.pause(4)
-    d.click(d.button("❌ Cancel Load"))
+    d.point_at(d.button("➕ Add Data Files…"))
 
 
 def help_page(d):
@@ -291,8 +294,8 @@ agree and where they differ.
 """, merge),
 
     Scene("Comparing data sets", """
-The sidebar has two comparison tables. Proximity Correlations shows how closely the
-distances of each pair of data sets agree. Network Similarities shows the proportion of
+Switches under the lists show two comparison tables. Proximity Correlations shows how
+closely the distances of each pair of data sets agree. Network Similarities shows the proportion of
 links that each pair of networks share. Both are computed for data sets with the same
 terms; other pairs are left blank. Here the biology and psychology ratings are highly
 correlated, but their networks share only part of their links.
@@ -345,9 +348,10 @@ which they don't.
 """, saved_layout),
 
     Scene("Saving and loading projects", """
-Back on Build Nets, the Manage Data Files section saves your whole project to a file on
+Back on Build Nets, Save Project in the sidebar saves your whole project to a file on
 your computer: the proximities, how to rebuild each network, the chosen layouts, and
-saved layouts. When you load a project, you can replace what is loaded or add to it.
+saved layouts. Load Project opens a window where you choose a project file, and you can
+replace what is loaded or add to it. Add Data Files works the same way for new data.
 The app forgets its data when left idle for a while, so save your project before taking
 a break.
 """, projects),

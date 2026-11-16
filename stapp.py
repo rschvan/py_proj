@@ -49,8 +49,8 @@ def _drop_stale_modules() -> None:
 _drop_stale_modules()
 
 from pypf.pfnet import PFnet, parse_q, parse_r
-from stutils import (init_pf_session_state, tight_divider, add_proximity_files,
-                     get_selected_values, save_project, load_project, get_focus_net,
+from stutils import (init_pf_session_state, tight_divider, add_files_dialog,
+                     get_selected_values, save_project_button, load_project_dialog, get_focus_net,
                      proximity_table, network_table, properties_table,
                      keep_panels_in_view, REVEAL_KEY)
 from pypf.utility import sorted_keys
@@ -108,49 +108,20 @@ with (st.sidebar):
     stss.project_name =st.text_input(label="**Project Name**",
                   value=stss.project_name,
                   key=f"proj_name_{stss.proj_name_ver}",)
+    save_project_button(col, name=stss.project_name)
+    if st.button("📂 Load Project…", width="stretch",
+                 help="Replace the current project with a saved one, or add it."):
+        load_project_dialog()
+    if st.button("➕ Add Data Files…", width="stretch",
+                 help="Add proximity files (spreadsheets or legacy text files)."):
+        add_files_dialog()
 
     tight_divider()
-    st.write("**Comparison Tables**")
-    show_corrs = st.checkbox("**Proximity Correlations**", value=False, key="show_corrs")
-    show_netsim = st.checkbox("**Network Similarities**", value=False, key="show_netsim")
-
-    tight_divider()
-
-    st.info(
-    """Selecting Proximities or Networks in the Lists will enable permissible action buttons for the selections.
-    """
-    )
 
     if get_focus_net() is not None:
         st.write(f"**In View: {stss.focus_net_name}**")
 
 # ------------------------------------------------------------------------------------ Main Panel
-# ------------------------------------------------------------------------------------ Project Save and Load
-
-manage, act = st.columns([0.30,0.70])
-
-with manage:
-    st.subheader("**Manage Data Files**")
-    stss.data_option = st.radio(label="**Select File Operation**",
-             index=None,
-             key=f"manage_data_{stss.manage_data_version}",
-             options=[ "**Add Proximity Data Files**",
-                      "**Load Project File**",
-                      "**Save Project File**",],
-                                )
-with act:
-    if stss.data_option:
-        with st.container(border=True, width="content", height="content", gap="small"):
-            st.write(f"**{stss.data_option}**")
-            match stss.data_option:
-                case "**Save Project File**":
-                    save_project(col, name=stss.project_name)
-
-                case "**Load Project File**":
-                    load_project(col)
-
-                case "**Add Proximity Data Files**":
-                    add_proximity_files(col)
 
 # Report files that could not be added (shown once, after the upload rerun)
 if stss.get("upload_errors"):
@@ -169,14 +140,15 @@ with st.expander("**Getting Started** (click to hide or show)",
                   "sidebar to remove it.")
     st.markdown(intro)
     st.markdown(
-        "1. **Add data**: in **Manage Data Files**, choose **Add Proximity Data Files**. "
+        "1. **Add data**: click **➕ Add Data Files…** in the sidebar. "
         "The minimum Pathfinder network (q = r = ∞) is derived for each file.\n"
         "2. **Work with the lists**: check the boxes left of the Name column to select items. "
-        "The buttons below each list let you derive networks with other q and r values, "
-        "average proximities, merge networks, and show details.\n"
+        "The buttons below each list become available for the selection: derive networks "
+        "with other q and r values, average proximities, merge networks, and show details.\n"
         "3. **View a network**: select one and click **Display Network**. On **View Network**, "
         "try layouts, use the toolbar to orient and adjust it, and click **Save Layout** to keep it.\n"
-        "4. **Save your project** in **Manage Data Files**."
+        "4. **Save your project** with **💾 Save Project** in the sidebar, and bring it back "
+        "later with **📂 Load Project**."
     )
     st.warning("The app loses its data when idle for a while. "
                "Save your project before taking a break.", icon="⚠️")
@@ -335,12 +307,15 @@ else:
             st.dataframe(df, width='content', height='content')
         # stss.prx_version += 1
 
-if len(col.proximities) > 1 and show_corrs:
-    st.subheader("Proximity Correlations")
-    st.info("""Correlations of the distance data in pairs of data sets with the same terms""")
-    prx_corrs_df = col.get_proximity_correlations()
-    if not prx_corrs_df.empty:
-        st.dataframe(prx_corrs_df, width='content', hide_index=False, height='content')
+if len(col.proximities) > 1 and st.toggle(
+        "**Show Proximity Correlations**", key="show_corrs",
+        help="Correlations of the distance data in pairs of proximities with the same terms"):
+    with st.container(key=f"{REVEAL_KEY}_corrs"):
+        st.subheader("Proximity Correlations")
+        st.info("""Correlations of the distance data in pairs of data sets with the same terms""")
+        prx_corrs_df = col.get_proximity_correlations()
+        if not prx_corrs_df.empty:
+            st.dataframe(prx_corrs_df, width='content', hide_index=False, height='content')
 
 # ----------------------------------------------------------------------------------------------------Network List
 st.subheader("Network List")
@@ -463,12 +438,15 @@ if len(col.pfnets) > 0 and show_props:
         st.dataframe(data=tab, width="content", hide_index=True, height='content')
     stss.net_version += 1
 
-if show_netsim and len(col.pfnets) > 1:
-    st.subheader("Network Similarity")
-    st.info("""Similarity: The number of common links 
-        divided by the number of unique links in two networks with the same terms""")
-    sim_df = col.network_similarity()
-    if not sim_df.empty:
-        st.dataframe(sim_df, width='content', hide_index=False, height='content')
-    else:
-        st.info("No PFnet objects.")
+if len(col.pfnets) > 1 and st.toggle(
+        "**Show Network Similarities**", key="show_netsim",
+        help="Shared links in pairs of networks with the same terms"):
+    with st.container(key=f"{REVEAL_KEY}_netsim"):
+        st.subheader("Network Similarity")
+        st.info("""Similarity: The number of common links
+            divided by the number of unique links in two networks with the same terms""")
+        sim_df = col.network_similarity()
+        if not sim_df.empty:
+            st.dataframe(sim_df, width='content', hide_index=False, height='content')
+        else:
+            st.info("No PFnet objects.")

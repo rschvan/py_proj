@@ -72,15 +72,15 @@ three pages, listed in the sidebar: <b>Build Nets</b>, <b>View Network</b>, and 
 <p>Sample proximities and networks are loaded when the app starts, so you can try everything
 before using your own data. A typical session goes like this:</p>
 <ol>
-    <li><b>Add data.</b> On <b>Build Nets</b>, open <b>Manage Data Files</b> and choose
-        <b>Add Proximity Data Files</b>. The minimum Pathfinder network (q&nbsp;=&nbsp;r&nbsp;=&nbsp;&infin;)
+    <li><b>Add data.</b> On <b>Build Nets</b>, click <b>Add Data Files&hellip;</b> in the sidebar.
+        The minimum Pathfinder network (q&nbsp;=&nbsp;r&nbsp;=&nbsp;&infin;)
         is derived for each file automatically.</li>
     <li><b>Derive more networks</b> if you want them: select proximities in the Proximity List and use
         <b>Derive Networks</b> to choose q and r, or a Nearest Neighbor network.</li>
     <li><b>Look at a network.</b> Select one network in the Network List and click <b>Display Network</b>.</li>
     <li><b>Adjust the layout</b> on <b>View Network</b>: try layout algorithms, flip or rotate the
         picture, and drag nodes. Click <b>Save Layout</b> to keep a layout you like.</li>
-    <li><b>Save the project</b> from <b>Manage Data Files</b> so you can reload your work later.</li>
+    <li><b>Save the project</b> with <b>Save Project</b> in the sidebar so you can reload your work later.</li>
 </ol>
 
 <div class="note"><b>Save your work.</b> The app loses its data when it is left idle for a while
@@ -88,7 +88,7 @@ before using your own data. A typical session goes like this:</p>
 See <a href="#projects" target="_self">Saving &amp; Loading Projects</a>.</div>
 
 <p>Click <b>Clear Demo</b> in the Build Nets sidebar to remove the sample data. The
-<b>Introductory Information</b> panel on Build Nets can be hidden by clicking its header.</p>
+<b>Getting Started</b> panel on Build Nets can be hidden by clicking its header.</p>
 </div>
 
 <!-- ===================================================================== BUILD NETS -->
@@ -96,8 +96,9 @@ See <a href="#projects" target="_self">Saving &amp; Loading Projects</a>.</div>
 <h2>Build Nets Page</h2>
 
 <h3 id="adding">Adding proximity data</h3>
-<p>In <b>Manage Data Files</b>, choose <b>Add Proximity Data Files</b>, pick the file type
-(<b>Spreadsheet</b> or <b>Legacy Text</b>), and browse for or drag in one or more files. The part of
+<p>Click <b>Add Data Files&hellip;</b> in the Build Nets sidebar. In the window that opens, pick the
+file type (<b>Spreadsheet</b> or <b>Legacy Text</b>), and browse for or drag in one or more files.
+The window closes when the files have been added. The part of
 a file name before the first period becomes the proximity's name; if that name is already used, a
 number is added to make it unique. Files that cannot be read are listed in an error message. The
 file layouts are described in <a href="#format" target="_self">Spreadsheet Data Format</a> and
@@ -213,11 +214,11 @@ Merge the original networks together instead.</p>
 project is loaded.</p>
 
 <h3 id="compare">Comparison tables</h3>
-<p>Check the boxes under <b>Comparison Tables</b> in the sidebar to show:</p>
+<p>Turn on the switches under the lists to show:</p>
 <ul>
-    <li><b>Proximity Correlations</b>: the correlation between the distances of each pair of
+    <li><b>Show Proximity Correlations</b> (under the Proximity List): the correlation between the distances of each pair of
         proximities.</li>
-    <li><b>Network Similarities</b>: the proportion of shared links for each pair of networks.</li>
+    <li><b>Show Network Similarities</b> (under the Network List): the proportion of shared links for each pair of networks.</li>
 </ul>
 <p>Both are computed only for pairs with the same terms; other pairs show <i>None</i>.</p>
 
@@ -367,10 +368,10 @@ For a merged network, rank 1 is the links found in the most networks, rank 2 the
 <!-- ===================================================================== PROJECTS -->
 <div id="projects">
 <h2>Saving &amp; Loading Projects</h2>
-<p>Use <b>Save Project File</b> and <b>Load Project File</b> in <b>Manage Data Files</b> at the top of
-Build Nets. Saving downloads a .json file named from the <b>Project Name</b> in the sidebar; your
-browser may let you choose another name or folder. Loading asks you to choose a project file and then
-confirm or cancel. Before confirming, choose how to load it:</p>
+<p>Use <b>Save Project</b> and <b>Load Project&hellip;</b> in the Build Nets sidebar. Saving downloads a
+.json file named from the <b>Project Name</b> above them; your browser may let you choose another name
+or folder. Loading opens a window where you choose a project file, choose how to load it, and click
+<b>Load</b> (or close the window to cancel):</p>
 <ul>
     <li><b>Replace current project</b>: start fresh with only the project in the file. Everything
         loaded now, including the sample data, is removed, so save your current work first if you
