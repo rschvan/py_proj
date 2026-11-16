@@ -6,7 +6,6 @@ from pathlib import Path
 import streamlit as st
 import pandas as pd
 import numpy as np
-import time
 
 
 @st.cache_resource
@@ -80,6 +79,9 @@ if page_selected != home_page:
     st.stop()
 
 st.title("PyPathfinder")
+if stss.get("toast"):  # message from an action window, shown after its rerun
+    st.toast(stss.toast)
+    stss.toast = None
 keep_panels_in_view()
 
 # --- Sidebar for Global Actions ---
@@ -94,9 +96,101 @@ def hide_sample():
 
 
 def also_deleted(names: list[str]) -> None:
-    """In a Delete panel: list the items that depend on the selection and go with it."""
+    """In a Delete window: list the items that depend on the selection and go with it."""
     if names:
         st.warning("**Also deletes** (made from the selection):  \n" + "  \n".join(f"`{n}`" for n in names))
+
+
+# ----------------------------------------------------------------- action windows
+# Each opens over the page for the current selection and closes (with a rerun) when its
+# action is done; closing it with ✕ cancels. Messages are shown as a toast after the rerun.
+
+def selected_line(names: list[str]) -> None:
+    st.caption("Selected: " + ", ".join(f"`{n}`" for n in names))
+
+
+def done(message: str) -> None:
+    stss.toast = message
+    st.rerun()
+
+
+@st.dialog("Derive Networks", width="small")
+def derive_dialog(names: list[str]) -> None:
+    selected_line(names)
+    stss.perm_net_type = st.radio("**Network Type**", ["Pathfinder", "Nearest Neighbor"],
+                                  key="network_type", horizontal=True)
+    if stss.perm_net_type == "Pathfinder":
+        q_col, r_col = st.columns(2)
+        stss.q_param = parse_q(q_col.text_input("**q** (1 – inf)", value="inf", key="q_input"))
+        stss.r_param = parse_r(r_col.text_input("**r** (1 – inf)", value="inf", key="r_input"))
+    if st.button("Derive", type="primary"):
+        for prx_name in names:
+            prx = col.proximities[prx_name]
+            if stss.perm_net_type == "Pathfinder":
+                col.add_pfnet(PFnet(prx, q=stss.q_param, r=stss.r_param))
+            else:
+                col.add_pfnet(PFnet(prx, type="nn"))
+        stss.prx_version += 1  # clears the selection
+        stss.net_version += 1
+        done(f"Derived {len(names)} network{'s' if len(names) > 1 else ''}.")
+
+
+@st.dialog("Average Proximities", width="small")
+def average_dialog(names: list[str]) -> None:
+    selected_line(names)
+    ave_name = st.text_input("**Average Name** (optional)", key=f"ave_name_{stss.ave_version}")
+    ave_method = st.radio("**Method**", options=["mean", "median"], horizontal=True,
+                          key=f"ave_method_radio_{stss.ave_version}")
+    if st.button("Compute Average", type="primary"):
+        try:
+            ave_prx = col.average_proximities(names, ave_name=ave_name, method=ave_method)
+        except ValueError as e:
+            st.error(f"Could not average: {e}")
+            return
+        col.add_proximity(ave_prx)
+        stss.ave_version += 1
+        stss.prx_version += 1
+        stss.net_version += 1
+        done(f"Created `{ave_prx.name}`.")
+
+
+@st.dialog("Delete Proximities", width="small")
+def delete_proximities_dialog(names: list[str]) -> None:
+    selected_line(names)
+    also_prxs, also_nets = col.dependents(prx_names=names)
+    also_deleted(also_prxs + also_nets)
+    if st.button("Delete", type="primary"):
+        col.delete_proximities(names)
+        stss.prx_version += 1
+        stss.net_version += 1
+        done(f"Deleted {len(names) + len(also_prxs)} proximities and {len(also_nets)} networks.")
+
+
+@st.dialog("Merge Networks", width="small")
+def merge_dialog(names: list[str]) -> None:
+    selected_line(names)
+    mrg_name = st.text_input("**Merged Network Name** (optional)", key=f"mrg_name_{stss.mrg_version}")
+    if st.button("Merge", type="primary"):
+        try:
+            merged = col.merge_networks(names, mrg_name=mrg_name)  # adds the merged net
+        except ValueError as e:
+            st.error(f"Could not merge: {e}")
+            return
+        stss.net_version += 1
+        stss.mrg_version += 1
+        done(f"Created `{merged.name}`.")
+
+
+@st.dialog("Delete Networks", width="small")
+def delete_networks_dialog(names: list[str]) -> None:
+    selected_line(names)
+    _, also_nets = col.dependents(net_names=names)
+    also_deleted(also_nets)
+    if st.button("Delete", type="primary"):
+        col.delete_pfnets(names)
+        stss.net_version += 1
+        count = len(names) + len(also_nets)
+        done(f"Deleted {count} network{'s' if count > 1 else ''}.")
 
 
 with (st.sidebar):
@@ -191,110 +285,21 @@ else:
     )
     sel_prxs = get_selected_values(df=prx_df, event=prxs_event, column="name")
 
-    dernet, aveprx, dispprx, delprx = st.columns(4)
-
-    with delprx:
-        if len(sel_prxs) > 0:
-            count = len(sel_prxs)
-            label = f"**Delete Selected ({count})**"
-
-            with st.expander(label, expanded=False,
-                             key=f"delete_selection_{stss.prx_version}"):
-                also_prxs, also_nets = col.dependents(prx_names=sel_prxs)
-                also_deleted(also_prxs + also_nets)
-
-                if st.button("Confirm", key="confirm_delete_btn", type="primary"):
-                    col.delete_proximities(sel_prxs)
-
-                    stss.prx_version += 1
-                    stss.net_version += 1
-                    st.info(f"Deleted {count + len(also_prxs)} proximities "
-                            f"and {len(also_nets)} networks.")
-                    time.sleep(2)
-                    st.rerun()
-
-                if st.button("Cancel", key="cancel_delete_btn"):
-                    stss.prx_version += 1
-                    st.rerun()
-        else:
-            st.button(
-                "Delete Proximities",
-                disabled=True,
-                help="Delete selected proximities.",
-            )
-
-    with dernet:
-        if len(sel_prxs) > 0:
-            with st.expander(label=f"Derive Networks ({len(sel_prxs)})", expanded=False):
-                stss.perm_net_type = st.radio("**Network Type**", ["Pathfinder", "Nearest Neighbor"],
-                                              key="network_type", help="Derive networks from selected proximities.")
-                if stss.perm_net_type == "Pathfinder":
-                    stss.q_param = parse_q(st.text_input("**q:** (1-inf)", value="inf", key="q_input"))
-                    stss.r_param = parse_r(st.text_input("**r:** (1.0-inf)", value="inf", key="r_input"))
-
-                if st.button("Derive Now", key="derive_pfnet_btn",
-                             #disabled=len(sel_prxs) == 0,
-                             help="Select proximities to derive nets"):
-                    if len(sel_prxs) > 0:
-                        for prx_name in sel_prxs:
-                            prx = col.proximities[prx_name]
-                            match stss.perm_net_type:
-                                case "Pathfinder":
-                                    pf = PFnet(prx, q=stss.q_param, r=stss.r_param)
-                                case "Nearest Neighbor":
-                                    pf = PFnet(prx, type="nn")
-                            col.add_pfnet(pf)
-                        stss.prx_version += 1
-                        st.rerun()
-                    else:
-                        st.warning("Click one or more proximity check boxes to derive networks.")
-        else:
-            st.button("Derive Networks", disabled=True, help="Derive Networks from selected proximities.")
-    with aveprx:
-        ave_problem = col.average_problem(sel_prxs)
-        if ave_problem is None:
-            with st.expander(f"Average Proximities ({len(sel_prxs)})", expanded=False, ):
-
-                ave_name = st.text_input(
-                    "**Average Name**",
-                    value= "", #stss.get("perm_ave_name", ""),
-                    key=f"ave_name_{stss.ave_version}",
-                )
-
-                ave_method = st.radio(
-                    "**Method**",
-                    options=["mean", "median"],
-                    index=0,
-                    key=f"ave_method_radio_{stss.ave_version}",
-                )
-
-                if st.button("Compute Average", ):
-                    try:
-                        ave_prx = col.average_proximities(
-                            sel_prxs, ave_name=ave_name, method=ave_method
-                        )
-                        stss.ave_version += 1
-
-                        col.add_proximity(ave_prx)
-                        stss.prx_version += 1
-
-                        st.info(f"Average Proximity: {ave_prx.name} created")
-                        time.sleep(3)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error averaging proximities: {e}")
-        else:
-            st.button("Average Proximities", disabled=True,
-                      help="Create new proximity with average distance matrices of selected proximities. "
-                           + ave_problem)
-
-    with dispprx:
-        display_matrix = st.button("Display Matrix",
-                                      disabled=len(sel_prxs) != 1,
-                                      help=f"Show the distance matrix of a selected proximity.")
-        if display_matrix:
-            if len(sel_prxs) != 1:
-                st.warning("Show the distance matrix of a selected proximity.")
+    n_prx = len(sel_prxs)
+    ave_problem = col.average_problem(sel_prxs)
+    with st.container(horizontal=True, gap="small"):
+        if st.button(f"Derive Networks… ({n_prx})" if n_prx else "Derive Networks…",
+                     disabled=n_prx == 0, help="Derive networks with other q and r values, "
+                     "or Nearest Neighbor networks, from the selected proximities."):
+            derive_dialog(sel_prxs)
+        if st.button("Average Proximities…", disabled=ave_problem is not None,
+                     help=ave_problem or "Average the distances of the selected proximities."):
+            average_dialog(sel_prxs)
+        display_matrix = st.button("Display Matrix", disabled=n_prx != 1,
+                                   help="Show the distance matrix of the selected proximity.")
+        if st.button(f"Delete Proximities… ({n_prx})" if n_prx else "Delete Proximities…",
+                     disabled=n_prx == 0, help="Delete the selected proximities and what was made from them."):
+            delete_proximities_dialog(sel_prxs)
 
 #---------------------------------------------------------------------------------------------------prx details
     if len(sel_prxs) == 1 and display_matrix:
@@ -336,74 +341,23 @@ else:
     )
     sel_nets = get_selected_values(pfnet_df, nets_event)
 
-    dispnet, properties, links, mrgnet, delnet = st.columns(5)
-
-    with delnet:
-        if len(sel_nets) > 0:
-            count = len(sel_nets)
-            net_str = "net" if count == 1 else "nets"
-            label = f"Delete {count} {net_str}"
-            with st.expander(label, expanded=False, key=f"delete_net_selection_{stss.net_version}"):
-                _, also_nets = col.dependents(net_names=sel_nets)
-                also_deleted(also_nets)
-
-                if st.button("Confirm", key="confirm_delete_net_btn", type="primary"):
-                    col.delete_pfnets(sel_nets)
-
-                    stss.net_version += 1
-                    count += len(also_nets)
-                    st.info(f"Deleted {count} {'networks' if count > 1 else 'network'}.")
-                    time.sleep(1)
-                    st.rerun()
-
-                if st.button("Cancel", key="cancel_delete_net_btn"):
-                    stss.net_version += 1
-                    st.rerun()
-        else:
-            st.button(
-                "Delete Networks",
-                disabled=True,
-                help="Delete selected networks.",
-            )
-
-    with mrgnet:
-        mrg_problem = col.merge_problem(sel_nets)
-        if mrg_problem is None:
-            with st.expander(f"Merge {len(sel_nets)} nets", expanded=False):
-                mrg_name = st.text_input("**Merged Net Name**", key=f"mrg_name_{stss.mrg_version}")
-                if st.button("Merge Now", key="mrg_nets_btn", ):
-                    try:
-                        col.merge_networks(sel_nets, mrg_name=mrg_name)  # adds the merged net
-                        stss.net_version += 1
-                        stss.mrg_version += 1
-                        st.info("Networks Merged")
-                        time.sleep(2)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error merging networks: {e}")
-        else:
-            st.button("Merge Networks", disabled=True, help=mrg_problem)
-    with dispnet:
-        if st.button("Display Network", key="display_net_btn", disabled=len(sel_nets) != 1,):
-            if len(sel_nets) == 1:
-                stss.focus_net_name = sel_nets[0]
-                st.switch_page(view_page)
-            else:
-                st.warning("Error: Select one network to display.")
-    with links:
-        show_link_list = False
-        if st.button("Network Link List", key="link_list_btn", disabled=len(sel_nets) != 1):
-            if len(sel_nets) == 1:
-                show_link_list = True
-            else:
-                st.warning("Error: Select one network to display link list.")
-    with properties:
-        show_props = False
-        if st.button("Network Properties", key="net_props_btn", disabled=len(sel_nets) != 1):
-            if len(sel_nets) == 1:
-                show_props = True
-            else:
-                st.warning("Error: Select one network to display properties.")
+    n_net = len(sel_nets)
+    mrg_problem = col.merge_problem(sel_nets)
+    with st.container(horizontal=True, gap="small"):
+        if st.button("Display Network", key="display_net_btn", disabled=n_net != 1,
+                     help="Show the selected network on View Network."):
+            stss.focus_net_name = sel_nets[0]
+            st.switch_page(view_page)
+        show_props = st.button("Network Properties", key="net_props_btn", disabled=n_net != 1,
+                               help="Degree, eccentricity, center and median of each node.")
+        show_link_list = st.button("Network Link List", key="link_list_btn", disabled=n_net != 1,
+                                   help="The links of the selected network with their weights.")
+        if st.button("Merge Networks…", disabled=mrg_problem is not None,
+                     help=mrg_problem or "Merge the selected networks into one."):
+            merge_dialog(sel_nets)
+        if st.button(f"Delete Networks… ({n_net})" if n_net else "Delete Networks…",
+                     disabled=n_net == 0, help="Delete the selected networks and merges made from them."):
+            delete_networks_dialog(sel_nets)
 
 #------------------------------------------------------------------------------------------------net details
 if len(col.pfnets) > 0 and show_link_list:

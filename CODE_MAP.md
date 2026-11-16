@@ -40,18 +40,19 @@ py_proj/
 
 | You're looking for | Go to |
 |---|---|
-| Page list and navigation | [stapp.py:76](stapp.py:76) `st.navigation` |
-| Loading changed code after an update | [stapp.py:18](stapp.py:18) `_drop_stale_modules` |
-| Build Nets sidebar (Clear Demo, Project Name, Save, Load, Add Data Files) | [stapp.py:102](stapp.py:102) |
+| Page list and navigation | [stapp.py:75](stapp.py:75) `st.navigation` |
+| Loading changed code after an update | [stapp.py:17](stapp.py:17) `_drop_stale_modules` |
+| Build Nets sidebar (Clear Demo, Project Name, Save, Load, Add Data Files) | [stapp.py:196](stapp.py:196) |
 | Save Project button, Load Project and Add Data Files dialogs | [stutils.py:188](stutils.py:188) `save_project_button`, `load_project_dialog`, `add_files_dialog` |
-| Getting Started box | [stapp.py:134](stapp.py:134) |
-| Sample data table | [stapp.py:165](stapp.py:165) |
-| Proximity List and its buttons (Derive, Average, Display Matrix, Delete) | [stapp.py:176](stapp.py:176) |
-| Distance matrix display | [stapp.py:299](stapp.py:299) |
-| Proximity correlations (switch under the Proximity List) | [stapp.py:310](stapp.py:310) → `Collection.get_proximity_correlations` |
-| Network List and its buttons (Display, Properties, Link List, Merge, Delete) | [stapp.py:321](stapp.py:321) |
-| Link list / properties display | [stapp.py:408](stapp.py:408) |
-| Network similarity (switch under the Network List) | [stapp.py:441](stapp.py:441) → `Collection.network_similarity` |
+| Getting Started box | [stapp.py:228](stapp.py:228) |
+| Sample data table | [stapp.py:259](stapp.py:259) |
+| Proximity List and its buttons (Derive, Average, Display Matrix, Delete) | [stapp.py:270](stapp.py:270) |
+| Action windows (Derive, Average, Merge, Delete) | [stapp.py:118](stapp.py:118) `derive_dialog` and the dialogs after it |
+| Distance matrix display | [stapp.py:304](stapp.py:304) |
+| Proximity correlations (switch under the Proximity List) | [stapp.py:315](stapp.py:315) → `Collection.get_proximity_correlations` |
+| Network List and its buttons (Display, Properties, Link List, Merge, Delete) | [stapp.py:326](stapp.py:326) |
+| Link list / properties display | [stapp.py:362](stapp.py:362) |
+| Network similarity (switch under the Network List) | [stapp.py:395](stapp.py:395) → `Collection.network_similarity` |
 | Columns shown in the Proximity and Network tables | [stutils.py:91](stutils.py:91) `proximity_table`, `network_table`, `properties_table` |
 | Number formatting (significant figures) | [stutils.py:73](stutils.py:73) `sig_figs` |
 | Panels scrolling into view | [stutils.py](stutils.py) `keep_panels_in_view`, `REVEAL_KEY` |
@@ -82,7 +83,7 @@ py_proj/
 ## How a click flows
 
 - **Adding files:** Add Data Files in the sidebar → `stutils.add_files_dialog` → `Collection.add_files` → `readers.read_files` → `Proximity` objects. Each one is added with a default PF network.
-- **Derive Networks:** the Derive expander in `stapp.py` → `PFnet(prx, q, r)` → `col.add_pfnet`.
+- **Derive Networks:** the Derive Networks… button in `stapp.py` opens `derive_dialog` → `PFnet(prx, q, r)` → `col.add_pfnet`.
 - **Display Network:** sets `focus_net_name` and switches to `view_net.py`. That page lays the network out with the algorithm chosen in Select Algorithm (`net.get_layout`), or with "saved" (`col.apply_saved_layout`), then calls `network_view`. The toolbar works in the browser and sends positions back, which become `net.coords`. Redraw asks Python for a new layout.
 - **Save Layout:** `view_net.save_layout` → `Collection.save_layout`. It's stored by `termsid`, so it applies to every network with the same terms.
 

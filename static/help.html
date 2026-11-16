@@ -76,7 +76,7 @@ before using your own data. A typical session goes like this:</p>
         The minimum Pathfinder network (q&nbsp;=&nbsp;r&nbsp;=&nbsp;&infin;)
         is derived for each file automatically.</li>
     <li><b>Derive more networks</b> if you want them: select proximities in the Proximity List and use
-        <b>Derive Networks</b> to choose q and r, or a Nearest Neighbor network.</li>
+        <b>Derive Networks&hellip;</b> to choose q and r, or a Nearest Neighbor network.</li>
     <li><b>Look at a network.</b> Select one network in the Network List and click <b>Display Network</b>.</li>
     <li><b>Adjust the layout</b> on <b>View Network</b>: try layout algorithms, flip or rotate the
         picture, and drag nodes. Click <b>Save Layout</b> to keep a layout you like.</li>
@@ -148,8 +148,9 @@ suits them.</p>
 </table>
 
 <h3 id="derive">Deriving networks</h3>
-<p>Select one or more proximities, open <b>Derive Networks</b>, choose the network type, and click
-<b>Derive Now</b>.</p>
+<p>Select one or more proximities and click <b>Derive Networks&hellip;</b> under the Proximity List.
+In the window that opens, choose the network type (and q and r for Pathfinder networks) and click
+<b>Derive</b>.</p>
 <ul>
     <li><b>Pathfinder</b> networks keep a link between two terms only when no other path between them
         is shorter. Two parameters control what counts as a path and how its length is measured:
@@ -174,7 +175,8 @@ suits them.</p>
 </ul>
 
 <h3 id="average">Averaging proximities</h3>
-<p>Select two or more proximities with the same terms and open <b>Average Proximities</b>. Each cell of
+<p>Select two or more proximities with the same terms and click <b>Average Proximities&hellip;</b>, then
+<b>Compute Average</b> in the window that opens. Each cell of
 the new distance matrix is the <b>mean</b> or <b>median</b> of the same cell in the selected
 proximities. For the mean, an infinite distance is replaced by 1.1 times the largest finite
 distance of its proximity. You can give the average a name; otherwise it is named from the first and
@@ -197,8 +199,8 @@ last proximities averaged. Average names start with <code>!x&#772;</code> (mean)
 </ul>
 
 <h3 id="merge">Merging networks</h3>
-<p>Select two or more networks with the same terms, open the <b>Merge</b> panel under the Network List,
-optionally type a name, and click <b>Merge Now</b>. The merged network contains every link found in any
+<p>Select two or more networks with the same terms, click <b>Merge Networks&hellip;</b> under the Network
+List, optionally type a name, and click <b>Merge</b>. The merged network contains every link found in any
 of the selected networks. Merged names start with <code>~~mg</code> and the number of networks merged.</p>
 <p>The weight of a merged link is a binary code. The networks are numbered i&nbsp;=&nbsp;0,&nbsp;1,&nbsp;2&nbsp;&hellip;
 in the order they appear in the Network List, and a link's weight is increased by 2<sup>i</sup> when network i
@@ -224,14 +226,16 @@ project is loaded.</p>
 
 <h3 id="tables">Downloading tables and deleting items</h3>
 <p>Any table can be downloaded as a .csv file: hover over the table and click the download icon in the
-toolbar at its top right. To delete proximities or networks, select them and use the delete button under
-the list, then click <b>Confirm</b>.</p>
+toolbar at its top right. To delete proximities or networks, select them, click <b>Delete Proximities&hellip;</b>
+or <b>Delete Networks&hellip;</b> under the list, and click <b>Delete</b> in the window that opens.</p>
 <p>Deleting also removes everything made from the selection, so nothing is left without its source:</p>
 <ul>
     <li>Deleting a proximity removes its networks, any averages it was part of, and their networks.</li>
     <li>Deleting a network removes any merged networks it was part of.</li>
 </ul>
-<p>The Delete panel lists these extra items before you click <b>Confirm</b>.</p>
+<p>The Delete window lists these extra items before you click <b>Delete</b>.</p>
+<p>Each of these windows names the selected items at the top. Close a window with &times; to cancel;
+it closes by itself when the action is done.</p>
 </div>
 
 <!-- ===================================================================== VIEW NETWORK -->

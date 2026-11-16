@@ -97,6 +97,10 @@ class Demo:
     def button(self, name):
         return self.page.get_by_role("button", name=name).first
 
+    def dialog_button(self, name):
+        """A button in the open window (dialog), matched by its exact label."""
+        return self.page.get_by_role("dialog").get_by_role("button", name=name, exact=True).first
+
     def dataframe(self, i):
         return self.page.locator('[data-testid="stMain"] [data-testid="stDataFrame"]').nth(i)
 

@@ -56,11 +56,11 @@ def network_list(d):
 def derive(d):
     d.scroll_to_heading("Proximity List")
     d.select_rows(table=2, names=["bio"])
-    d.click(d.text("Derive Networks (1)"))
-    d.type_into("q:", "2")
-    d.type_into("r:", "1")
+    d.click(d.button("Derive Networks… (1)"))
+    d.type_into("q (", "2")
+    d.type_into("r (", "1")
     d.pause(1)
-    d.click(d.button("Derive Now"))
+    d.click(d.dialog_button("Derive"))
     d.pause(2)
     d.scroll_to_heading("Network List")
     d.point_at_table_cell(table=3, row="bio_pf_q2_r1", frac=0.12)
@@ -77,9 +77,9 @@ def properties(d):
 def average(d):
     d.scroll_to_heading("Proximity List")
     d.select_rows(table=2, names=["bio", "psy"])
-    d.click(d.text("Average Proximities (2)"))
+    d.click(d.button("Average Proximities…"))
     d.pause(1.5)
-    d.click(d.button("Compute Average"))
+    d.click(d.dialog_button("Compute Average"))
     d.pause(4)
     d.scroll_to_heading("Proximity List")
     d.point_at_table_cell(table=2, row_index=0, frac=0.12)
@@ -88,9 +88,9 @@ def average(d):
 def merge(d):
     d.scroll_to_heading("Network List")
     d.select_rows(table=3, names=["bio_pf", "psy_pf"])
-    d.click(d.text("Merge 2 nets"))
+    d.click(d.button("Merge Networks…"))
     d.pause(1.5)
-    d.click(d.button("Merge Now"))
+    d.click(d.dialog_button("Merge"))
     d.pause(3)
     d.scroll_to_heading("Network List")
     d.point_at_table_cell(table=3, row_startswith="~~mg2", frac=0.12)
@@ -260,7 +260,7 @@ whether it is directed.
 """, network_list),
 
     Scene("Deriving networks with q and r", """
-To derive other networks, select one or more proximities with the check boxes and open
+To derive other networks, select one or more proximities with the check boxes and click
 Derive Networks. The q parameter limits how many links a path may have when the app
 searches for a shorter route between two terms, and r controls how link distances
 combine along a path. With r equal to one, a path's length is the sum of its links;
@@ -279,7 +279,7 @@ The radius and diameter of the network are shown above the table.
 
     Scene("Averaging proximities", """
 Proximities with the same terms can be averaged. Here we select the biology and
-psychology ratings, which use the same twenty-five terms, open Average Proximities, and
+psychology ratings, which use the same twenty-five terms, click Average Proximities, and
 compute the mean. You can also choose the median. The average appears at the top of the
 Proximity List, along with its minimum network, ready to compare with the individual
 data sets.
