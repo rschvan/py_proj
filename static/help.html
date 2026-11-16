@@ -204,6 +204,8 @@ in the order they appear in the Network List, and a link's weight is increased b
 contains it. Reading the weight in binary from right to left, a 1 in position i means network i has
 the link. The Link List of a merged network shows this code (<code>nets</code>) and how many networks
 contain each link (<code>count</code>).</p>
+<p>A merged network can't be merged again, because its link codes would be lost.
+Merge the original networks together instead.</p>
 <p>Merged networks are not saved in project files; merge them again after loading a project.</p>
 
 <h3 id="compare">Comparison tables</h3>
@@ -219,6 +221,12 @@ contain each link (<code>count</code>).</p>
 <p>Any table can be downloaded as a .csv file: hover over the table and click the download icon in the
 toolbar at its top right. To delete proximities or networks, select them and use the delete button under
 the list, then click <b>Confirm</b>.</p>
+<p>Deleting also removes everything made from the selection, so nothing is left without its source:</p>
+<ul>
+    <li>Deleting a proximity removes its networks, any averages it was part of, and their networks.</li>
+    <li>Deleting a network removes any merged networks it was part of.</li>
+</ul>
+<p>The Delete panel lists these extra items before you click <b>Confirm</b>.</p>
 </div>
 
 <!-- ===================================================================== VIEW NETWORK -->
@@ -373,7 +381,7 @@ regularly. You can only recover what you last saved.</div>
         <tr>
             <td>
                 <ul>
-                    <li>Proximities (terms and distances)</li>
+                    <li>Proximities (terms and distances), and which proximities each average came from</li>
                     <li>How to rebuild each network: its type, q, r, and proximity</li>
                     <li>The layout algorithm chosen for each network</li>
                     <li>Saved layouts (from <b>Save Layout</b>)</li>
@@ -382,7 +390,6 @@ regularly. You can only recover what you last saved.</div>
             <td>
                 <ul>
                     <li>Merged networks: merge them again after loading</li>
-                    <li>Networks whose proximity was deleted</li>
                     <li>Node positions you have not saved with <b>Save Layout</b>. Layouts that start
                         at random (gravity, kamada_kawai, spring) will come out differently.</li>
                     <li>Text size and rank display settings</li>

@@ -130,10 +130,56 @@ def test_merged_net_has_its_own_eccentricity(col):
     assert merged.eccentricity != col.pfnets["psy_pf"].eccentricity
 
 
-def test_deleting_proximity_keeps_its_networks(col):
-    col.delete_proximities(["psy"])
-    assert "psy" not in col.proximities and "psy_pf" in col.pfnets
-    assert len(col.terms) == 1  # still used by the networks
+def _family(col):
+    """psy, bio; an average of both with its own network; a q2 net; and a merge."""
+    from pypf.pfnet import PFnet
+    ave = col.average_proximities(["psy", "bio"], ave_name="ave")
+    col.add_proximity(ave)                      # also adds ave's _pf network
+    col.add_pfnet(PFnet(col.proximities["psy"], q=2))
+    mrg = col.merge_networks(["psy_pf", "bio_pf"], mrg_name="m")
+    return ave.name, col.pfnets[f"{ave.name}_pf"].name, mrg.name
+
+
+def test_dependents_follow_the_whole_chain(col):
+    ave, ave_net, mrg = _family(col)
+    prxs, nets = col.dependents(prx_names=["psy"])
+    assert prxs == [ave]
+    assert set(nets) == {"psy_pf", "psy_pf_q2", ave_net, mrg}
+    assert col.dependents(net_names=["bio_pf"]) == ([], [mrg])
+    assert col.dependents(net_names=[mrg]) == ([], [])
+
+
+def test_deleting_proximity_deletes_its_dependents(col):
+    ave, ave_net, mrg = _family(col)
+    extra_prxs, extra_nets = col.delete_proximities(["psy"])
+    assert extra_prxs == [ave] and mrg in extra_nets
+    assert set(col.proximities) == {"bio"}
+    assert set(col.pfnets) == {"bio_pf"}
+    assert len(col.terms) == 1
+
+
+def test_deleting_network_deletes_merges_that_used_it(col):
+    _, ave_net, mrg = _family(col)
+    assert col.delete_pfnets(["bio_pf"]) == [mrg]
+    assert "bio_pf" not in col.pfnets and mrg not in col.pfnets
+    assert "psy_pf" in col.pfnets and ave_net in col.pfnets
+
+
+def test_merged_networks_cannot_be_merged_again(col):
+    _, _, mrg = _family(col)
+    assert "can't be merged again" in col.merge_problem([mrg, "bio_pf"])
+    with pytest.raises(ValueError):
+        col.merge_networks([mrg, "bio_pf"])
+
+
+def test_project_keeps_average_sources_across_renaming(col):
+    ave, _, _ = _family(col)
+    state = col.get_project_state()
+    col.load_project_state(state)               # adding again renames everything
+    copy_names = set(col.proximities) - {"psy", "bio", ave}
+    copy_ave = next(n for n in copy_names if col.proximities[n].sources)
+    assert set(col.proximities[copy_ave].sources) <= copy_names
+    assert Collection.from_project_state(state).proximities[ave].sources == ["psy", "bio"]
 
 
 def test_no_ui_state_in_collection():

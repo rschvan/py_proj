@@ -109,11 +109,39 @@ class Collection:
             added.append(prx.name)
         return added, errors
 
-    def delete_proximities(self, names) -> None:
-        """Deletes the named proximities. Networks derived from them are kept."""
-        for name in names:
+    def dependents(self, prx_names=(), net_names=()) -> tuple[list[str], list[str]]:
+        """What depends on the named proximities and networks, all the way down:
+        networks derived from a proximity, averages that used it (and their networks),
+        and merged networks that used any of those networks.
+        Returns (proximity names, network names), not including the names given."""
+        prxs, nets = set(prx_names), set(net_names)
+        changed = True
+        while changed:
+            changed = False
+            for name, prx in self.proximities.items():
+                if name not in prxs and prxs.intersection(prx.sources):
+                    prxs.add(name)
+                    changed = True
+            for name, net in self.pfnets.items():
+                if name in nets:
+                    continue
+                parent = net.proximity
+                if (parent is not None and parent.name in prxs) or nets.intersection(net.sources):
+                    nets.add(name)
+                    changed = True
+        return (sorted_keys({n: self.proximities[n] for n in prxs - set(prx_names) if n in self.proximities}),
+                sorted_keys({n: self.pfnets[n] for n in nets - set(net_names) if n in self.pfnets}))
+
+    def delete_proximities(self, names) -> tuple[list[str], list[str]]:
+        """Deletes the named proximities and everything that depends on them (see dependents).
+        Returns (proximity names, network names) of the dependents also deleted."""
+        extra_prxs, extra_nets = self.dependents(prx_names=names)
+        for name in [*names, *extra_prxs]:
             self.proximities.pop(name, None)
+        for name in extra_nets:
+            self.pfnets.pop(name, None)
         self.prune_orphaned_terms()
+        return extra_prxs, extra_nets
 
     def add_pfnet(self, pf: PFnet) -> None:
         unique_name = get_unique_name(pf.name, self.pfnets.keys())
@@ -122,11 +150,14 @@ class Collection:
             pf.name = pf.name + "_dup"
         self.pfnets[pf.name] = pf
 
-    def delete_pfnets(self, names) -> None:
-        """Deletes the named networks."""
-        for name in names:
+    def delete_pfnets(self, names) -> list[str]:
+        """Deletes the named networks and the merged networks that used them.
+        Returns the names of the merged networks also deleted."""
+        _, extra_nets = self.dependents(net_names=names)
+        for name in [*names, *extra_nets]:
             self.pfnets.pop(name, None)
         self.prune_orphaned_terms()
+        return extra_nets
 
     def _same_terms_problem(self, items: dict, names, action: str, min_count: int = 2) -> str | None:
         names = list(names)
@@ -145,7 +176,11 @@ class Collection:
 
     def merge_problem(self, names) -> str | None:
         """Why the named networks cannot be merged, or None if they can."""
-        return self._same_terms_problem(self.pfnets, names, "merge")
+        problem = self._same_terms_problem(self.pfnets, names, "merge")
+        if problem is None and any(self.pfnets[n].type == "mg" for n in names):
+            # a merged net's link weights code its sources; merging again would lose them
+            problem = "Merged networks can't be merged again."
+        return problem
 
     def get_proximity(self, name: str) -> Proximity | None:
         return self.proximities.get(name)
@@ -325,7 +360,8 @@ class Collection:
                 "name": prx.name,
                 "termsid": prx.termsid,
                 "dismat": prx.dismat.tolist(),
-                "issymmetric": bool(prx.issymmetric)
+                "issymmetric": bool(prx.issymmetric),
+                "sources": list(prx.sources),  # proximities an average was made from
             })
 
         def safe_inf_check(v):
@@ -396,8 +432,15 @@ class Collection:
                 new_prx.terms = self.terms[tid]
 
             name = new_prx.name
+            new_prx.sources = list(p_data.get("sources", []))  # renamed below
             self.add_proximity(new_prx, add_pfnet=False)
             prx_name_map[name] = new_prx.name
+
+        # Sources use the names in the file; follow any renaming, and drop sources that
+        # were not in the file so they cannot match an unrelated proximity already here.
+        for name in prx_name_map.values():
+            prx = self.proximities[name]
+            prx.sources = [prx_name_map[s] for s in prx.sources if s in prx_name_map]
 
         # 3. Restore Networks from Recipes
         for r_data in data.get("network_recipes", []):

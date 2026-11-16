@@ -50,6 +50,12 @@ def hide_sample():
     stss.intro_visible = False
 
 
+def also_deleted(names: list[str]) -> None:
+    """In a Delete panel: list the items that depend on the selection and go with it."""
+    if names:
+        st.warning("**Also deletes** (made from the selection):  \n" + "  \n".join(f"`{n}`" for n in names))
+
+
 with (st.sidebar):
     if stss.sample_visible == True:
         #st.info("**Click to Bypass Demo**")
@@ -179,12 +185,16 @@ else:
 
             with st.expander(label, expanded=False,
                              key=f"delete_selection_{stss.prx_version}"):
+                also_prxs, also_nets = col.dependents(prx_names=sel_prxs)
+                also_deleted(also_prxs + also_nets)
 
                 if st.button("Confirm", key="confirm_delete_btn", type="primary"):
                     col.delete_proximities(sel_prxs)
 
                     stss.prx_version += 1
-                    st.info(f"Deleted {count} proximities.")
+                    stss.net_version += 1
+                    st.info(f"Deleted {count + len(also_prxs)} proximities "
+                            f"and {len(also_nets)} networks.")
                     time.sleep(2)
                     st.rerun()
 
@@ -316,11 +326,14 @@ else:
             net_str = "net" if count == 1 else "nets"
             label = f"Delete {count} {net_str}"
             with st.expander(label, expanded=False, key=f"delete_net_selection_{stss.net_version}"):
+                _, also_nets = col.dependents(net_names=sel_nets)
+                also_deleted(also_nets)
 
                 if st.button("Confirm", key="confirm_delete_net_btn", type="primary"):
                     col.delete_pfnets(sel_nets)
 
                     stss.net_version += 1
+                    count += len(also_nets)
                     st.info(f"Deleted {count} {'networks' if count > 1 else 'network'}.")
                     time.sleep(1)
                     st.rerun()
