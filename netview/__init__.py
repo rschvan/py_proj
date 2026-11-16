@@ -54,6 +54,15 @@ def weight_label(net, weight) -> str:
     return f"{float(weight):.4g}"
 
 
+def merge_legend(net) -> list[list[str]]:
+    """For a merged network, [code, network name] for each network it was merged from,
+    where code is that network's digit in the link codes (see weight_label); else []."""
+    if net.type != "mg":
+        return []
+    n = len(net.sources)
+    return [[f"{1 << i:0{n}b}", name] for i, name in enumerate(net.sources)]
+
+
 def _to_canvas(coords: np.ndarray) -> list[list[float]]:
     return (np.asarray(coords, dtype=float) * _SCALE).round(3).tolist()
 
@@ -109,6 +118,7 @@ def network_view(net, *, layout_seq: int, font_size: int, can_redraw: bool,
             "base": _to_canvas(base),
             "directed": bool(net.isdirected),
             "maxRank": max(net.links.values()) if net.links else 1,
+            "legend": merge_legend(net),
             "canRedraw": can_redraw,
             "fontSize": font_size,
             "view": view,

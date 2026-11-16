@@ -51,3 +51,14 @@ def test_weight_labels():
     labels = {netview.weight_label(merged, merged.adjmat[i, j]) for i, j in merged.links}
     assert labels <= {"01", "10", "11"} and len(labels) > 1
     assert set(merged.get_link_list()["nets"]) == labels  # Link List uses the same code
+
+
+def test_merge_legend():
+    netview = pytest.importorskip("netview")
+    col = Collection()
+    for name in ["psy", "bio"]:
+        col.add_proximity(load(name))
+    col.add_pfnet(PFnet(col.proximities["psy"], q=2))
+    merged = col.merge_networks(["psy_pf", "bio_pf", "psy_pf_q2"])
+    assert netview.merge_legend(merged) == [["001", "psy_pf"], ["010", "bio_pf"], ["100", "psy_pf_q2"]]
+    assert netview.merge_legend(col.pfnets["psy_pf"]) == []

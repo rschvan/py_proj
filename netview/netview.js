@@ -2,7 +2,8 @@
 // vis-network's UMD bundle is prepended by netview/__init__.py and defines globalThis.vis.
 //
 // Python -> JS (data):  token, nodes [{id,label,title,x,y}], edges [{from,to,rank,weight}],
-//                       base [[x,y],...], directed, maxRank, canRedraw, view {fontSize, weights, maxRank}
+//                       base [[x,y],...], directed, maxRank, canRedraw, view {fontSize, weights, maxRank},
+//                       legend [[code, name],...] (merged networks only)
 // JS -> Python:         state  "coords" {token, xy:[[x,y],...]}   after any change to positions
 //                       state  "view"   {fontSize, weights, maxRank}  text/label settings
 //                       trigger "redraw" (timestamp)               recompute the layout in Python
@@ -237,6 +238,61 @@ function createInstance(parentElement) {
     inst.commitView();
   };
 
+  // ------------------------------------------------------- merged-network legend
+  const legendBox = q(".nv-legend");
+  inst.legend = [];
+  inst.showLegend = (items) => {
+    inst.legend = items;
+    legendBox.replaceChildren();
+    legendBox.hidden = items.length === 0;
+    if (!items.length) return;
+    const title = document.createElement("div");
+    title.className = "nv-legend-title";
+    title.textContent = "Merged from";
+    legendBox.append(title);
+    for (const [code, name] of items) {
+      const row = document.createElement("div");
+      const c = document.createElement("code");
+      c.textContent = code;
+      row.append(c, name);
+      legendBox.append(row);
+    }
+  };
+
+  // Draws the legend into the PNG where it appears on screen (ratio: canvas pixels per CSS pixel).
+  inst.drawLegend = (ctx, ratio) => {
+    if (!inst.legend.length) return;
+    const font = 13 * ratio, line = 19.5 * ratio, pad = 8 * ratio, gap = 8 * ratio;
+    const x0 = 8 * ratio, y0 = 8 * ratio;
+    const mono = `${font}px ui-monospace, Consolas, monospace`;
+    const sans = `${font}px arial, sans-serif`;
+    ctx.font = mono;
+    const codeW = Math.max(...inst.legend.map(([c]) => ctx.measureText(c).width));
+    ctx.font = sans;
+    const nameW = Math.max(...inst.legend.map(([, n]) => ctx.measureText(n).width));
+    ctx.font = `bold ${sans}`;
+    const titleW = ctx.measureText("Merged from").width;
+    const w = pad * 2 + Math.max(titleW, codeW + gap + nameW);
+    const h = pad * 2 + line * (inst.legend.length + 1);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.strokeStyle = "#d6d6d9";
+    ctx.lineWidth = ratio;
+    ctx.fillRect(x0, y0, w, h);
+    ctx.strokeRect(x0, y0, w, h);
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#262730";
+    ctx.fillText("Merged from", x0 + pad, y0 + pad + line / 2);
+    inst.legend.forEach(([code, name], i) => {
+      const y = y0 + pad + line * (i + 1.5);
+      ctx.font = mono;
+      ctx.fillStyle = "blue";
+      ctx.fillText(code, x0 + pad, y);
+      ctx.font = sans;
+      ctx.fillStyle = "#262730";
+      ctx.fillText(name, x0 + pad + codeW + gap, y);
+    });
+  };
+
   // ------------------------------------------------------------ PNG export
   inst.savePng = () => {
     const src = container.querySelector("canvas");
@@ -248,6 +304,7 @@ function createInstance(parentElement) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, out.width, out.height);
     ctx.drawImage(src, 0, 0);
+    inst.drawLegend(ctx, src.width / (src.clientWidth || src.width));
     const a = document.createElement("a");
     a.download = `${inst.name || "network"}.png`;
     a.href = out.toDataURL("image/png");
@@ -276,6 +333,7 @@ function createInstance(parentElement) {
       inst.view.maxRank = inst.maxRank;
     }
     inst.view.net = data.netId;
+    inst.showLegend(data.legend || []);
 
     const fs = inst.view.fontSize;
     const scale = fs / 28.0;
