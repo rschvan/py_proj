@@ -1,5 +1,6 @@
 # app_pages/view_net.py
 import numpy as np
+import pandas as pd
 import streamlit as st
 
 from netview import network_view
@@ -16,17 +17,71 @@ st.set_page_config(
 if "col" not in stss:
     init_pf_session_state()
 stss.setdefault("layout_seq", 0)
+stss.setdefault("compare_nets", [])   # the comparison set: PFnet objects, in the order added
+stss.setdefault("compare_version", 0)  # bumped to reset the comparison table's checkboxes
 
 # layouts that start from random positions, so Redraw gives a different result
 REDRAWABLE = ["gravity", "kamada_kawai", "davidson_harel", "spring"]
 
 
-def new_net():
-    """Callback for the network selectbox: make the selected net the focus net
-    and bump layout_version so layout widgets reset for the new network."""
-    stss.focus_net_name = stss.selected_net_name
+def show_net(name: str) -> None:
+    """Make the named net the focus net; bump layout_version so layout widgets reset."""
+    stss.focus_net_name = name
     stss.layout_version += 1
     stss.layout_seq += 1
+
+
+def new_net():
+    """Callback for the network selectbox."""
+    show_net(stss.selected_net_name)
+
+
+# ----------------------------------------------------------------- comparison set
+# Kept as the network objects, not names, so a deleted network (or a replaced project)
+# drops out by itself and a later network that reuses a name is not taken for it.
+
+def compare_nets() -> list:
+    """The comparison set's networks that are still in the project."""
+    nets = [net for net in stss.compare_nets if stss.col.pfnets.get(net.name) is net]
+    stss.compare_nets = nets
+    return nets
+
+
+def compare_add_problem(net, nets: list) -> str | None:
+    """Why the net cannot join the set, or None if it can. The set holds only networks
+    with the same terms, so they can be compared with the nodes in the same places."""
+    if any(net is n for n in nets):
+        return "The network in view is already in the set."
+    if nets and net.termsid != nets[0].termsid:
+        return (f"The set holds networks with the terms of {nets[0].name}; "
+                f"{net.name} has different terms.")
+    return None
+
+
+def add_to_compare():
+    net = get_focus_net()
+    if net is not None and compare_add_problem(net, compare_nets()) is None:
+        stss.compare_nets.append(net)
+        stss.compare_version += 1
+
+
+def clear_compare():
+    stss.compare_nets = []
+    stss.compare_version += 1
+
+
+def compare_table_changed(key: str, nets: list):
+    """Callback for the comparison table: a ticked view box shows that network,
+    a ticked delete box removes it from the set."""
+    edits = stss[key]["edited_rows"]
+    for row, change in edits.items():
+        if change.get("view"):
+            show_net(nets[row].name)
+            if "selected_net_name" in stss:
+                stss.selected_net_name = nets[row].name  # keep the selector in step
+    removed = {row for row, change in edits.items() if change.get("delete")}
+    stss.compare_nets = [net for i, net in enumerate(nets) if i not in removed]
+    stss.compare_version += 1
 
 
 def redraw():
@@ -98,15 +153,36 @@ with st.sidebar:
         else:
             focus_net.get_layout(method=layout_choice)
         stss.layout_seq += 1
-    st.caption("Use the toolbar above the network to orient, redraw, "
-               "and adjust text. Drag nodes to move them.")
 
     st.button("💾 Save Layout", on_click=save_layout, width="stretch",
               help="Save the current node positions. Every network with the same terms "
                    "can then use them by choosing **saved** above. Saved layouts are "
                    "stored in the project file.")
-    if has_saved:
-        st.caption("A saved layout exists for these terms.")
+
+    tight_divider()
+    st.markdown("**Comparison Set**")
+    nets = compare_nets()
+    add_problem = compare_add_problem(focus_net, nets)
+    with st.container(horizontal=True, gap="small"):
+        st.button("➕ Add", on_click=add_to_compare, disabled=add_problem is not None,
+                  help=add_problem or "Add the network in view to the comparison set.")
+        st.button("Clear All", on_click=clear_compare, disabled=not nets,
+                  help="Empty the comparison set.")
+    if nets:
+        key = f"compare_table_{stss.compare_version}"
+        st.data_editor(
+            pd.DataFrame({"view": [net is focus_net for net in nets],
+                          "network": [net.name for net in nets],
+                          "delete": [False] * len(nets)}),
+            key=key, on_change=compare_table_changed, args=(key, nets),
+            hide_index=True, width="stretch", disabled=["network"],
+            column_config={
+                "view": st.column_config.CheckboxColumn("view", width="small",
+                                                        help="Tick to show this network."),
+                "delete": st.column_config.CheckboxColumn("delete", width="small",
+                                                          help="Tick to remove it from the set."),
+            },
+        )
 
 #-------------------------------------------------------------------------------------------  MAIN PANEL
 
