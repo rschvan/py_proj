@@ -195,6 +195,63 @@ def delete_networks_dialog(names: list[str]) -> None:
         done(f"Deleted {count} network{'s' if count > 1 else ''}.")
 
 
+# ----------------------------------------------------------------- table windows
+# Tables open in a window over the page; close it with ✕ or Esc. The selection stays,
+# so another table for the same item is one click away.
+
+DOWNLOAD_TIP = "Hover over the table and click ⤓ at its top right to download it as a .csv file."
+
+
+@st.dialog("Distance Matrix", width="large")
+def matrix_dialog(name: str) -> None:
+    prx = col.proximities[name]
+    st.markdown(f"**{prx.name}**: {len(prx.terms)} terms")
+    if prx.sources:
+        st.caption("Average of: " + ", ".join(f"`{s}`" for s in prx.sources))
+    st.dataframe(pd.DataFrame(prx.dismat, index=prx.terms, columns=prx.terms), width="content")
+    st.caption(DOWNLOAD_TIP)
+
+
+def fitted_columns(df: pd.DataFrame, px_per_char: float = 6.5, padding: int = 18) -> dict:
+    """Column widths (pixels) that fit each column's longest value or header."""
+    def longest(col) -> int:
+        values = [col] + [f"{v:g}" if isinstance(v, float) else str(v) for v in df[col]]
+        return max(len(v) for v in values)
+    return {col: st.column_config.Column(width=round(longest(col) * px_per_char) + padding,
+                                         alignment="center")
+            for col in df.columns}
+
+
+@st.dialog("Network Properties", width="large")
+def properties_dialog(name: str) -> None:
+    net = col.pfnets[name]
+    ecc = net.eccentricity
+    st.markdown(f"**{net.name}**: {net.nnodes} nodes, {net.nlinks} links, "
+                f"radius {ecc['radius']}, diameter {ecc['diameter']}")
+    if net.type == "mg":
+        st.caption("Merged from: " + ", ".join(f"`{s}`" for s in net.sources))
+    tab = properties_table(net)
+    columns = fitted_columns(tab)
+    table_width = sum(c["width"] for c in columns.values()) + 20  # + the vertical scrollbar
+    st.dataframe(tab, width=table_width, hide_index=True, column_config=columns)
+    st.caption(DOWNLOAD_TIP)
+
+
+@st.dialog("Network Link List", width="large")
+def link_list_dialog(name: str) -> None:
+    net = col.pfnets[name]
+    st.markdown(f"**{net.name}**: {net.nnodes} nodes, {net.nlinks} links, "
+                f"{'directed' if net.isdirected else 'undirected'}")
+    if net.type == "mg":
+        n = len(net.sources)
+        codes = [f"`{1 << i:0{n}b}` {source}" for i, source in enumerate(net.sources)]
+        st.markdown("Codes of the merged networks:  \n" + "  \n".join(codes))
+        st.caption("**weight** and **nets** show which networks have each link, using these codes; "
+                   "**count** is how many networks have it.")
+    st.dataframe(net.get_link_list(), width="content", hide_index=False)
+    st.caption(DOWNLOAD_TIP)
+
+
 with (st.sidebar):
     if demo_loaded():
         st.button(label="**Clear Demo**", on_click=demo_button_clicked, args=(clear_demo,),
@@ -300,22 +357,13 @@ else:
         if st.button("Average Proximities…", disabled=ave_problem is not None,
                      help=ave_problem or "Average the distances of the selected proximities."):
             average_dialog(sel_prxs)
-        display_matrix = st.button("Display Matrix", disabled=n_prx != 1,
-                                   help="Show the distance matrix of the selected proximity.")
+        if st.button("Display Matrix", disabled=n_prx != 1,
+                     help="Show the distance matrix of the selected proximity."):
+            matrix_dialog(sel_prxs[0])
         if st.button(f"Delete Proximities… ({n_prx})" if n_prx else "Delete Proximities…",
                      disabled=n_prx == 0, help="Delete the selected proximities and what was made from them."):
             delete_proximities_dialog(sel_prxs)
 
-#---------------------------------------------------------------------------------------------------prx details
-    if len(sel_prxs) == 1 and display_matrix:
-        with st.container(key=f"{REVEAL_KEY}_matrix"):
-            prx = col.proximities[sel_prxs[0]]
-            st.subheader(f"Distance Matrix for {prx.name}")
-            if hasattr(prx, "sources") and len(prx.sources) > 0:
-                st.write(f"Sources: {prx.sources}")
-            df = pd.DataFrame(prx.dismat, index=prx.terms, columns=prx.terms)
-            st.dataframe(df, width='content', height='content')
-        # stss.prx_version += 1
 
 if len(col.proximities) > 1 and st.toggle(
         "**Show Proximity Correlations**", key="show_corrs",
@@ -353,49 +401,18 @@ else:
                      help="Show the selected network on View Network."):
             stss.focus_net_name = sel_nets[0]
             st.switch_page(view_page)
-        show_props = st.button("Network Properties", key="net_props_btn", disabled=n_net != 1,
-                               help="Degree, eccentricity, center and median of each node.")
-        show_link_list = st.button("Network Link List", key="link_list_btn", disabled=n_net != 1,
-                                   help="The links of the selected network with their weights.")
+        if st.button("Network Properties", key="net_props_btn", disabled=n_net != 1,
+                     help="Degree, eccentricity, center and median of each node."):
+            properties_dialog(sel_nets[0])
+        if st.button("Network Link List", key="link_list_btn", disabled=n_net != 1,
+                     help="The links of the selected network with their weights."):
+            link_list_dialog(sel_nets[0])
         if st.button("Merge Networks…", disabled=mrg_problem is not None,
                      help=mrg_problem or "Merge the selected networks into one."):
             merge_dialog(sel_nets)
         if st.button(f"Delete Networks… ({n_net})" if n_net else "Delete Networks…",
                      disabled=n_net == 0, help="Delete the selected networks and merges made from them."):
             delete_networks_dialog(sel_nets)
-
-#------------------------------------------------------------------------------------------------net details
-if len(col.pfnets) > 0 and show_link_list:
-    with st.container(key=f"{REVEAL_KEY}_links"):
-        net = col.pfnets[sel_nets[0]]
-        st.write("**Link List**")
-        st.write(f"{net.name} : {net.nnodes} nodes -- {net.nlinks} links -- net.isdirected={net.isdirected}")
-        if net.type == "mg":
-            st.write(f"Sources: {net.sources}")
-            for i, source in enumerate(net.sources):
-                b = f"{int(2**i):b}"
-                st.write(f"{b} {source}")
-            st.write("""**weight** is a binary code using bits shown above
-                **nets** shows which nets using bits shown above
-                **count** shows the number of nets that contain the link
-                """)
-        llist = net.get_link_list()
-        st.dataframe(data=llist, width="content", hide_index=False, height='content')
-    stss.net_version += 1
-
-if len(col.pfnets) > 0 and show_props:
-    with st.container(key=f"{REVEAL_KEY}_props"):
-        st.write("**Network Properties**")
-        net = col.pfnets[sel_nets[0]]
-        if net.type == "mg":
-            st.write(f"Sources: {net.sources}")
-        ecc = net.eccentricity
-        st.write(f"{net.name}")
-        st.write(
-            f"{net.nnodes} nodes and {net.nlinks} links -- radius = {ecc['radius']} -- diameter = {ecc['diameter']}")
-        tab = properties_table(net)
-        st.dataframe(data=tab, width="content", hide_index=True, height='content')
-    stss.net_version += 1
 
 if len(col.pfnets) > 1 and st.toggle(
         "**Show Network Similarities**", key="show_netsim",
