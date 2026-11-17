@@ -235,6 +235,22 @@ def test_no_ui_state_in_collection():
         assert not hasattr(c, attr)
 
 
+def test_saving_a_layout_updates_other_nets_using_saved(col):
+    psy, bio = col.pfnets["psy_pf"], col.pfnets["bio_pf"]
+    col.save_layout(psy)
+    col.apply_saved_layout(bio)                 # bio_pf now uses "saved"
+    from pypf.pfnet import PFnet
+    bio_q2 = PFnet(col.proximities["bio"], q=2)
+    col.add_pfnet(bio_q2)
+    bio_q2.get_layout(method="spiral")          # same terms, not using "saved"
+    spiral = bio_q2.coords.copy()
+    bio.set_coords(bio.coords[::-1].copy(), method="moved")
+    col.save_layout(bio)                        # new layout saved from bio_pf
+    new = col.saved_coords[bio.termsid]
+    assert np.allclose(psy.coords, new) and psy.layout_request == "saved"
+    assert np.allclose(bio_q2.coords, spiral)   # left alone
+
+
 def test_save_layout_switches_that_net_to_saved(col):
     psy, bio = col.pfnets["psy_pf"], col.pfnets["bio_pf"]
     psy.coords = psy.coords * 0.5

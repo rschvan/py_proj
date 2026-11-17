@@ -60,10 +60,22 @@ class Collection:
     def save_layout(self, net: PFnet) -> None:
         """Saves the net's current coords as the layout for all nets with its terms, and
         switches this net to the "saved" layout, so a project file reloads it that way.
-        Other nets with the same terms keep their own layout until "saved" is chosen."""
+        Other nets with the same terms that use "saved" get the new layout too; the rest
+        keep their own layout until "saved" is chosen."""
         if net.termsid and net.coords is not None:
             self.saved_coords[net.termsid] = np.round(np.array(net.coords, dtype=float), COORD_DECIMALS)
             self.apply_saved_layout(net)
+            self.refresh_saved_layouts(net.termsid)
+
+    def refresh_saved_layouts(self, termsid: str) -> list[str]:
+        """Gives every net with these terms that uses the "saved" layout the current saved
+        coords. Returns the names of the nets updated."""
+        updated = []
+        for name, net in self.pfnets.items():
+            if (net.termsid == termsid and getattr(net, "layout_request", None) == "saved"
+                    and self.apply_saved_layout(net)):
+                updated.append(name)
+        return updated
 
     def has_saved_layout(self, termsid: str) -> bool:
         return termsid in self.saved_coords
@@ -437,8 +449,11 @@ class Collection:
                 self.terms[tid] = tuple(terms_list)
 
         # Restore saved layouts (older project files have none)
+        # (a file added to this collection replaces its saved layouts for the same terms,
+        # so nets already here that use "saved" are refreshed too)
         for tid, coords in data.get("saved_layouts", {}).items():
             self.saved_coords[tid] = np.array(coords, dtype=float)
+            self.refresh_saved_layouts(tid)
 
         # 2. Restore Proximities
         prx_name_map = {}
