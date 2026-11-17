@@ -166,19 +166,27 @@ def _family(col):
 def test_dependents_follow_the_whole_chain(col):
     ave, ave_net, mrg = _family(col)
     prxs, nets = col.dependents(prx_names=["psy"])
-    assert prxs == [ave]
-    assert set(nets) == {"psy_pf", "psy_pf_q2", ave_net, mrg}
+    assert prxs == []                           # averages are not dependents
+    assert set(nets) == {"psy_pf", "psy_pf_q2", mrg}
     assert col.dependents(net_names=["bio_pf"]) == ([], [mrg])
     assert col.dependents(net_names=[mrg]) == ([], [])
 
 
-def test_deleting_proximity_deletes_its_dependents(col):
+def test_deleting_proximity_deletes_only_its_descendant_networks(col):
     ave, ave_net, mrg = _family(col)
     extra_prxs, extra_nets = col.delete_proximities(["psy"])
-    assert extra_prxs == [ave] and mrg in extra_nets
-    assert set(col.proximities) == {"bio"}
-    assert set(col.pfnets) == {"bio_pf"}
+    assert extra_prxs == [] and set(extra_nets) == {"psy_pf", "psy_pf_q2", mrg}
+    assert set(col.proximities) == {"bio", ave}
+    assert set(col.pfnets) == {"bio_pf", ave_net}
     assert len(col.terms) == 1
+
+
+def test_average_keeps_deleted_source_names_across_save_and_load(col):
+    ave, _, _ = _family(col)
+    col.delete_proximities(["psy"])
+    assert col.proximities[ave].sources == ["psy", "bio"]
+    restored = Collection.from_project_state(col.get_project_state())
+    assert restored.proximities[ave].sources == ["psy", "bio"]
 
 
 def test_deleting_network_deletes_merges_that_used_it(col):

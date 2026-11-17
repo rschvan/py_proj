@@ -110,18 +110,16 @@ class Collection:
         return added, errors
 
     def dependents(self, prx_names=(), net_names=()) -> tuple[list[str], list[str]]:
-        """What depends on the named proximities and networks, all the way down:
-        networks derived from a proximity, averages that used it (and their networks),
-        and merged networks that used any of those networks.
-        Returns (proximity names, network names), not including the names given."""
+        """What depends on the named proximities and networks: networks derived from
+        a proximity, and merged networks that used any of those networks.
+        Averages are not dependents: they keep their own distances, so they (and their
+        networks) outlive the proximities they were made from.
+        Returns (proximity names, network names), not including the names given.
+        The proximity list is always empty; it is kept so callers need not change."""
         prxs, nets = set(prx_names), set(net_names)
         changed = True
         while changed:
             changed = False
-            for name, prx in self.proximities.items():
-                if name not in prxs and prxs.intersection(prx.sources):
-                    prxs.add(name)
-                    changed = True
             for name, net in self.pfnets.items():
                 if name in nets:
                     continue
@@ -129,14 +127,14 @@ class Collection:
                 if (parent is not None and parent.name in prxs) or nets.intersection(net.sources):
                     nets.add(name)
                     changed = True
-        return (sorted_keys({n: self.proximities[n] for n in prxs - set(prx_names) if n in self.proximities}),
-                sorted_keys({n: self.pfnets[n] for n in nets - set(net_names) if n in self.pfnets}))
+        return [], sorted_keys({n: self.pfnets[n] for n in nets - set(net_names) if n in self.pfnets})
 
     def delete_proximities(self, names) -> tuple[list[str], list[str]]:
-        """Deletes the named proximities and everything that depends on them (see dependents).
+        """Deletes the named proximities and the networks that descend from them (see
+        dependents). Averages made from them are kept.
         Returns (proximity names, network names) of the dependents also deleted."""
         extra_prxs, extra_nets = self.dependents(prx_names=names)
-        for name in [*names, *extra_prxs]:
+        for name in names:
             self.proximities.pop(name, None)
         for name in extra_nets:
             self.pfnets.pop(name, None)
@@ -444,11 +442,11 @@ class Collection:
             self.add_proximity(new_prx, add_pfnet=False)
             prx_name_map[name] = new_prx.name
 
-        # Sources use the names in the file; follow any renaming, and drop sources that
-        # were not in the file so they cannot match an unrelated proximity already here.
+        # Sources use the names in the file; follow any renaming. Sources that were
+        # deleted before saving keep their names, as a record of what was averaged.
         for name in prx_name_map.values():
             prx = self.proximities[name]
-            prx.sources = [prx_name_map[s] for s in prx.sources if s in prx_name_map]
+            prx.sources = [prx_name_map.get(s, s) for s in prx.sources]
 
         # 3. Restore Networks from Recipes
         net_name_map = {}
