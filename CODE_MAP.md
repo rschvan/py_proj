@@ -31,7 +31,6 @@ py_proj/
 │   └── data/           Sample data, samples.csv (descriptions), sample_proj.json
 ├── static/help.html    The help text (sections: start, build, view, measures, projects, …)
 ├── tests/              pytest suite for pypf and the table helpers
-├── demo/               Scripted demo-video recorder (Playwright) and its scenes
 ├── pyproject.toml      Package definition: pypf deps; extras [app] and [dev]
 └── requirements*.txt   What the app venv / dev tools install
 ```
@@ -95,8 +94,4 @@ venv/Scripts/python.exe -m streamlit run stapp.py
 
 ```bash
 venv/Scripts/python.exe -m pytest -q
-```
-
-```bash
-venv/Scripts/python.exe demo/record_demo.py
 ```
