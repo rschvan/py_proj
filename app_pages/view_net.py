@@ -72,14 +72,14 @@ def clear_compare():
 
 def compare_table_changed(key: str, nets: list):
     """Callback for the comparison table: a ticked view box shows that network,
-    a ticked delete box removes it from the set."""
+    a ticked remove box removes it from the set."""
     edits = stss[key]["edited_rows"]
     for row, change in edits.items():
         if change.get("view"):
             show_net(nets[row].name)
             if "selected_net_name" in stss:
                 stss.selected_net_name = nets[row].name  # keep the selector in step
-    removed = {row for row, change in edits.items() if change.get("delete")}
+    removed = {row for row, change in edits.items() if change.get("remove")}
     stss.compare_nets = [net for i, net in enumerate(nets) if i not in removed]
     stss.compare_version += 1
 
@@ -173,13 +173,13 @@ with st.sidebar:
         st.data_editor(
             pd.DataFrame({"view": [net is focus_net for net in nets],
                           "network": [net.name for net in nets],
-                          "delete": [False] * len(nets)}),
+                          "remove": [False] * len(nets)}),
             key=key, on_change=compare_table_changed, args=(key, nets),
             hide_index=True, width="stretch", disabled=["network"],
             column_config={
                 "view": st.column_config.CheckboxColumn("view", width="small",
                                                         help="Tick to show this network."),
-                "delete": st.column_config.CheckboxColumn("delete", width="small",
+                "remove": st.column_config.CheckboxColumn("remove", width="small",
                                                           help="Tick to remove it from the set."),
             },
         )

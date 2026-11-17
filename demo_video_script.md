@@ -92,7 +92,7 @@ and click **Derive**.
 9. Click **Save Layout** in the sidebar, then switch to psy\_pf\_q2 and choose **saved**. \
 {A saved layout belongs to the terms, so every network with the same terms can use it. That makes networks easy to compare with the nodes in the same places.}
 10. Under **Comparison Set** at the bottom of the sidebar, click **Add** for psy\_pf\_q2. Switch to bio\_pf and psy\_pf and add each, choosing **saved** as the layout for psy\_pf. \
-{The comparison set keeps networks ready to show again. Tick view to switch to one, tick delete to take one out, and Clear All empties the set.}
+{The comparison set keeps networks ready to show again. Tick view to switch to one, tick remove to take one out, and Clear All empties the set.}
 11. Tick **view** on each in turn. \
 {The nodes stay in place while the links change. The set holds networks with the same terms, so they can share the saved layout. Add is greyed out for a network with other terms, such as statecaps\_pf.}
 12. (Optional) Switch to cities\_pf; it opens with its **saved** layout. \
