@@ -1,5 +1,4 @@
 # stutils.py: streamlit helpers for the app (project root, kept out of the pypf package)
-import copy
 import os
 from pathlib import Path
 
@@ -66,6 +65,46 @@ def get_sample_collection(code_id: str) -> Collection:
     col = Collection()
     col.load_project_state(get_cached_sample_json())
     return col
+
+
+# ----------------------------------------------------------------- demo data
+# Demo items are tracked by object, not by name, so a file of the user's that has a sample's
+# name is never taken for demo data. stss.demo_items maps id -> object; holding the objects
+# also keeps their ids from being reused while they are tracked.
+
+def load_demo() -> None:
+    """Adds a copy of the sample data to the project and tracks it as the demo."""
+    prxs, nets = stss.col.add_copy_of(stss.sample_col)
+    stss.demo_items = {id(item): item for item in [*prxs, *nets]}
+
+
+def mark_demo(item) -> None:
+    """Tracks an item made only from demo data (an average), so Clear Demo removes it."""
+    stss.demo_items[id(item)] = item
+
+
+def is_demo(item) -> bool:
+    return id(item) in stss.demo_items
+
+
+def demo_names() -> tuple[list[str], list[str]]:
+    """Names of the demo proximities and networks still in the project."""
+    col = stss.col
+    return ([name for name, prx in col.proximities.items() if is_demo(prx)],
+            [name for name, net in col.pfnets.items() if is_demo(net)])
+
+
+def demo_loaded() -> bool:
+    return any(demo_names())
+
+
+def clear_demo() -> None:
+    """Removes the demo items and what depends on them. Averages that also used the
+    user's own proximities are kept."""
+    prxs, nets = demo_names()
+    stss.col.delete_proximities(prxs)
+    stss.col.delete_pfnets(nets)
+    stss.demo_items = {}
 
 # ----------------------------------------------------------------- table formatting
 # pypf returns unrounded numbers and flags; these helpers shape them for display.
@@ -216,7 +255,7 @@ def load_project_dialog() -> None:
     mode = st.radio("**Load into**", LOAD_MODES, horizontal=True,
                     key=f"load_mode_{stss.manage_data_version}",
                     help="**Replace** starts fresh with only the project in the file "
-                         "(including removing the sample data). **Add** keeps what is "
+                         "(including removing the demo data). **Add** keeps what is "
                          "loaded now; names already in use get a number added.")
 
     if st.button("📂 Load", type="primary", key="confirm_load_btn"):
@@ -225,7 +264,6 @@ def load_project_dialog() -> None:
             if mode == LOAD_MODES[0]:
                 # load into a new collection first, so a bad file leaves the current one intact
                 stss.col = Collection.from_project_state(project_data)
-                stss.sample_visible = False   # the sample data is gone
                 stss.focus_net_name = None    # View Network shows the first network
                 stss.layout_seq += 1
             else:
@@ -285,7 +323,8 @@ def init_pf_session_state():
     stss.sample_col = get_sample_collection(pypf_code_id())  # shared, read-only
     stss.sample_sources = get_sample_sources()
     stss.example_file_format = get_example_file_format()
-    stss.col = copy.deepcopy(stss.sample_col)          # this session's own copy
+    stss.col = Collection()
+    load_demo()                                          # this session's own copy
     stss.focus_net_name = "bio_pf"                       # network shown on View Network
     stss.layouts = ["auto",
                     "gravity",
@@ -308,7 +347,6 @@ def init_pf_session_state():
     stss.q_param = np.inf
     stss.r_param = np.inf
     stss.intro_visible = True
-    stss.sample_visible = True
     stss.perm_file_type = "Spreadsheet"
     stss.perm_net_type = "Pathfinder"
     stss.project_name = "pypf_project"

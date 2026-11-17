@@ -51,7 +51,8 @@ from pypf.pfnet import PFnet, parse_q, parse_r
 from stutils import (init_pf_session_state, tight_divider, add_files_dialog,
                      get_selected_values, save_project_button, load_project_dialog, get_focus_net,
                      proximity_table, network_table, properties_table,
-                     keep_panels_in_view, REVEAL_KEY)
+                     keep_panels_in_view, REVEAL_KEY,
+                     load_demo, clear_demo, demo_loaded, is_demo, mark_demo)
 from pypf.utility import sorted_keys
 
 # alias for st.system_state
@@ -61,8 +62,6 @@ if "col" not in stss:
     init_pf_session_state()
 
 #aliases
-sample_col = stss.sample_col
-sample_sources = stss.sample_sources
 col = stss.col
 
 st.set_page_config(layout="wide", page_title="PyPathfinder", page_icon="🏠")
@@ -87,12 +86,13 @@ keep_panels_in_view()
 # --- Sidebar for Global Actions ---
 
 #----------------------------------------------------------------------------------------------------sidebar
-def hide_sample():
-    """Callback for Clear Demo: remove the sample proximities and networks."""
-    stss.sample_visible = False
-    col.delete_proximities(sample_col.proximities.keys())
-    col.delete_pfnets(sample_col.pfnets.keys())
-    stss.intro_visible = False
+def demo_button_clicked(action) -> None:
+    """Callback for Clear Demo and Load Demo."""
+    action()
+    if action is clear_demo:
+        stss.intro_visible = False  # the user is ready for their own data
+    stss.prx_version += 1  # clears the selections
+    stss.net_version += 1
 
 
 def also_deleted(names: list[str]) -> None:
@@ -147,6 +147,8 @@ def average_dialog(names: list[str]) -> None:
         except ValueError as e:
             st.error(f"Could not average: {e}")
             return
+        if all(is_demo(col.proximities[n]) for n in names):
+            mark_demo(ave_prx)  # made only from demo data: Clear Demo removes it
         col.add_proximity(ave_prx)
         stss.ave_version += 1
         stss.prx_version += 1
@@ -194,10 +196,13 @@ def delete_networks_dialog(names: list[str]) -> None:
 
 
 with (st.sidebar):
-    if stss.sample_visible == True:
-        #st.info("**Click to Bypass Demo**")
-        st.button(label="**Clear Demo**", on_click=hide_sample)
-        tight_divider()
+    if demo_loaded():
+        st.button(label="**Clear Demo**", on_click=demo_button_clicked, args=(clear_demo,),
+                  help="Remove the sample data and anything made only from it.")
+    else:
+        st.button(label="Load Demo", on_click=demo_button_clicked, args=(load_demo,),
+                  help="Add the sample proximities and networks to explore.")
+    tight_divider()
 
     stss.project_name =st.text_input(label="**Project Name**",
                   value=stss.project_name,
@@ -229,9 +234,11 @@ with st.expander("**Getting Started** (click to hide or show)",
                  on_change=toggle_intro, expanded=stss.intro_visible, ):
     intro = ("**PyPathfinder** builds and displays Pathfinder networks from proximity data: "
              "distances or relatedness values between every pair of a set of terms.")
-    if stss.sample_visible:
+    if demo_loaded():
         intro += (" Sample data is loaded so you can explore; click **Clear Demo** in the "
                   "sidebar to remove it.")
+    else:
+        intro += " To explore with sample data, click **Load Demo** in the sidebar."
     st.markdown(intro)
     st.markdown(
         "1. **Add data**: click **➕ Add Data Files…** in the sidebar. "
@@ -244,6 +251,9 @@ with st.expander("**Getting Started** (click to hide or show)",
         "4. **Save your project** with **💾 Save Project** in the sidebar, and bring it back "
         "later with **📂 Load Project**."
     )
+    with st.expander("Spreadsheet layout example (bank6)"):
+        st.caption("Terms in the first row and column, distances or dissimilarities in the matrix.")
+        st.dataframe(stss.example_file_format, width="content", hide_index=False)
     st.warning("The app loses its data when idle for a while. "
                "Save your project before taking a break.", icon="⚠️")
     help_link, video_link = st.columns(2)
@@ -254,15 +264,10 @@ with st.expander("**Getting Started** (click to hide or show)",
         st.link_button("PFNets YouTube channel", "https://www.youtube.com/@PFNets", icon="▶️")
 
 
-# sample sources
-if stss.sample_visible:
-    st.subheader("Sample Proximity Data and Derived Networks")
-    st.write("""Example Proximity Data Spreadsheet (bank6 data)  
-            Terms in first row and column with 
-            distances or dissimilarities in the matrix""")
-    st.dataframe(stss.example_file_format, width='content', hide_index=False, )
-    st.write("Sample Proximity Sources")
-    st.dataframe(sample_sources, width='content', hide_index=True)
+# where the sample data came from
+if demo_loaded():
+    with st.expander("**Demo data sources**"):
+        st.dataframe(stss.sample_sources, width="content", hide_index=True)
 
 # ---Proximity and Network Lists
 

@@ -109,6 +109,31 @@ class Collection:
             added.append(prx.name)
         return added, errors
 
+    def add_copy_of(self, other: "Collection") -> tuple[list[Proximity], list[PFnet]]:
+        """Adds copies of other's proximities and networks, with the saved layouts it has
+        that this collection lacks. Names already in use get a number added.
+        Returns (the proximities added, the networks added); other is not changed."""
+        other = copy.deepcopy(other)
+        for tid, terms in other.terms.items():
+            self.terms.setdefault(tid, terms)
+        prx_names, net_names = {}, {}
+        for name, prx in other.proximities.items():
+            self.add_proximity(prx, add_pfnet=False)
+            prx_names[name] = prx.name
+        for name, net in other.pfnets.items():
+            self.add_pfnet(net)
+            net_names[name] = net.name
+            if getattr(net, "graph", None) is not None:
+                net.graph.name = net.name
+        # sources name items of other; follow any renaming
+        for prx in other.proximities.values():
+            prx.sources = [prx_names.get(s, s) for s in prx.sources]
+        for net in other.pfnets.values():
+            net.sources = [net_names.get(s, s) for s in net.sources]
+        for tid, coords in other.saved_coords.items():
+            self.saved_coords.setdefault(tid, coords.copy())
+        return list(other.proximities.values()), list(other.pfnets.values())
+
     def dependents(self, prx_names=(), net_names=()) -> tuple[list[str], list[str]]:
         """What depends on the named proximities and networks: networks derived from
         a proximity, and merged networks that used any of those networks.

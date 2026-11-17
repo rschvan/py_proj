@@ -189,6 +189,22 @@ def test_average_keeps_deleted_source_names_across_save_and_load(col):
     assert restored.proximities[ave].sources == ["psy", "bio"]
 
 
+def test_add_copy_of_renames_and_follows_sources(col):
+    ave, ave_net, mrg = _family(col)
+    col.save_layout(col.pfnets["psy_pf"])
+    other = Collection()
+    other.add_proximity(load("psy"))            # takes the names psy and psy_pf
+    prxs, nets = other.add_copy_of(col)
+    assert len(prxs) == len(col.proximities) and len(nets) == len(col.pfnets)
+    assert all(other.proximities[p.name] is p for p in prxs)
+    assert all(p not in col.proximities.values() for p in prxs)   # copies
+    copy_ave = next(p for p in prxs if p.sources)
+    assert copy_ave.sources == [prxs[0].name, "bio"] and prxs[0].name != "psy"
+    copy_mrg = next(n for n in nets if n.type == "mg")
+    assert all(s in other.pfnets for s in copy_mrg.sources) and "psy_pf" not in copy_mrg.sources
+    assert other.saved_coords.keys() == col.saved_coords.keys()
+
+
 def test_deleting_network_deletes_merges_that_used_it(col):
     _, ave_net, mrg = _family(col)
     assert col.delete_pfnets(["bio_pf"]) == [mrg]
